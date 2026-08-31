@@ -1,0 +1,14 @@
+.next
+out
+build
+coverage
+node_modules
+package-lock.json
+public
+md-files
+
+# Hand-authored prose is the source of truth for *how* to build this project.
+# Prettier reflows tables and swaps emphasis markers, which creates review noise and
+# would fail `format:check` in CI whenever someone edits documentation. Keep it out.
+*.md
+docs/

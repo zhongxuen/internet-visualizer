@@ -1,0 +1,53 @@
+@import 'tailwindcss';
+
+/*
+ * Dark-mode-first baseline.
+ *
+ * The product is dark by default (CLAUDE.md, "UI philosophy"), so the canvas is dark
+ * unconditionally and nothing built before phase 02 may assume a light background.
+ * Phase 02 replaces this with the full token set in tokens.css -- until then, these
+ * five variables are the only colors anything should reach for.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #07090d;
+  --surface: #0e131c;
+  --foreground: #e6edf6;
+  --muted: #8b98ab;
+  --border: #1c2230;
+  --accent: #38bdf8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+ * An animation-first product fails hard for reduced-motion users unless this is in
+ * place from the start. Individual modules additionally collapse playback to discrete
+ * step transitions -- see phase 04.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
