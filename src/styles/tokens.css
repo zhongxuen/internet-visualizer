@@ -1,0 +1,109 @@
+/*
+ * Design tokens — the single source of colour, layer semantics, and timing.
+ *
+ * Rules (docs/implementation/02-design-system-and-shell.md, step 1):
+ *
+ *   1. No raw hex outside this file. Components reach for a token, never a value.
+ *   2. Never encode meaning in colour alone. Every colour below that carries meaning
+ *      (layers, states) has a matching label/icon requirement in the component that
+ *      uses it — layer chips always render their `L2`..`L7` short label, state chips
+ *      always render an icon or word.
+ *   3. Contrast: body text >= 4.5:1, large text and UI borders >= 3:1, measured
+ *      against every surface the token can sit on. Measured ratios are noted per
+ *      token as `base / raised / overlay` and are asserted by
+ *      `tests/tokens-contrast.test.ts`, which parses this file.
+ *
+ * Layer colours are deliberately spread around the hue wheel and are never reused for
+ * state, so "transport" looks identical in every module for the life of the product.
+ */
+
+:root {
+  /* --- Surface ------------------------------------------------------------ */
+  --bg-base: #07090d; /* page canvas, near black */
+  --bg-raised: #0e131c; /* cards, panels, nav */
+  --bg-overlay: #161d2b; /* tooltips, popovers, menus */
+
+  --border: #616e85; /* 3.87 / 3.61 / 3.28 — structural, meets 3:1 everywhere */
+  --border-strong: #7a879e; /* 5.49 / 5.13 / 4.65 — emphasis + hovered controls */
+
+  /* --- Text --------------------------------------------------------------- */
+  --text-primary: #e8eff8; /* 17.21 / 16.07 / 14.57 */
+  --text-secondary: #b6c4d6; /* 11.25 / 10.51 / 9.52 */
+  --text-muted: #8a99ae; /* 6.88 / 6.42 / 5.82 */
+
+  /* --- Accent ------------------------------------------------------------- */
+  --accent: #4cc2f1; /* 9.77 / 9.12 / 8.27 */
+  --accent-strong: #7bd4f7; /* 11.96 / 11.17 / 10.12 — hover/active */
+  --accent-ink: #04121b; /* text on any filled accent/state surface, >= 6.8:1 */
+  --focus-ring: #7bd4f7; /* one ring colour for every interactive element */
+
+  /* --- Semantic protocol colours (OSI layer) ------------------------------ */
+  /* Fixed for the whole product. See src/lib/theme.ts for the typed accessors. */
+  --layer-link: #f0a44a; /* 9.60 / 8.96 / 8.13 — L2 */
+  --layer-network: #6fdc8c; /* 11.66 / 10.89 / 9.88 — L3 */
+  --layer-transport: #55d6e0; /* 11.46 / 10.70 / 9.71 — L4 */
+  --layer-session: #a78bfa; /* 7.32 / 6.84 / 6.20 — L5 */
+  --layer-application: #f58bc0; /* 8.86 / 8.27 / 7.50 — L7 */
+
+  /* --- State -------------------------------------------------------------- */
+  --state-ok: #45c67b; /* 9.12 / 8.52 / 7.73 */
+  --state-warn: #e0a63a; /* 9.19 / 8.58 / 7.78 */
+  --state-error: #ff6b6b; /* 7.18 / 6.71 / 6.08 */
+  --state-pending: #8a99ae; /* 6.88 / 6.42 / 5.82 */
+
+  /* --- Motion ------------------------------------------------------------- */
+  /*
+   * Three durations only. Anything that needs a different number is either a
+   * simulation timeline (owned by the module) or wrong.
+   * `--ease-out` intentionally shadows Tailwind's default so the `ease-out`
+   * utility resolves to our curve; this block is unlayered and therefore wins
+   * over Tailwind's `@layer theme` output regardless of import order.
+   */
+  --dur-fast: 120ms;
+  --dur-base: 240ms;
+  --dur-slow: 600ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Make the bare `transition` utility use our tokens rather than Tailwind's. */
+  --default-transition-duration: var(--dur-fast);
+  --default-transition-timing-function: var(--ease-out);
+  --ease-in-out: var(--ease-inout);
+}
+
+/*
+ * Tailwind wiring. `inline` means utilities emit `var(--bg-raised)` directly instead
+ * of copying the value, so a token change is picked up everywhere with no rebuild of
+ * intermediate variables.
+ *
+ * Utility names avoid Tailwind's own namespaces: `surface` rather than `base` (which
+ * would collide with the `text-base` font-size utility) and `fg` for text colours.
+ */
+@theme inline {
+  --color-surface: var(--bg-base);
+  --color-surface-raised: var(--bg-raised);
+  --color-surface-overlay: var(--bg-overlay);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-fg: var(--text-primary);
+  --color-fg-secondary: var(--text-secondary);
+  --color-fg-muted: var(--text-muted);
+
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-ink: var(--accent-ink);
+  --color-focus: var(--focus-ring);
+
+  --color-layer-link: var(--layer-link);
+  --color-layer-network: var(--layer-network);
+  --color-layer-transport: var(--layer-transport);
+  --color-layer-session: var(--layer-session);
+  --color-layer-application: var(--layer-application);
+
+  --color-state-ok: var(--state-ok);
+  --color-state-warn: var(--state-warn);
+  --color-state-error: var(--state-error);
+  --color-state-pending: var(--state-pending);
+}

@@ -11,12 +11,48 @@
 
 export type ModuleStatus = 'planned' | 'in-progress' | 'ready';
 
+/**
+ * Which section of the navigation a module belongs to. Declared here rather than
+ * derived in the nav, so adding a module stays a one-file change and no component
+ * ever hardcodes a list of module ids.
+ */
+export type ModuleGroup = 'explore' | 'tools' | 'learn';
+
+export interface ModuleGroupMeta {
+  key: ModuleGroup;
+  label: string;
+  /** One line describing the group, used as the nav menu's caption. */
+  description: string;
+}
+
+/** Nav order. Groups render in this order; modules keep their MODULES order within. */
+export const MODULE_GROUPS: readonly ModuleGroupMeta[] = [
+  {
+    key: 'explore',
+    label: 'Explore',
+    description: 'Simulations that take one protocol apart and animate it.',
+  },
+  {
+    key: 'tools',
+    label: 'Tools',
+    description:
+      'Hands-on network utilities. Simulated unless a live badge says otherwise.',
+  },
+  {
+    key: 'learn',
+    label: 'Learn',
+    description: 'Guided lessons built on the same scenarios the modules run.',
+  },
+];
+
 export interface ModuleMeta {
   id: string;
   title: string;
   route: string;
   summary: string;
   status: ModuleStatus;
+  /** Navigation section. See MODULE_GROUPS. */
+  group: ModuleGroup;
   /** Learning topics this module teaches, e.g. ['DNS', 'UDP'] */
   topics: string[];
   /**
@@ -29,6 +65,7 @@ export interface ModuleMeta {
 export const MODULES: ModuleMeta[] = [
   {
     id: 'network-map',
+    group: 'explore',
     title: 'Network Map',
     route: '/network-map',
     summary: 'Explore a live graph of devices, routers, and the links between them.',
@@ -38,6 +75,7 @@ export const MODULES: ModuleMeta[] = [
   },
   {
     id: 'packet-journey',
+    group: 'explore',
     title: 'Packet Journey',
     route: '/packet-journey',
     summary:
@@ -48,6 +86,7 @@ export const MODULES: ModuleMeta[] = [
   },
   {
     id: 'dns-explorer',
+    group: 'explore',
     title: 'DNS Explorer',
     route: '/dns-explorer',
     summary:
@@ -58,6 +97,7 @@ export const MODULES: ModuleMeta[] = [
   },
   {
     id: 'http-explorer',
+    group: 'explore',
     title: 'HTTP Explorer',
     route: '/http-explorer',
     summary: 'Inspect the full request and response lifecycle, header by header.',
@@ -67,6 +107,7 @@ export const MODULES: ModuleMeta[] = [
   },
   {
     id: 'https-explorer',
+    group: 'explore',
     title: 'HTTPS Explorer',
     route: '/https-explorer',
     summary: 'See the TLS handshake negotiate keys and verify a certificate chain.',
@@ -76,6 +117,7 @@ export const MODULES: ModuleMeta[] = [
   },
   {
     id: 'api-visualizer',
+    group: 'explore',
     title: 'API Visualizer',
     route: '/api-visualizer',
     summary: 'Animate REST calls, status codes, auth headers, and error handling.',
@@ -85,6 +127,7 @@ export const MODULES: ModuleMeta[] = [
   },
   {
     id: 'websocket-viewer',
+    group: 'explore',
     title: 'WebSocket Viewer',
     route: '/websocket-viewer',
     summary:
@@ -95,6 +138,7 @@ export const MODULES: ModuleMeta[] = [
   },
   {
     id: 'internet-simulator',
+    group: 'explore',
     title: 'Internet Simulator',
     route: '/internet-simulator',
     summary:
@@ -105,6 +149,7 @@ export const MODULES: ModuleMeta[] = [
   },
   {
     id: 'network-diagnostics',
+    group: 'tools',
     title: 'Network Diagnostics',
     route: '/network-diagnostics',
     summary:
@@ -117,6 +162,7 @@ export const MODULES: ModuleMeta[] = [
   },
   {
     id: 'learning-center',
+    group: 'learn',
     title: 'Learning Center',
     route: '/learning-center',
     summary:
@@ -130,6 +176,20 @@ export const MODULES: ModuleMeta[] = [
 /** Look up a module by its registry id. */
 export function getModule(id: string): ModuleMeta | undefined {
   return MODULES.find((m) => m.id === id);
+}
+
+/**
+ * Resolve the module owning a pathname, so the shared module chrome can label itself
+ * from the URL instead of every module passing its own metadata up to the layout.
+ * Matches the module route and anything nested under it, e.g. /dns-explorer/root.
+ */
+export function getModuleByRoute(pathname: string): ModuleMeta | undefined {
+  return MODULES.find((m) => pathname === m.route || pathname.startsWith(m.route + '/'));
+}
+
+/** Modules in one nav group, in registry order. */
+export function modulesInGroup(group: ModuleGroup): ModuleMeta[] {
+  return MODULES.filter((m) => m.group === group);
 }
 
 /** Modules that are actually shippable today. */

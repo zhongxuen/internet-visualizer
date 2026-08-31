@@ -1,53 +1,96 @@
 @import 'tailwindcss';
+@import '../styles/tokens.css';
+@import '../styles/motion.css';
 
 /*
- * Dark-mode-first baseline.
- *
  * The product is dark by default (CLAUDE.md, "UI philosophy"), so the canvas is dark
- * unconditionally and nothing built before phase 02 may assume a light background.
- * Phase 02 replaces this with the full token set in tokens.css -- until then, these
- * five variables are the only colors anything should reach for.
+ * unconditionally. All colour lives in ../styles/tokens.css; nothing below — and
+ * nothing in any component — may introduce a raw value.
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
-  --background: #07090d;
-  --surface: #0e131c;
-  --foreground: #e6edf6;
-  --muted: #8b98ab;
-  --border: #1c2230;
-  --accent: #38bdf8;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-  --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-base);
+  color: var(--text-primary);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
+  color: var(--text-primary);
 }
 
 /*
  * An animation-first product fails hard for reduced-motion users unless this is in
- * place from the start. Individual modules additionally collapse playback to discrete
- * step transitions -- see phase 04.
+ * place from the start. This is the CSS half of the policy and covers transitions no
+ * component owns; JS-driven animation goes through `useReducedMotionSafe().scale()`.
+ * Individual modules additionally collapse playback to discrete step transitions --
+ * see phase 04.
+ *
+ * MotionProvider writes the resolved setting to `<html data-motion>`, so the two
+ * halves cannot disagree: the OS rule below stands down when the session override
+ * asks for full motion, and the override rule collapses motion the OS did not.
  */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion='full']) :is(*, *::before, *::after) {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+:root[data-motion='reduced'] :is(*, *::before, *::after) {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/*
+ * Focus baseline (step 7): one tokenised ring, on every interactive element, for
+ * free.
+ *
+ * In `@layer base`, and written with `:where()`, so it loses to anything more
+ * deliberate: a component that owns its own ring (the module card draws one around
+ * the whole card rather than around its title link) just applies `outline-none` and
+ * wins, because utilities outrank base. Unlayered, this rule would quietly beat every
+ * such opt-out.
+ *
+ * `:focus-visible`, not `:focus`: a mouse user clicking a card should not get a ring,
+ * a keyboard user tabbing to it always should.
+ */
+@layer base {
+  :where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /*
+   * `main` is focused programmatically by the skip link and would otherwise draw a
+   * ring around the whole page. The link's job is to move the reading position; the
+   * heading it lands on is the visible confirmation. `:is()` to outrank the rule
+   * above, which matches it via `[tabindex]`.
+   */
+  main:is(:focus, :focus-visible) {
+    outline: none;
+  }
+}
+
+/*
+ * The skip link: off-screen until focused, then pinned to the top-left above
+ * everything. The first Tab on any page must reveal it.
+ */
+@layer components {
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+  }
+
+  .skip-link:focus {
+    left: 0.75rem;
+    top: 0.75rem;
   }
 }

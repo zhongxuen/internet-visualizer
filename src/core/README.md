@@ -7,7 +7,9 @@ how any of it is drawn.
 
 - `sim/` — the deterministic simulation kernel. Protocol simulations run on a virtual
   clock and emit an ordered list of typed `SimEvent`s.
-- `net/` — real-network safety primitives (SSRF guard, rate limiter). Phase 12.
+- `net/` — address, port, and byte primitives (IPv4/IPv6/CIDR/MAC parsing and
+  classification, the well-known port table, hex/binary rendering). The same validators
+  guard real-network input in phase 12, which is why they are strict.
 - `types/` — shared domain types (packets, nodes, links, events).
 - `protocols/` — per-protocol logic (IPv4/TTL, DNS, TCP, TLS records) added from phase 03.
 

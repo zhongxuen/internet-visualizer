@@ -1,0 +1,93 @@
+/*
+ * Idle animation vocabulary for the shell.
+ *
+ * These are the ambient loops that hint at what a module does before you open it
+ * (docs/implementation/02-design-system-and-shell.md, step 5). They are decorative:
+ * every one of them sits inside an `aria-hidden` glyph, and nothing is only legible
+ * while it moves.
+ *
+ * They live here rather than in a component for the same reason colours do — a
+ * component may reach for `animate-idle-trace`, never for a keyframe of its own.
+ * Loop lengths are seconds rather than the `--dur-*` tokens on purpose: those three
+ * durations describe UI transitions, and an ambient loop is not one.
+ *
+ * Reduced motion needs no special case here. `globals.css` collapses every animation
+ * to a single 0.01ms pass, which lands each loop below on its resting frame.
+ */
+
+@theme {
+  --animate-idle-trace: idle-trace 3.6s var(--ease-inout) infinite;
+  --animate-idle-shuttle: idle-shuttle 3.2s var(--ease-inout) infinite;
+  --animate-idle-flow: idle-flow 2.4s linear infinite;
+  --animate-idle-pulse: idle-pulse 2.8s var(--ease-inout) infinite;
+  --animate-idle-ring: idle-ring 2.8s var(--ease-out) infinite;
+  --animate-idle-fill: idle-fill 4s var(--ease-inout) infinite;
+
+  /* A packet crossing a link: fades in at the source, out at the destination. */
+  @keyframes idle-trace {
+    0% {
+      transform: translateX(0);
+      opacity: 0;
+    }
+    12%,
+    82% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(var(--idle-distance, 40px));
+      opacity: 0;
+    }
+  }
+
+  /* Request out, response back — the same element, both directions. */
+  @keyframes idle-shuttle {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(var(--idle-distance, 40px));
+    }
+  }
+
+  /* Dashes travelling along a stroke; direction comes from the dashoffset sign. */
+  @keyframes idle-flow {
+    to {
+      stroke-dashoffset: var(--idle-dashoffset, -12);
+    }
+  }
+
+  @keyframes idle-pulse {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  /* Radar ping / TLS handshake ring. */
+  @keyframes idle-ring {
+    0% {
+      transform: scale(0.4);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+
+  /* A progress bar creeping forward, for lesson-shaped glyphs. */
+  @keyframes idle-fill {
+    0%,
+    100% {
+      transform: scaleX(0.15);
+    }
+    55%,
+    75% {
+      transform: scaleX(1);
+    }
+  }
+}
