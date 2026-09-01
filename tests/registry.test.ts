@@ -16,8 +16,12 @@ describe('module registry', () => {
     expect(getModule('nope')).toBeUndefined();
   });
 
-  it('has no ready modules yet', () => {
-    expect(readyModules()).toHaveLength(0);
+  /**
+   * One entry per completed phase. Phase 05 shipped the Network Map; every other module
+   * is still 'planned', and each later phase adds its own id here as it lands.
+   */
+  it('marks exactly the modules whose phase has shipped as ready', () => {
+    expect(readyModules().map((m) => m.id)).toEqual(['network-map']);
   });
 
   /**

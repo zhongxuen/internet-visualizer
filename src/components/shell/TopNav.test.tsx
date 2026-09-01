@@ -40,7 +40,14 @@ describe('TopNav', () => {
       'href',
       '/dns-explorer',
     );
-    expect(within(menu).getAllByText('Planned').length).toBe(items.length);
+    // Every item carries a status, and the status is the registry's -- not a constant
+    // here, which would have to be edited every time a phase ships a module.
+    expect(within(menu).getAllByText(/^(Planned|In progress|Ready)$/)).toHaveLength(
+      items.length,
+    );
+    expect(
+      within(menu).getByRole('menuitem', { name: /Network Map/ }).textContent,
+    ).toContain('Ready');
   });
 
   it('covers every registered module across the three groups', () => {

@@ -68,8 +68,9 @@ export const MODULES: ModuleMeta[] = [
     group: 'explore',
     title: 'Network Map',
     route: '/network-map',
-    summary: 'Explore a live graph of devices, routers, and the links between them.',
-    status: 'planned',
+    summary:
+      'Explore how a network is built up, from one house to a datacenter, machine by machine.',
+    status: 'ready',
     topics: ['TCP/IP', 'Routing', 'Topology'],
     usesRealNetwork: false,
   },

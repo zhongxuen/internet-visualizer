@@ -28,6 +28,14 @@ export default defineConfig({
           name: 'ui',
           environment: 'jsdom',
           setupFiles: ['./tests/setup.ts'],
+          /**
+           * Mounting a React Flow diagram in jsdom is not cheap, and a module test does
+           * it several times over as it switches scenarios. Under the parallelism the
+           * whole suite runs at, that reliably crosses the 5 s default on an ordinary
+           * laptop -- a slow environment, not a slow test. Real timing belongs in the
+           * phase-14 Playwright suite, in a browser that actually lays out.
+           */
+          testTimeout: 20_000,
           include: [
             'src/{components,modules,lib}/**/*.test.{ts,tsx}',
             'tests/**/*.test.{ts,tsx}',
