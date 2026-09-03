@@ -26,5 +26,11 @@ Rules:
   built and demonstrated against the real shape of the data. Replacing it changes nothing
   downstream: nothing in the renderer knows where a `SimResult` came from.
 
-Still to come with the rest of phase 03: `clock.ts`, `rng.ts`, `scenario.ts`,
-`simulation.ts`, `builder.ts`, `index.ts`.
+- `rng.ts` — the seeded PRNG (mulberry32), and the only source of randomness a
+  simulation may use. `fork(label)` derives an independent stream from the *seed* rather
+  than from the current state, so adding a randomised detail to one part of a run cannot
+  shift which packet another part decides to drop. Landed early, with phase 06's
+  `lossy-link` scenario, which needs a loss decision that replays identically.
+
+Still to come with the rest of phase 03: `clock.ts`, `scenario.ts`, `simulation.ts`,
+`builder.ts`, `index.ts`.

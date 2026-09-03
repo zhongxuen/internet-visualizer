@@ -17,11 +17,17 @@ describe('module registry', () => {
   });
 
   /**
-   * One entry per completed phase. Phase 05 shipped the Network Map; every other module
-   * is still 'planned', and each later phase adds its own id here as it lands.
+   * One entry per completed phase. Phase 05 shipped the Network Map, phase 06 the Packet
+   * Journey, phase 07 the DNS Explorer, and phase 08 the HTTP Explorer; every other
+   * module is still 'planned', and each later phase adds its own id here as it lands.
    */
   it('marks exactly the modules whose phase has shipped as ready', () => {
-    expect(readyModules().map((m) => m.id)).toEqual(['network-map']);
+    expect(readyModules().map((m) => m.id)).toEqual([
+      'network-map',
+      'packet-journey',
+      'dns-explorer',
+      'http-explorer',
+    ]);
   });
 
   /**

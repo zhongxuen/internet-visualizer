@@ -27,6 +27,8 @@ import type { CanvasSelection } from './types';
  * +---------------------------+-------------------------+
  * | Timeline + PlaybackControls                         |
  * +-----------------------------------------------------+
+ * | footer (module slot, full width)                    |
+ * +-----------------------------------------------------+
  * | EventLog (collapsible)                              |
  * +-----------------------------------------------------+
  * ```
@@ -35,8 +37,9 @@ import type { CanvasSelection } from './types';
  * a scenario picker, not writing animation code.** A module renders one of these, passes
  * its run in, and gets playback, keyboard control, an inspector, a phase stepper, and a
  * log. Anything module-specific goes in a slot -- `controlPanel` above the diagram,
- * `inspectorExtra` below the standard detail -- so a module that needs something unusual
- * overrides a slot rather than forking the layout.
+ * `inspectorExtra` below the standard detail, `footer` at full width beneath the
+ * timeline -- so a module that needs something unusual overrides a slot rather than
+ * forking the layout.
  *
  * ## Where the state lives
  *
@@ -54,10 +57,10 @@ import type { CanvasSelection } from './types';
  *
  * ## Reaching the playback store from a slot
  *
- * `controlPanel` and `inspectorExtra` render inside `PlaybackContext`, so slot content
- * can call `usePlaybackContext()` and read or seek the playhead. That is how a module
- * builds its own controls (a tour that follows the phase stepper) without this component
- * growing a prop for each one.
+ * `controlPanel`, `inspectorExtra`, and `footer` render inside `PlaybackContext`, so slot
+ * content can call `usePlaybackContext()` and read or seek the playhead. That is how a
+ * module builds its own controls (a tour that follows the phase stepper, a hop table that
+ * seeks) without this component growing a prop for each one.
  *
  * ## Responsive
  *
@@ -81,6 +84,15 @@ export interface SimulationViewProps {
   /** Module-specific inspector content, appended below the standard detail. */
   inspectorExtra?: ReactNode;
   /**
+   * Module-specific content at full width, below the timeline and above the log.
+   *
+   * The side column is 22rem wide and the control panel sits above the diagram, so
+   * neither can hold a wide running ledger -- Packet Journey's hop table is one, and this
+   * is the slot it goes in. Like the other slots it renders inside `PlaybackContext`, so
+   * its content can read and seek the playhead.
+   */
+  footer?: ReactNode;
+  /**
    * Controlled selection. Omit to let the view own what is selected and simply listen
    * through `onSelect`.
    */
@@ -103,6 +115,7 @@ export function SimulationView({
   speed,
   controlPanel,
   inspectorExtra,
+  footer,
   selection: selectionProp,
   onSelect,
   focusNodeIds,
@@ -190,6 +203,8 @@ export function SimulationView({
           />
           <PlaybackControls status={status} speed={playbackSpeed} onCommand={run} />
         </div>
+
+        {footer}
 
         <EventLog
           events={result.events}

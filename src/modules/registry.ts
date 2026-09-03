@@ -81,7 +81,7 @@ export const MODULES: ModuleMeta[] = [
     route: '/packet-journey',
     summary:
       'Follow a single packet hop by hop, watching headers, TTL, and fragmentation change.',
-    status: 'planned',
+    status: 'ready',
     topics: ['TCP/IP', 'UDP', 'Routing'],
     usesRealNetwork: false,
   },
@@ -92,7 +92,7 @@ export const MODULES: ModuleMeta[] = [
     route: '/dns-explorer',
     summary:
       'Walk a domain lookup from stub resolver to root, TLD, and authoritative server.',
-    status: 'planned',
+    status: 'ready',
     topics: ['DNS', 'UDP', 'Caching'],
     usesRealNetwork: false,
   },
@@ -102,7 +102,7 @@ export const MODULES: ModuleMeta[] = [
     title: 'HTTP Explorer',
     route: '/http-explorer',
     summary: 'Inspect the full request and response lifecycle, header by header.',
-    status: 'planned',
+    status: 'ready',
     topics: ['HTTP', 'Cookies', 'Sessions', 'Caching'],
     usesRealNetwork: false,
   },

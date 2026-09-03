@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildToyRun, TOY_TOPOLOGY } from '@/core/sim/toyRun';
 
 import { SimulationView } from './SimulationView';
+import { usePlaybackContext, usePlaybackState } from './hooks/usePlayback';
 import type { VisualizedRun } from './hooks/useSimulation';
 
 /**
@@ -71,6 +72,42 @@ describe('SimulationView', () => {
     renderView();
     expect(positionMs()).toBe(0);
     expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
+  });
+
+  describe('module slots', () => {
+    /**
+     * A module fills a slot rather than forking the layout, and slot content is rendered
+     * inside `PlaybackContext` so it can read and move the playhead. Packet Journey's hop
+     * table is the reason `footer` exists; this is the contract it depends on.
+     */
+    function Seeker() {
+      const store = usePlaybackContext();
+      const time = usePlaybackState(store, (state) => state.virtualTime);
+
+      return (
+        <button type="button" onClick={() => store.getState().seek(MID_HOP)}>
+          footer at {time}
+        </button>
+      );
+    }
+
+    it('renders the footer slot and gives it the playback store', () => {
+      render(<SimulationView simulation={RUN} footer={<Seeker />} />);
+
+      const button = screen.getByRole('button', { name: /footer at/ });
+      expect(button).toHaveTextContent('footer at 0');
+
+      fireEvent.click(button);
+
+      expect(button).toHaveTextContent(`footer at ${MID_HOP}`);
+      expect(positionMs()).toBe(MID_HOP);
+    });
+
+    it('omits the footer entirely when a module passes none', () => {
+      renderView();
+
+      expect(screen.queryByRole('button', { name: /footer at/ })).not.toBeInTheDocument();
+    });
   });
 
   describe('phase stepping', () => {
