@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Phases 01–08 are complete: the scaffolding, the design system and app shell, the
-simulation core, the visualization layer, and the first four modules — **Network Map**
-(phase 05), **Packet Journey** (phase 06), **DNS Explorer** (phase 07), and **HTTP
-Explorer** (phase 08), the only four entries in `src/modules/registry.ts` with
-`status: 'ready'`. Every other module is still `'planned'`. Phase 09 (HTTPS/TLS Explorer)
-is next, and builds on the request/response primitives `src/modules/http-explorer`
-exports.
+Phases 01–09 and phase 10 part A are complete: the scaffolding, the design system and app
+shell, the simulation core, the visualization layer, and six modules — **Network Map**
+(phase 05), **Packet Journey** (phase 06), **DNS Explorer** (phase 07), **HTTP Explorer**
+(phase 08), **HTTPS Explorer** (phase 09), and **API Visualizer** (phase 10A), the only six
+entries in `src/modules/registry.ts` with `status: 'ready'`. Every other module is still
+`'planned'`. Phase 10 part B (WebSocket Viewer) is next; it reuses the phase-08 HTTP
+message model for the `Upgrade` handshake and must not modify the API Visualizer.
 
 The step-by-step build plan lives in `docs/implementation/` (start at `00-overview.md`),
 which is committed and is the source of truth for _how_ to build. The full project spec

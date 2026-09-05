@@ -1,11 +1,16 @@
-import { PlannedModule, moduleMetadata } from '@/components/shell';
+import { moduleMetadata } from '@/components/shell';
+import { ApiVisualizerModule } from '@/modules/api-visualizer';
 
 export const metadata = moduleMetadata('api-visualizer');
 
 /**
- * Route placeholder. The chrome comes from `(modules)/layout.tsx`; the phase that
- * builds this module replaces the body below with its composition root.
+ * The API Visualizer route.
+ *
+ * A server component that renders one client component and nothing else. The back link, the
+ * title, the topic badges, and the "Simulated" badge all come from `(modules)/layout.tsx`,
+ * which resolves them from the registry -- a module page never draws its own chrome, and this
+ * one has no reason to be a page rather than a component beyond owning the URL.
  */
 export default function ApiVisualizerPage() {
-  return <PlannedModule moduleId="api-visualizer" />;
+  return <ApiVisualizerModule />;
 }

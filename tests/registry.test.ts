@@ -18,8 +18,10 @@ describe('module registry', () => {
 
   /**
    * One entry per completed phase. Phase 05 shipped the Network Map, phase 06 the Packet
-   * Journey, phase 07 the DNS Explorer, and phase 08 the HTTP Explorer; every other
-   * module is still 'planned', and each later phase adds its own id here as it lands.
+   * Journey, phase 07 the DNS Explorer, phase 08 the HTTP Explorer, phase 09 the HTTPS
+   * Explorer, phase 10 part A the API Visualizer, and phase 10 part B the WebSocket
+   * Viewer; every other module is still 'planned', and each later phase adds its own id
+   * here as it lands.
    */
   it('marks exactly the modules whose phase has shipped as ready', () => {
     expect(readyModules().map((m) => m.id)).toEqual([
@@ -27,6 +29,9 @@ describe('module registry', () => {
       'packet-journey',
       'dns-explorer',
       'http-explorer',
+      'https-explorer',
+      'api-visualizer',
+      'websocket-viewer',
     ]);
   });
 
