@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { certificate, dnsName, DAY_MS, type CertificateChain } from './certificates';
+import { certificate, dnsName, DAY_MS, type CertificateChain } from '../certificates';
 import {
   buildTls12Handshake,
   TLS12_HANDSHAKE_TYPE_VALUES,
   tradeOffs,
   VERSION_COMPARISON,
   type Tls12Handshake,
-} from './handshake12';
-import { buildTls13Handshake } from './handshake13';
+} from '../handshake12';
+import { buildTls13Handshake } from '../handshake13';
 
 const NOW = Date.UTC(2026, 5, 1);
 

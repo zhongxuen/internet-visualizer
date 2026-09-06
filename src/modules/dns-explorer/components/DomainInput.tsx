@@ -23,8 +23,8 @@ import {
   QUERYABLE_TYPES,
   RR_TYPE_NOTES,
   type RrType,
-} from '../sim/records';
-import type { DnsTransport } from '../sim/resolver';
+} from '@/core/protocols/dns/records';
+import type { DnsTransport } from '@/core/protocols/dns/resolver';
 
 /**
  * Ask about a name of your own.

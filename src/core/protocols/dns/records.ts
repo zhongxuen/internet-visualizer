@@ -1,12 +1,12 @@
 /**
- * Records -- what DNS actually moves, and the zones this module serves it from.
+ * Records -- what DNS actually moves, and the zones this layer serves it from.
  *
  * DNS is usually explained as "a phone book that turns names into IP addresses", which
  * is wrong in the two ways that matter: the answer is often not an address, and there is
  * no book. There is a **tree of zones**, each administered separately, each knowing only
  * its own contents and the names of the servers one level down. This file models both
  * halves of that -- the records themselves, and the zones that hold them -- and it is
- * the only file in the module that contains data.
+ * the only file in the DNS layer that contains data.
  *
  * ## Names are canonical here
  *
@@ -51,7 +51,7 @@ export const MAX_NAME_LENGTH = 253;
 /** The longest a single label may be (RFC 1035 s2.3.4). */
 export const MAX_LABEL_LENGTH = 63;
 
-/** Lower-case, trailing dot removed. The form every comparison in this module uses. */
+/** Lower-case, trailing dot removed. The form every comparison in this layer uses. */
 export function normalizeName(input: string): string {
   const trimmed = input.trim().toLowerCase();
   if (trimmed === '.' || trimmed === '') return ROOT;
@@ -104,7 +104,7 @@ export function isInBailiwick(name: string, zoneName: string): boolean {
 }
 
 /**
- * Validate a hostname the way this module accepts one.
+ * Validate a hostname the way this layer accepts one.
  *
  * Letters, digits and hyphens per RFC 1123 s2.1, plus the underscore that service labels
  * such as `_sip._tcp` use (RFC 2782) and the leading `*` of a wildcard (RFC 4592).
@@ -137,7 +137,7 @@ export function parseDomainName(input: string): ParseResult<string> {
 // ---------------------------------------------------------------------------
 
 /**
- * The record types this module can serve.
+ * The record types this layer can serve.
  *
  * The last four are DNSSEC's (RFC 4034): a zone's public keys, the parent's fingerprint
  * of one of them, the signatures, and the record that proves a name does *not* exist.
@@ -208,7 +208,7 @@ export const RR_TYPE_NOTES: Readonly<Record<RrType, string>> = {
   NSEC: 'Proof that a name or type does not exist, by pointing at the next one that does.',
 };
 
-/** The response codes a query in this module can come back with (RFC 1035 s4.1.1). */
+/** The response codes a query in this layer can come back with (RFC 1035 s4.1.1). */
 export type Rcode =
   'NOERROR' | 'FORMERR' | 'SERVFAIL' | 'NXDOMAIN' | 'NOTIMP' | 'REFUSED';
 
@@ -317,7 +317,7 @@ export interface ResourceRecord<D extends RData = RData> {
 /**
  * Build a record, deriving the type from the data so the two cannot disagree.
  *
- * Every record in this module goes through here, which is why no test asserts
+ * Every record in this layer goes through here, which is why no test asserts
  * `record.type === record.data.type`: it is not expressible.
  */
 export function rr<D extends RData>(
@@ -916,7 +916,7 @@ export const TTL = {
 // The servers
 // ---------------------------------------------------------------------------
 
-/** The misconception this module exists to correct, in one sentence. */
+/** The misconception this layer exists to correct, in one sentence. */
 export const ROOT_SERVER_NOTE =
   'There are 13 root server addresses, not 13 machines: each letter is announced by ' +
   'anycast from hundreds of sites, so the nearest one answers.';
@@ -1480,7 +1480,7 @@ const reverseZone = zone({
 // ---------------------------------------------------------------------------
 
 /**
- * Every zone in this module, plus the indexes a resolver needs to walk them.
+ * Every zone in this layer, plus the indexes a resolver needs to walk them.
  *
  * The indexes are the only place the *network* is modelled: which box answers on which
  * address, and which zones that box is authoritative for. One server can serve several
@@ -1522,7 +1522,7 @@ export function createInternet(
   return { zones, rootHints, byOrigin, zonesByAddress, serverByAddress };
 }
 
-/** The fixtures, indexed. Every lookup in this module resolves against this and only this. */
+/** The fixtures, indexed. Every lookup in this layer resolves against this and only this. */
 export const SIMULATED_INTERNET: SimulatedInternet = createInternet(
   [
     rootZone,

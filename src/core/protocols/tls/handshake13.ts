@@ -35,7 +35,7 @@
  * almost always is, the server can derive handshake keys the moment it has read the
  * ClientHello. {@link buildHelloRetryRequest} models the case where the guess is wrong.
  *
- * ## What the module deliberately gets right
+ * ## What this file deliberately gets right
  *
  * - `supported_versions`, not the record version, is what selects TLS 1.3 (s 4.1.2).
  * - The certificate is sent under handshake keys, not in the clear (s 4.4.2).

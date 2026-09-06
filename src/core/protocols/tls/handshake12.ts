@@ -731,7 +731,7 @@ export interface VersionComparisonRow {
 }
 
 /**
- * The comparison the phase doc asks the module to draw.
+ * The 1.2-versus-1.3 comparison, as rows a view can draw.
  *
  * Deliberately includes the rows where TLS 1.3 *removed* something, because "what got
  * taken away" is most of what happened: renegotiation, compression, static RSA, custom

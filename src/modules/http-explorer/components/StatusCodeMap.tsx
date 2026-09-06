@@ -9,7 +9,7 @@ import {
   STATUS_SEMANTICS,
   type StatusClass,
   type StatusSemantics,
-} from '../sim/semantics';
+} from '@/core/protocols/http/semantics';
 import { sourceForStatus } from '../statuses';
 
 /**

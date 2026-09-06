@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { cacheLookup } from './cache';
-import { SIMULATED_INTERNET, UDP_MAX_PAYLOAD, rdataText } from './records';
+import { cacheLookup } from '../cache';
+import { SIMULATED_INTERNET, UDP_MAX_PAYLOAD, rdataText } from '../records';
 import {
   QUERY_TIMEOUT_MS,
   resolve,
   type DnsResolution,
   type ResolutionStep,
-} from './resolver';
+} from '../resolver';
 
 /** Everything except the stub's own exchange, which encloses the rest. */
 function serverSteps(result: DnsResolution): ResolutionStep[] {
@@ -32,7 +32,7 @@ describe('the cold walk', () => {
   });
 
   /**
-   * The misconception the whole module exists to correct. A root server asked for
+   * The misconception the whole layer exists to correct. A root server asked for
    * `www.example.com` returns the `.com` nameservers and their addresses -- never the
    * answer, and never anything in the answer section at all.
    */

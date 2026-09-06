@@ -8,7 +8,7 @@ import {
   type HeaderList,
   type HttpRequest,
   type HttpResponse,
-} from './message';
+} from '../message';
 import {
   applyRevalidation,
   cacheControlOf,
@@ -42,7 +42,7 @@ import {
   varyMatches,
   type CacheEntry,
   type HttpCache,
-} from './caching';
+} from '../caching';
 
 const HOST = 'example.com';
 const SECOND = 1000;

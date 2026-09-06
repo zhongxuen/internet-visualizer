@@ -7,14 +7,14 @@ import { focusRing } from '@/components/ui/styles';
 import { formatDuration } from '@/components/viz';
 import { cn } from '@/lib/cn';
 
-import { HTTP_VERSIONS, type HttpVersion } from '../sim/message';
+import { HTTP_VERSIONS, type HttpVersion } from '@/core/protocols/http/message';
 import {
   HEAD_OF_LINE_BLOCKING,
   VERSION_PROFILES,
   type StreamTiming,
   type VersionComparison as Comparison,
   type VersionRun,
-} from '../sim/versions';
+} from '@/core/protocols/http/versions';
 
 /**
  * The same page load, three ways, on one scale.

@@ -21,7 +21,7 @@ import {
   transmitSegment,
   type TcpConnection,
   type TcpSegment,
-} from './tcp';
+} from '../tcp';
 
 /**
  * Fixed initial sequence numbers. A real stack picks these unpredictably -- a guessable

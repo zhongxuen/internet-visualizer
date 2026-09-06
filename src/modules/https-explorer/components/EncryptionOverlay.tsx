@@ -5,7 +5,11 @@ import { focusRing } from '@/components/ui/styles';
 import { cn } from '@/lib/cn';
 
 import { CLIENT_IP, CLIENT_PORT, HTTPS_PORT, type TlsRun } from '../sim/connection';
-import { isProtected, type ObservedRecord, type ObserverFact } from '../sim/records';
+import {
+  isProtected,
+  type ObservedRecord,
+  type ObserverFact,
+} from '@/core/protocols/tls/records';
 
 /**
  * The two views of one connection, and the honest answer to "what does HTTPS hide?"

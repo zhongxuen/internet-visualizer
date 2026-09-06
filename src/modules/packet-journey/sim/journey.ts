@@ -74,7 +74,7 @@ import {
   reassembleIpv4,
   FRAGMENT_UNIT_BYTES,
   type Ipv4Header,
-} from './ipv4';
+} from '@/core/protocols/ipv4/ipv4';
 import {
   createNatTable,
   describeFlow,
@@ -99,14 +99,14 @@ import {
   type TcpRole,
   type TcpSegment,
   type TcpSendSpec,
-} from './tcp';
+} from '@/core/protocols/tcp/tcp';
 import {
   buildUdpLayer,
   describeUdpDatagram,
   udpDatagram,
   udpPdu,
   type UdpDatagram,
-} from './udp';
+} from '@/core/protocols/udp/udp';
 
 // ---------------------------------------------------------------------------
 // Constants

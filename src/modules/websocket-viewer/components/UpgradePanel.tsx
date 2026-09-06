@@ -74,7 +74,10 @@ function upgradeLines(text: string): number[] {
   return text
     .split('\r\n')
     .map((line, index) => {
-      const name = line.slice(0, Math.max(0, line.indexOf(':'))).trim().toLowerCase();
+      const name = line
+        .slice(0, Math.max(0, line.indexOf(':')))
+        .trim()
+        .toLowerCase();
       return UPGRADE_FIELDS.includes(name) ? index + 1 : 0;
     })
     .filter((line) => line > 0);
@@ -102,7 +105,7 @@ function Derivation({ handshake }: { handshake: HandshakeRecord }) {
               {step.size} {step.unit}
             </span>
           </div>
-          <code className="text-fg-secondary block break-all font-mono text-[0.6875rem] leading-relaxed">
+          <code className="text-fg-secondary block font-mono text-[0.6875rem] leading-relaxed break-all">
             {step.value}
           </code>
           <p className="text-fg-muted text-[0.6875rem] leading-relaxed">{step.explain}</p>
@@ -136,7 +139,10 @@ function Checks({ handshake }: { handshake: HandshakeRecord }) {
         {handshake.checks.map((check) => (
           <tr
             key={check.id}
-            className={cn('border-border/60 border-t align-top', check.passed && 'opacity-70')}
+            className={cn(
+              'border-border/60 border-t align-top',
+              check.passed && 'opacity-70',
+            )}
           >
             <td className="py-2 pr-3 whitespace-nowrap">
               <Badge tone={check.passed ? 'ok' : REQUIREMENT_TONE[check.requirement]}>
@@ -298,7 +304,9 @@ export function UpgradePanel({
             <dd
               className={cn(
                 'mt-1 text-[0.6875rem] leading-relaxed',
-                handshake.resource.credentialInQuery ? 'text-state-warn' : 'text-fg-muted',
+                handshake.resource.credentialInQuery
+                  ? 'text-state-warn'
+                  : 'text-fg-muted',
               )}
             >
               {handshake.resource.credentialInQuery
@@ -308,15 +316,19 @@ export function UpgradePanel({
           </div>
         </dl>
 
-        <section aria-label="Sec-WebSocket-Accept derivation" className="flex flex-col gap-2">
+        <section
+          aria-label="Sec-WebSocket-Accept derivation"
+          className="flex flex-col gap-2"
+        >
           <h3 className="text-fg-secondary text-xs font-medium tracking-widest uppercase">
             Deriving Sec-WebSocket-Accept
           </h3>
           <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
-            A proof of comprehension, not a secret. Nothing authenticates on this digest, which
-            is why SHA-1 is not a mistake here — a collision buys an attacker nothing. What it
-            proves is that the responder read the request and knew what was being asked for, so
-            a cached <code>101</code> from an earlier connection cannot answer this one.
+            A proof of comprehension, not a secret. Nothing authenticates on this digest,
+            which is why SHA-1 is not a mistake here — a collision buys an attacker
+            nothing. What it proves is that the responder read the request and knew what
+            was being asked for, so a cached <code>101</code> from an earlier connection
+            cannot answer this one.
           </p>
           <Derivation handshake={handshake} />
         </section>

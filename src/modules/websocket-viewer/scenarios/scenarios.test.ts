@@ -184,7 +184,10 @@ describe('binary-frames', () => {
 describe('fragmented-message', () => {
   const run = runWebSocketScenario(FRAGMENTED_MESSAGE);
   const fragments = run.frames.filter(
-    (record) => record.stepId === 'fragmented' && record.frame.opcode !== 'ping' && record.frame.opcode !== 'pong',
+    (record) =>
+      record.stepId === 'fragmented' &&
+      record.frame.opcode !== 'ping' &&
+      record.frame.opcode !== 'pong',
   );
 
   it('declares the type once, continues, and sets FIN only on the last', () => {

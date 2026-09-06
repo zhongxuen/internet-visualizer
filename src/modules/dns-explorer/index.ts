@@ -1,14 +1,17 @@
 /**
  * DNS Explorer's public surface.
  *
- * The route imports the composition root from here; the scenarios and the resolver are
- * re-exported so the Learning Center can name the same six runs, and so a later module
- * that needs a name resolved can ask for one without reaching into the folder. Note that
- * another *module* may not import any of this (`eslint.config.mjs`) -- shared code
- * belongs in `@/core` or `@/components`.
+ * The route imports the composition root from here; the scenarios are re-exported so the
+ * Learning Center can name the same six runs. Note that another *module* may not import
+ * any of this (`eslint.config.mjs`) -- shared code belongs in `@/core` or
+ * `@/components`.
  *
- * Nothing exported here can reach a network. `resolve` reads the bundled zone fixtures
- * and nothing else, which is the property the whole module rests on.
+ * The resolver itself is not here and is not re-exported through here. It is
+ * `@/core/protocols/dns`, which anything may import: a module that needs a name resolved
+ * asks that layer directly rather than reaching through this folder for it.
+ *
+ * Nothing exported here can reach a network. A run reads the bundled zone fixtures and
+ * nothing else, which is the property the whole module rests on.
  */
 
 export { DnsExplorerModule } from './DnsExplorerModule';
@@ -49,5 +52,3 @@ export {
   type LookupCoverage,
   type LookupDraft,
 } from './lookup';
-export { resolve, type DnsResolution, type ResolutionStep } from './sim/resolver';
-export { SIMULATED_INTERNET, type RrType } from './sim/records';

@@ -61,8 +61,8 @@ export function CloseCodeTable({ activeCode, className }: CloseCodeTableProps) {
       <div className="flex min-w-0 flex-col gap-3">
         <table className="w-full border-collapse text-left text-xs">
           <caption className="text-fg-muted pb-2 text-left text-[0.6875rem] leading-snug">
-            The <em>on the wire</em> column is the whole reason this is a table. Four of these
-            can never appear in a frame.
+            The <em>on the wire</em> column is the whole reason this is a table. Four of
+            these can never appear in a frame.
           </caption>
           <thead>
             <tr className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
@@ -92,9 +92,13 @@ export function CloseCodeTable({ activeCode, className }: CloseCodeTableProps) {
                     <code className="text-fg font-mono text-[0.6875rem] tabular-nums">
                       {info.code}
                     </code>
-                    <p className="text-fg-secondary mt-0.5 text-[0.6875rem]">{info.name}</p>
+                    <p className="text-fg-secondary mt-0.5 text-[0.6875rem]">
+                      {info.name}
+                    </p>
                     {info.sender ? (
-                      <p className="text-fg-muted text-[0.625rem]">sent by the {info.sender}</p>
+                      <p className="text-fg-muted text-[0.625rem]">
+                        sent by the {info.sender}
+                      </p>
                     ) : null}
                   </td>
                   <td className="py-2 pr-3 whitespace-nowrap">

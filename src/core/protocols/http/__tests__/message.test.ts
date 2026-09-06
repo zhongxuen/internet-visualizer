@@ -32,7 +32,7 @@ import {
   toVirtual,
   withContentLength,
   wireSize,
-} from './message';
+} from '../message';
 
 const GET = request({
   method: 'GET',

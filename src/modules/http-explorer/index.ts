@@ -1,13 +1,15 @@
 /**
  * HTTP Explorer's public surface.
  *
- * The route imports the composition root from here; the scenarios, the message model, and
- * the header catalogue are re-exported so the Learning Center can name the same seven runs
- * and cite the same sentences, and so phases 09 and 10 -- HTTPS, and the API and WebSocket
- * modules, all of which are HTTP with something added -- can build on the request and
- * response primitives rather than restating them. Note that another *module* may not
- * import any of this (`eslint.config.mjs`); shared code belongs in `@/core` or
- * `@/components`.
+ * The route imports the composition root from here; the scenarios and the header
+ * catalogue are re-exported so the Learning Center can name the same seven runs and cite
+ * the same sentences. Note that another *module* may not import any of this
+ * (`eslint.config.mjs`); shared code belongs in `@/core` or `@/components`.
+ *
+ * The message model is not here and is not re-exported through here. It is
+ * `@/core/protocols/http`, which anything may import: HTTPS, the API Visualizer, the
+ * WebSocket Viewer and the Internet Simulator are all HTTP with something added, and they
+ * build on that layer directly rather than on this module.
  *
  * Nothing exported here can reach a network. `runHttpScenario` reads the bundled origin
  * fixtures and nothing else, and `builderScenario` has no host parameter to be given one.
@@ -77,54 +79,3 @@ export {
   type OriginFixture,
   type OriginRoute,
 } from './sim/exchange';
-
-export {
-  CRLF,
-  header,
-  HTTP_METHODS,
-  HTTP_VERSIONS,
-  serializeMessage,
-  showLineEndings,
-  wireSegments,
-  type CrlfDisplay,
-  type HeaderList,
-  type HttpMethod,
-  type HttpRequest,
-  type HttpResponse,
-  type HttpVersion,
-  type WireSegment,
-} from './sim/message';
-
-export {
-  isCacheableByDefault,
-  isIdempotent,
-  isSafe,
-  METHOD_SEMANTICS,
-  methodSemantics,
-  STATUS_CLASSES,
-  STATUS_SEMANTICS,
-  statusSemantics,
-  type MethodSemantics,
-  type StatusSemantics,
-} from './sim/semantics';
-
-export {
-  CACHE_TIER_LABELS,
-  NO_CACHE_VS_NO_STORE,
-  type CacheOutcome,
-  type CacheTier,
-} from './sim/caching';
-
-export {
-  COOKIE_DEFENCES,
-  type Cookie,
-  type CookieJar,
-  type SameSite,
-} from './sim/cookies';
-
-export {
-  HEAD_OF_LINE_BLOCKING,
-  VERSION_PROFILES,
-  type VersionComparison,
-  type VersionProfile,
-} from './sim/versions';

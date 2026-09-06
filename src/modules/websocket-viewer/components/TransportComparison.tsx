@@ -99,7 +99,11 @@ function Counter({
       <dd
         className={cn(
           'font-mono text-sm tabular-nums',
-          tone === 'accent' ? 'text-accent' : tone === 'warn' ? 'text-state-warn' : 'text-fg',
+          tone === 'accent'
+            ? 'text-accent'
+            : tone === 'warn'
+              ? 'text-state-warn'
+              : 'text-fg',
         )}
       >
         {value}
@@ -190,7 +194,7 @@ function Lane({
             aria-hidden="true"
             title={`Update ${delivery.updateIndex + 1} reached the client ${Math.round(delivery.latencyMs)} ms after it happened`}
             className={cn(
-              'bg-state-ok absolute top-2 h-3 w-[3px] rounded-full ring-2 ring-state-ok/30',
+              'bg-state-ok ring-state-ok/30 absolute top-2 h-3 w-[3px] rounded-full ring-2',
               delivery.deliveredAt <= now ? 'opacity-100' : 'opacity-25',
             )}
             style={{ left: `${percentOf(delivery.deliveredAt, duration)}%` }}
@@ -206,7 +210,8 @@ function Lane({
 
       <p className="sr-only">
         {run.label}: {total.requests} requests and {total.totalBytes} bytes over the run,{' '}
-        {total.overheadPercent}% of it overhead, average delivery {total.averageLatencyMs} ms.
+        {total.overheadPercent}% of it overhead, average delivery {total.averageLatencyMs}{' '}
+        ms.
       </p>
 
       <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">{run.verdict}</p>
@@ -240,7 +245,8 @@ export function TransportComparison({
       <div className="flex min-w-0 flex-col gap-3">
         <p className="text-fg-secondary text-xs leading-relaxed">
           The same {comparison.options.updates.length} updates, at the same{' '}
-          {comparison.options.updates.length} moments, delivered four ways over the same wire.
+          {comparison.options.updates.length} moments, delivered four ways over the same
+          wire.
           {ratio === undefined
             ? ''
             : ` Polling costs about ${ratio}× what the WebSocket costs on this schedule — a number worth quoting only because every byte in it came from a message that was actually built.`}
@@ -248,8 +254,13 @@ export function TransportComparison({
 
         <ul aria-hidden="true" className="flex flex-wrap gap-x-3 gap-y-1">
           {(Object.keys(EVENT_TONE) as WireEvent['kind'][]).map((kind) => (
-            <li key={kind} className="text-fg-muted flex items-center gap-1.5 text-[0.625rem]">
-              <span className={cn('inline-block h-2 w-[3px] rounded-full', EVENT_TONE[kind])} />
+            <li
+              key={kind}
+              className="text-fg-muted flex items-center gap-1.5 text-[0.625rem]"
+            >
+              <span
+                className={cn('inline-block h-2 w-[3px] rounded-full', EVENT_TONE[kind])}
+              />
               {EVENT_LABEL[kind]}
             </li>
           ))}
@@ -266,10 +277,10 @@ export function TransportComparison({
         </ul>
 
         <p className="text-fg-muted text-[0.625rem] leading-relaxed">
-          Counted over HTTP/1.1. Under HTTP/2, HPACK compresses a repeated header set down to a
-          handful of bytes, so the polling byte count above is an upper bound — but the request
-          count does not change, and neither does polling’s average delay of half the interval,
-          which is a property of the timer rather than of the encoding.
+          Counted over HTTP/1.1. Under HTTP/2, HPACK compresses a repeated header set down
+          to a handful of bytes, so the polling byte count above is an upper bound — but
+          the request count does not change, and neither does polling’s average delay of
+          half the interval, which is a property of the timer rather than of the encoding.
         </p>
       </div>
     </Panel>

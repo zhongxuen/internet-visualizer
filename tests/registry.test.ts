@@ -19,9 +19,9 @@ describe('module registry', () => {
   /**
    * One entry per completed phase. Phase 05 shipped the Network Map, phase 06 the Packet
    * Journey, phase 07 the DNS Explorer, phase 08 the HTTP Explorer, phase 09 the HTTPS
-   * Explorer, phase 10 part A the API Visualizer, and phase 10 part B the WebSocket
-   * Viewer; every other module is still 'planned', and each later phase adds its own id
-   * here as it lands.
+   * Explorer, phase 10 part A the API Visualizer, phase 10 part B the WebSocket Viewer,
+   * phase 11 the Internet Simulator, and phase 12 Network Diagnostics; the Learning
+   * Center is still 'planned', and phase 13 adds its id here when it lands.
    */
   it('marks exactly the modules whose phase has shipped as ready', () => {
     expect(readyModules().map((m) => m.id)).toEqual([
@@ -32,14 +32,26 @@ describe('module registry', () => {
       'https-explorer',
       'api-visualizer',
       'websocket-viewer',
+      'internet-simulator',
+      'network-diagnostics',
     ]);
   });
 
   /**
-   * The security boundary from CLAUDE.md. Phase 12 flips network-diagnostics to true;
-   * this test must be updated to assert it is the ONLY one, never relaxed.
+   * The security boundary from CLAUDE.md, now that phase 12 has flipped the flag: the
+   * assertion is that network-diagnostics is the ONLY entry with it. Tighten this test,
+   * never relax it -- a second module setting `usesRealNetwork` is a design error, not a
+   * new feature, because every live request in the product goes through the three Route
+   * Handlers this module owns.
    */
-  it('has no module able to touch a real network', () => {
-    expect(MODULES.filter((m) => m.usesRealNetwork)).toHaveLength(0);
+  it('has exactly one module able to touch a real network', () => {
+    expect(MODULES.filter((m) => m.usesRealNetwork).map((m) => m.id)).toEqual([
+      'network-diagnostics',
+    ]);
+  });
+
+  /** The module that reaches a network must also be the one that is finished. */
+  it('gives the live module a ready status, so the badge is never on an unfinished page', () => {
+    expect(getModule('network-diagnostics')?.status).toBe('ready');
   });
 });

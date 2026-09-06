@@ -6,7 +6,11 @@ import { Badge, Panel, type BadgeTone } from '@/components/ui';
 import { focusRing } from '@/components/ui/styles';
 import { cn } from '@/lib/cn';
 
-import { COOKIE_DEFENCES, type Cookie, type CookieJar } from '../sim/cookies';
+import {
+  COOKIE_DEFENCES,
+  type Cookie,
+  type CookieJar,
+} from '@/core/protocols/http/cookies';
 import type { HttpExchange } from '../sim/exchange';
 
 /**

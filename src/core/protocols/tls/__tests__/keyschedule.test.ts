@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getCipherSuite, type CipherSuite } from './cipher';
+import { getCipherSuite, type CipherSuite } from '../cipher';
 import {
   buildKeySchedule,
   buildTls12KeySchedule,
@@ -17,8 +17,8 @@ import {
   toyDhIllustration,
   toySide,
   trafficKeysFrom,
-} from './keyschedule';
-import { PLACEHOLDER_PREFIX } from './placeholder';
+} from '../keyschedule';
+import { PLACEHOLDER_PREFIX } from '../placeholder';
 
 const SUITE = getCipherSuite('TLS_AES_128_GCM_SHA256') as CipherSuite;
 const SHA384 = getCipherSuite('TLS_AES_256_GCM_SHA384') as CipherSuite;

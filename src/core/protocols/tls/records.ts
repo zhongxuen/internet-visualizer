@@ -3,7 +3,7 @@
  *
  * HTTPS is not a protocol. It is HTTP, unchanged, handed to TLS in five-byte-headed
  * chunks. Every handshake message, every alert, and every byte of the request and
- * response in this module goes through the same small structure:
+ * response in this layer goes through the same small structure:
  *
  * ```
  *  0      1      3            5
@@ -33,11 +33,11 @@
  * ## Deliberately not typed to HTTP
  *
  * {@link recordsForPlaintext} takes a **string of bytes**, not an `HttpRequest`. Partly
- * that is the architecture boundary -- `eslint.config.mjs` forbids one module importing
- * another, so this module cannot reach into `http-explorer` -- but mostly it is that the
- * boundary is real. The record layer genuinely does not know or care what is inside; it
- * frames opaque bytes. A module that had to know about HTTP to encrypt it would be
- * modelling something that does not exist.
+ * that is the architecture boundary -- `eslint.config.mjs` forbids `src/core` from
+ * importing a module, so this layer cannot reach for an `HttpRequest` even if it wanted
+ * one -- but mostly it is that the boundary is real. The record layer genuinely does not
+ * know or care what is inside; it frames opaque bytes. A record layer that had to know
+ * about HTTP to encrypt it would be modelling something that does not exist.
  *
  * ## No encryption happens here
  *

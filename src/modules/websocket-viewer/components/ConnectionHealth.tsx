@@ -144,8 +144,8 @@ function BackoffLadder({
 
       <table className="w-full border-collapse text-left text-xs">
         <caption className="text-fg-muted pb-2 text-left text-[0.6875rem] leading-snug">
-          The window doubles either way. What the randomisation changes is where inside it each
-          client lands.
+          The window doubles either way. What the randomisation changes is where inside it
+          each client lands.
         </caption>
         <thead>
           <tr className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
@@ -168,13 +168,16 @@ function BackoffLadder({
             return (
               <tr
                 key={attempt.attempt}
-                className={cn('border-border/60 border-t align-middle', !used && 'opacity-50')}
+                className={cn(
+                  'border-border/60 border-t align-middle',
+                  !used && 'opacity-50',
+                )}
               >
                 <td className="text-fg py-2 pr-3 font-mono text-[0.6875rem] tabular-nums">
                   {attempt.attempt}
                   {used ? '' : ' (not needed)'}
                 </td>
-                <td className="text-fg-muted py-2 pr-3 font-mono text-[0.6875rem] tabular-nums whitespace-nowrap">
+                <td className="text-fg-muted py-2 pr-3 font-mono text-[0.6875rem] whitespace-nowrap tabular-nums">
                   0 – {Math.round(attempt.capMs)} ms
                 </td>
                 <td className="py-2">
@@ -211,9 +214,9 @@ function BackoffLadder({
       </table>
 
       <p className="text-fg-muted text-[0.625rem] leading-relaxed">
-        The pale bar is the window, the solid one is where this client actually landed, and the
-        amber line is where <em>every</em> client lands with no jitter at all — the same instant,
-        every round.
+        The pale bar is the window, the solid one is where this client actually landed,
+        and the amber line is where <em>every</em> client lands with no jitter at all —
+        the same instant, every round.
       </p>
     </section>
   );

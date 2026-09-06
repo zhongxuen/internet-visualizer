@@ -74,7 +74,7 @@ import {
   type CacheOutcome,
   type CacheTier,
   type HttpCache,
-} from './caching';
+} from '@/core/protocols/http/caching';
 import {
   cookieHeaderValue,
   cookiesFor,
@@ -86,7 +86,7 @@ import {
   type CookieExclusion,
   type CookieJar,
   type CookieStoreResult,
-} from './cookies';
+} from '@/core/protocols/http/cookies';
 import {
   EPOCH_CLOCK,
   byteLength,
@@ -106,7 +106,7 @@ import {
   type HttpResponse,
   type HttpVersion,
   type HttpHeader,
-} from './message';
+} from '@/core/protocols/http/message';
 import {
   forbidsContent,
   isRedirect,
@@ -114,7 +114,7 @@ import {
   methodAfterRedirect,
   reasonPhrase,
   redirectTarget,
-} from './semantics';
+} from '@/core/protocols/http/semantics';
 import {
   VERSION_PROFILES,
   compareVersions,
@@ -123,7 +123,7 @@ import {
   type NetworkConditions,
   type ResourceRequest,
   type VersionComparison,
-} from './versions';
+} from '@/core/protocols/http/versions';
 
 // ---------------------------------------------------------------------------
 // Citations

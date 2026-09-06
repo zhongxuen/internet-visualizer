@@ -41,7 +41,7 @@ import {
   type CertificateChain,
   type OcspResponse,
   type TrustStore,
-} from '../sim/certificates';
+} from '@/core/protocols/tls/certificates';
 
 // ---------------------------------------------------------------------------
 // Time

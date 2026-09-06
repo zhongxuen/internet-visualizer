@@ -56,7 +56,7 @@ import type { RfcRef, SimEvent } from '@/core/types/events';
 import type { PDU, ProtocolLayer } from '@/core/types/pdu';
 import type { NodeKind, SimLink, SimNode, Topology } from '@/core/types/topology';
 
-import type { DnsCache } from '../sim/cache';
+import type { DnsCache } from '@/core/protocols/dns/cache';
 import {
   RCODE_VALUES,
   RR_TYPE_CODES,
@@ -71,7 +71,7 @@ import {
   type ResourceRecord,
   type RrType,
   type SimulatedInternet,
-} from '../sim/records';
+} from '@/core/protocols/dns/records';
 import {
   STUB_LATENCY_MS,
   resolve,
@@ -80,7 +80,7 @@ import {
   type DnsTransport,
   type ResolutionStep,
   type ServerTier,
-} from '../sim/resolver';
+} from '@/core/protocols/dns/resolver';
 
 // ---------------------------------------------------------------------------
 // Constants

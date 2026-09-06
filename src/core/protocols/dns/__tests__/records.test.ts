@@ -25,7 +25,7 @@ import {
   zoneKeys,
   type DnsZone,
   type ResourceRecord,
-} from './records';
+} from '../records';
 
 const rootZone = findZone(SIMULATED_INTERNET, ROOT) as DnsZone;
 const comZone = findZone(SIMULATED_INTERNET, 'com') as DnsZone;
@@ -91,7 +91,7 @@ describe('names', () => {
 
 describe('the fixtures', () => {
   /**
-   * The safety rule for the whole module: a learner must never be able to mistake one of
+   * The safety rule for the whole layer: a learner must never be able to mistake one of
    * these for a real host, and nothing here may ever be pointed at one. RFC 5737 and RFC
    * 3849 exist precisely so documentation can use addresses that route nowhere.
    */

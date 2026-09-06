@@ -40,7 +40,7 @@
  * `Path=/`, so the guarantee travels inside the one part the server does get back.
  */
 
-import { header } from '../sim/message';
+import { header } from '@/core/protocols/http/message';
 import type { HttpScenario } from '../sim/exchange';
 
 import { FIXTURE_ADDRESSES, HTTP_CLOCK } from './common';

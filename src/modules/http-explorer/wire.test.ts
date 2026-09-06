@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CONDITIONAL_REQUEST, SIMPLE_GET } from './scenarios';
 import { runHttpScenario } from './sim/exchange';
-import { CRLF } from './sim/message';
+import { CRLF } from '@/core/protocols/http/message';
 import { requestWire, wireMessages, wireResponse } from './wire';
 
 const simple = runHttpScenario(SIMPLE_GET);

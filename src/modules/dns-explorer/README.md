@@ -13,12 +13,14 @@ Simulated only. No name here is ever looked up on a real network; see the rules 
 All of phase 07: the pure logic, the six scenarios, and the module surface on
 `/dns-explorer`. The registry entry is `ready`, `usesRealNetwork: false`.
 
+The protocol itself is not in this folder. `records.ts`, `resolver.ts`, `cache.ts` and
+`dnssec.ts` were promoted to **`@/core/protocols/dns`** in phase 11, so the Internet
+Simulator can resolve a name with the same resolver this module explains rather than a
+second one that agrees with it on a good day. What is left here is everything that is
+about *teaching* DNS.
+
 ```
-sim/                    # pure DNS logic -- no React, no DOM, no clock of its own
-  records.ts            # RR types, wire-format sizing, and the simulated zones themselves
-  resolver.ts           # the recursive walk: root -> TLD -> authoritative, with referrals
-  cache.ts              # TTL expiry, and negative caching per RFC 2308
-  dnssec.ts             # the chain-of-trust walk, and what each way of breaking it means
+@/core/protocols/dns/   # the protocol: records, resolver, cache, dnssec (see its README)
 scenarios/              # six runs over that logic, as data
   run.ts                # the bridge: a resolution becomes phases, packets, and annotations
   <six>.ts              # one file per scenario: which questions, in what order, and the notes
@@ -36,7 +38,7 @@ meta.ts                 # the registry id, so nothing else spells it
 The UI adds nothing to the protocol. `ladder.ts` and `lookup.ts` are pure functions with
 their own tests, the four components render what those return, and
 `DnsExplorerModule.tsx` holds three pieces of state and no logic. Delete every file
-outside `sim/` and `scenarios/` and DNS still resolves identically.
+outside `scenarios/` and DNS still resolves identically — the resolver is not in here.
 
 Run one lookup with `resolve(SIMULATED_INTERNET, 'www.example.com', 'A')`. What comes
 back is a complete, deterministic record of the walk: every query and response with its
@@ -46,7 +48,7 @@ milliseconds.
 Run a whole scenario with `runDnsScenario(COLD_CACHE)`. That adds the second half — a
 topology built from the servers this lookup actually touched, a `SimResult` the
 visualization layer can draw, and the resolutions and cache behind it. The boundary is
-one-way: `sim/` knows nothing about any of it.
+one-way: `@/core/protocols/dns` knows nothing about any of it.
 
 ## The six scenarios
 
@@ -100,8 +102,8 @@ simplified diagram of DNS shows, and one most of the web needs.
 ## The rules the tests enforce
 
 - **Root and TLD refer; only the last server answers.** Asserted at both levels: in
-  `records.test.ts` against the zone lookup, and again in `resolver.test.ts` against the
-  walk, so a bug in one cannot hide a bug in the other.
+  `@/core/protocols/dns/__tests__/records.test.ts` against the zone lookup, and again in
+  `resolver.test.ts` against the walk, so a bug in one cannot hide a bug in the other.
 - **The warm run touches nobody.** Same answer, no queries, and — separately — a name in
   an already-known zone starts at the authoritative server, because what a cache reuses
   is not only answers but _routes_.
@@ -118,9 +120,11 @@ simplified diagram of DNS shows, and one most of the web needs.
 
 - Another module (`src/modules/<b>/**`). Shared code goes through `@/core` or
   `@/components` — enforced by `eslint.config.mjs`.
-- Anything in `sim/` may import `@/core` and nothing else. No React, no DOM, no
-  `Math.random()`, no `Date.now()`: randomness comes from `@/core/sim/rng` seeded by the
-  caller, and time is virtual milliseconds the resolver advances explicitly.
+- The protocol layer this module runs on (`@/core/protocols/dns`) may import `@/core` and
+  nothing else. No React, no DOM, no `Math.random()`, no `Date.now()`: randomness comes
+  from `@/core/sim/rng` seeded by the caller, and time is virtual milliseconds the
+  resolver advances explicitly. The same holds for `scenarios/`, `lookup.ts` and
+  `ladder.ts`, which are pure too.
 
 ## Address and safety rules
 
@@ -128,12 +132,13 @@ Server **names** are real (`a.root-servers.net`, `a.gtld-servers.net`) because t
 worth recognising. Every **address** is from a block reserved for documentation —
 RFC 5737 (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`) and RFC 3849
 (`2001:db8::/32`) — so nothing here can be mistaken for, or pointed at, a real host.
-`records.test.ts` checks every address in every fixture with the same classifier the
-phase-12 diagnostics guard will use.
+The zone fixtures' test checks every address in every fixture with the same classifier
+the phase-12 diagnostics guard will use.
 
 The only source of answers is `SIMULATED_INTERNET`. A name that is not in it resolves to
 NXDOMAIN from the simulated zone that would own it; there is no fallback path to a real
-lookup, and there is nothing in this folder that could make one.
+lookup, and there is nothing in this folder or in `@/core/protocols/dns` that could make
+one.
 
 That rule reaches the surface, because a field a learner can type into is where it would
 otherwise be quietly broken:

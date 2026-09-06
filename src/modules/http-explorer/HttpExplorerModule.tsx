@@ -35,7 +35,7 @@ import {
   SIMPLE_GET,
 } from './scenarios';
 import { runHttpScenario, type HttpExchange, type HttpRun } from './sim/exchange';
-import type { CrlfDisplay } from './sim/message';
+import type { CrlfDisplay } from '@/core/protocols/http/message';
 import { sourceForStatus } from './statuses';
 import { wireMessages, wireResponse } from './wire';
 

@@ -328,7 +328,7 @@ export interface HolAnalysis {
  * The comparison the version view is built around.
  *
  * Two rows, because there are two problems -- and reading them as one row is the
- * misconception this module exists to remove.
+ * misconception this layer exists to remove.
  */
 export const HEAD_OF_LINE_BLOCKING: readonly HolAnalysis[] = [
   {

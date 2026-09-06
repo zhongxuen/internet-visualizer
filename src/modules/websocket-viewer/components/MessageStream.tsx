@@ -210,8 +210,8 @@ export function MessageStream({
                       </span>
                       {record.message ? (
                         <span className="text-fg-muted text-[0.6875rem] leading-relaxed">
-                          Delivered to the application as one {record.message.opcode} message
-                          of {record.message.bytes} bytes
+                          Delivered to the application as one {record.message.opcode}{' '}
+                          message of {record.message.bytes} bytes
                           {record.message.frameCount > 1
                             ? `, reassembled from ${record.message.frameCount} frames`
                             : ''}
@@ -222,7 +222,8 @@ export function MessageStream({
                       ) : null}
                       {record.close ? (
                         <span className="text-state-warn text-[0.6875rem] leading-relaxed">
-                          Close code {record.close.code ?? '(none — reported locally as 1005)'}
+                          Close code{' '}
+                          {record.close.code ?? '(none — reported locally as 1005)'}
                           {record.close.reason === '' ? '' : ` — ${record.close.reason}`}
                         </span>
                       ) : null}
@@ -243,10 +244,10 @@ export function MessageStream({
         </ol>
 
         <p className="text-fg-muted text-[0.625rem] leading-relaxed">
-          Both directions, ordered by the moment each frame left its sender — which is the only
-          ordering the protocol has. After the handshake there is no request/response pairing
-          at all: two independent streams sharing one TCP connection, and nothing correlates a
-          frame in one with a frame in the other.
+          Both directions, ordered by the moment each frame left its sender — which is the
+          only ordering the protocol has. After the handshake there is no request/response
+          pairing at all: two independent streams sharing one TCP connection, and nothing
+          correlates a frame in one with a frame in the other.
         </p>
       </div>
     </Panel>

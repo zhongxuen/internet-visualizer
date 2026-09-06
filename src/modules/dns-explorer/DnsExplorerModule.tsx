@@ -40,7 +40,7 @@ import {
   runDnsScenario,
   type DnsRun,
 } from './scenarios';
-import type { DnsCache } from './sim/cache';
+import type { DnsCache } from '@/core/protocols/dns/cache';
 
 /**
  * DNS Explorer: a name becoming an address, one server at a time.

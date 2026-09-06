@@ -90,8 +90,10 @@ function rowsOf(fields: readonly FrameField[], totalBits: number): Segment[][] {
 }
 
 function fieldTone(id: string): string {
-  if (id === 'mask' || id === 'masking-key') return 'border-layer-session/60 bg-layer-session/15 text-layer-session';
-  if (id === 'payload') return 'border-layer-application/60 bg-layer-application/15 text-layer-application';
+  if (id === 'mask' || id === 'masking-key')
+    return 'border-layer-session/60 bg-layer-session/15 text-layer-session';
+  if (id === 'payload')
+    return 'border-layer-application/60 bg-layer-application/15 text-layer-application';
   if (id.startsWith('rsv')) return 'border-border bg-surface text-fg-muted';
   if (id === 'length-field' || id === 'extended-length')
     return 'border-layer-transport/60 bg-layer-transport/15 text-layer-transport';
@@ -149,12 +151,14 @@ function BitDiagram({ record }: { record: FrameRecord }) {
       ))}
 
       <p className="text-fg-muted text-[0.625rem] leading-relaxed">
-        Each row is 32 bits, laid out as RFC 6455 § 5.2 draws it. The byte offset is in the
-        gutter.{' '}
-        {truncated ? 'The payload is cut off here; the whole of it is counted below. ' : ''}
-        The header is {record.layout.headerBytes} bytes on this frame — never a fixed size, and
-        never an odd number: the length extension is 0, 2, or 8 bytes and the mask is 0 or 4, so
-        the only reachable header sizes are 2, 4, 6, 8, 10, and 14.
+        Each row is 32 bits, laid out as RFC 6455 § 5.2 draws it. The byte offset is in
+        the gutter.{' '}
+        {truncated
+          ? 'The payload is cut off here; the whole of it is counted below. '
+          : ''}
+        The header is {record.layout.headerBytes} bytes on this frame — never a fixed
+        size, and never an odd number: the length extension is 0, 2, or 8 bytes and the
+        mask is 0 or 4, so the only reachable header sizes are 2, 4, 6, 8, 10, and 14.
       </p>
     </div>
   );
@@ -182,7 +186,7 @@ function FieldTable({ record }: { record: FrameRecord }) {
       <tbody>
         {record.layout.fields.map((field) => (
           <tr key={field.id} className="border-border/60 border-t align-top">
-            <td className="text-fg-muted py-2 pr-3 font-mono text-[0.6875rem] tabular-nums whitespace-nowrap">
+            <td className="text-fg-muted py-2 pr-3 font-mono text-[0.6875rem] whitespace-nowrap tabular-nums">
               {field.bitOffset}
               <span className="text-fg-muted/70"> +{field.bits}</span>
             </td>
@@ -223,7 +227,9 @@ function LengthEncodings({ record }: { record: FrameRecord }) {
             key={info.encoding}
             className={cn(
               'rounded-lg border px-3 py-2',
-              active ? 'border-accent/60 bg-accent/10' : 'border-border bg-surface opacity-70',
+              active
+                ? 'border-accent/60 bg-accent/10'
+                : 'border-border bg-surface opacity-70',
             )}
           >
             <div className="flex items-baseline justify-between gap-2">
@@ -234,7 +240,9 @@ function LengthEncodings({ record }: { record: FrameRecord }) {
             <p className="text-fg-muted mt-1 text-[0.625rem] leading-relaxed">
               7-bit field holds {info.field}. Header: {info.headerBytes}.
             </p>
-            <p className="text-fg-muted mt-1 text-[0.625rem] leading-relaxed">{info.detail}</p>
+            <p className="text-fg-muted mt-1 text-[0.625rem] leading-relaxed">
+              {info.detail}
+            </p>
           </li>
         );
       })}
@@ -271,7 +279,9 @@ function Masking({ record }: { record: FrameRecord }) {
         <dl className="flex flex-col gap-1 text-[0.6875rem]">
           <div className="flex flex-wrap gap-x-2">
             <dt className="text-fg-muted w-28 shrink-0">Masking key</dt>
-            <dd className="text-fg font-mono break-all">{toSpacedHex(Uint8Array.from(key))}</dd>
+            <dd className="text-fg font-mono break-all">
+              {toSpacedHex(Uint8Array.from(key))}
+            </dd>
           </div>
           <div className="flex flex-wrap gap-x-2">
             <dt className="text-fg-muted w-28 shrink-0">Application data</dt>
@@ -288,9 +298,9 @@ function Masking({ record }: { record: FrameRecord }) {
             </dd>
           </div>
           <p className="text-fg-muted mt-1 leading-relaxed">
-            <code>transformed[i] = original[i] XOR key[i mod 4]</code> — its own inverse, which
-            is why one routine serves both ends. It is not encryption: the key is in the clear,
-            four bytes ahead of the data it masks.
+            <code>transformed[i] = original[i] XOR key[i mod 4]</code> — its own inverse,
+            which is why one routine serves both ends. It is not encryption: the key is in
+            the clear, four bytes ahead of the data it masks.
           </p>
         </dl>
       ) : null}
@@ -363,10 +373,10 @@ export function FrameInspector({ record, className }: FrameInspectorProps) {
             </p>
           )}
           <p className="text-fg-muted mt-1 text-[0.625rem] leading-relaxed">
-            {record.layout.headerBytes} bytes of header for{' '}
-            {record.layout.payloadBytes} of payload —{' '}
-            {Math.round(record.layout.overheadRatio * 100)}% overhead. The equivalent HTTP
-            request would have cost several hundred bytes of field lines and needed a reply.
+            {record.layout.headerBytes} bytes of header for {record.layout.payloadBytes}{' '}
+            of payload — {Math.round(record.layout.overheadRatio * 100)}% overhead. The
+            equivalent HTTP request would have cost several hundred bytes of field lines
+            and needed a reply.
           </p>
         </div>
 
@@ -377,9 +387,10 @@ export function FrameInspector({ record, className }: FrameInspectorProps) {
             The three length encodings
           </h4>
           <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
-            And the encoding must be the <em>minimal</em> one. A 100-byte payload sent with the
-            16-bit escape is a protocol error, not merely wasteful — two legal spellings of one
-            frame is how two parsers come to disagree about where the next frame starts.
+            And the encoding must be the <em>minimal</em> one. A 100-byte payload sent
+            with the 16-bit escape is a protocol error, not merely wasteful — two legal
+            spellings of one frame is how two parsers come to disagree about where the
+            next frame starts.
           </p>
           <LengthEncodings record={record} />
         </section>

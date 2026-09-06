@@ -38,7 +38,7 @@
  * > "the CORS RFC" and conclude they have missed a document. They have not; there isn't one.
  */
 
-import { header } from '../sim/message';
+import { header } from '@/core/protocols/http/message';
 import type { HttpScenario } from '../sim/exchange';
 
 import { FIXTURE_ADDRESSES, HTTP_CLOCK } from './common';

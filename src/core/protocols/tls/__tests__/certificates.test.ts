@@ -29,7 +29,7 @@ import {
   type TrustStore,
   type ValidationOptions,
   type ValidationStepId,
-} from './certificates';
+} from '../certificates';
 
 // ---------------------------------------------------------------------------
 // Fixtures

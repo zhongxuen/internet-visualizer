@@ -90,8 +90,7 @@ function FrameWorkbench({
 }) {
   const store = usePlaybackContext();
   const now = useNow();
-  const current =
-    run.frames.find((record) => record.id === selectedId) ?? run.frames[0];
+  const current = run.frames.find((record) => record.id === selectedId) ?? run.frames[0];
 
   return (
     <div className="grid min-w-0 gap-3 xl:grid-cols-2">
@@ -165,7 +164,9 @@ function DetailPanel({ run }: { run: WebSocketRun }) {
 
 export function WebSocketViewerModule() {
   const [scenarioId, setScenarioId] = useState<string>(DEFAULT_WEBSOCKET_SCENARIO_ID);
-  const [selected, setSelected] = useState<{ run: WebSocketRun; id: string } | null>(null);
+  const [selected, setSelected] = useState<{ run: WebSocketRun; id: string } | null>(
+    null,
+  );
   const [handshakeId, setHandshakeId] = useState<string | null>(null);
 
   const scenario = useMemo(

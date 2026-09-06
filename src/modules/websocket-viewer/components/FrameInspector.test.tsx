@@ -21,7 +21,10 @@ import { FrameInspector } from './FrameInspector';
 const chat = runWebSocketScenario(HANDSHAKE_AND_CHAT);
 const binary = runWebSocketScenario(BINARY_FRAMES);
 
-function frameFrom(run: ReturnType<typeof runWebSocketScenario>, from: 'client' | 'server') {
+function frameFrom(
+  run: ReturnType<typeof runWebSocketScenario>,
+  from: 'client' | 'server',
+) {
   const record = run.frames.find((each) => each.from === from);
   if (!record) throw new Error(`no ${from} frame in this run`);
   return record;
@@ -74,7 +77,9 @@ describe('FrameInspector', () => {
   it('shows the 16-bit escape as an escape and not as a length', () => {
     render(<FrameInspector record={byStep('medium-binary')} />);
 
-    expect(screen.getByText(/126 \(escape: the real length follows\)/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/126 \(escape: the real length follows\)/),
+    ).toBeInTheDocument();
     expect(screen.getAllByText('Extended payload length (16)')).toHaveLength(2);
   });
 

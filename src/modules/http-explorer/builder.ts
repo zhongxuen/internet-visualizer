@@ -43,8 +43,8 @@ import {
   type HeaderList,
   type HttpMethod,
   type HttpVersion,
-} from './sim/message';
-import { methodSemantics } from './sim/semantics';
+} from '@/core/protocols/http/message';
+import { methodSemantics } from '@/core/protocols/http/semantics';
 
 import { daysBefore, FIXTURE_ADDRESSES, HTTP_CLOCK, secondsAfter } from './scenarios';
 

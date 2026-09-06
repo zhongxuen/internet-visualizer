@@ -17,7 +17,7 @@
  * worth being able to say that plainly before phase 09 takes it away.
  */
 
-import { header } from '../sim/message';
+import { header } from '@/core/protocols/http/message';
 import type { HttpScenario } from '../sim/exchange';
 
 import { FIXTURE_ADDRESSES, HTTP_CLOCK, daysBefore } from './common';

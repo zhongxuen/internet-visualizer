@@ -8,11 +8,14 @@ Simulated only. Nothing here touches a network, and there is no cryptography in 
 
 ## What exists today
 
-Phase 09, complete: the pure logic under `sim/`, the seven scenarios that run on it, the
-five views, and the route. The registry entry is `ready`.
+Phase 09, complete: the seven scenarios, the five views, and the route. The registry
+entry is `ready`. TLS itself was promoted to **`@/core/protocols/tls`** in phase 11, so
+the Internet Simulator's TLS stage performs the same handshake this module takes apart.
+`connection.ts` stayed, because the observer on the path is a teaching device and not a
+part of TLS.
 
 ```
-sim/
+@/core/protocols/tls/
   placeholder.ts    # the fake-crypto discipline, in one file
   cipher.ts         # suite catalogue and decomposition; why the 1.3 name has two parts
   certificates.ts   # chain, trust store, and the five validation steps
@@ -20,6 +23,7 @@ sim/
   records.ts        # the record layer, and what an observer reads off it
   handshake13.ts    # 1-RTT, 0-RTT/PSK, HelloRetryRequest, downgrade detection
   handshake12.ts    # full and abbreviated, plus the 1.2-vs-1.3 comparison table
+sim/
   connection.ts     # the one-way bridge from all of the above to a SimResult
 scenarios/
   common.ts         # one instant, one PKI, one exchange -- everything else derives
@@ -49,7 +53,7 @@ it everywhere at once. Field-level visibility comes from `MessageField.visibleTo
 rather than from a message's encryption level, because the two differ: an encrypted
 record's header, length and timing are still on the wire.
 
-`connection.ts` is where the boundary is drawn. Everything else in `sim/` decides what TLS
+`connection.ts` is where the boundary is drawn. `@/core/protocols/tls` decides what TLS
 *does*; `connection.ts` decides what a learner *sees* while it happens -- phases, node
 states, annotations, PDUs -- and the scenario files decide only what connection takes
 place. They are a screenful of declarations each, with no logic in them at all.
@@ -76,7 +80,8 @@ Every key, secret, signature, fingerprint, and ciphertext comes from `placeholde
 is a labelled FNV-1a hash of a string. They are not secret, not random, not one-way, and
 not keys. Each renders with a `PLACEHOLDER-` prefix so it cannot be mistaken for output
 from a real library, and `PLACEHOLDER_NOTICE` is the sentence any UI showing one must
-display.
+display. That file lives in `@/core/protocols/tls` now, and the discipline travelled with
+it: every value the layer can produce is still labelled.
 
 What is modelled faithfully is the **structure**: which input feeds which derivation, what
 each party knows at each moment, and the byte sizes involved. That is checkable against
@@ -103,8 +108,8 @@ SNI hostname, the record types and lengths, the timings and the sizes all surviv
 real client aborts on the first failure and is right to. For teaching it is exactly wrong:
 one red row says "the certificate was bad", where four green rows and one red row say
 which promise broke. The three `cert-*` scenarios each break exactly one step:
-`certificates.test.ts` asserts it of every failure mode in isolation, and
-`scenarios.test.ts` asserts it of the three shipped scenarios, along with the fact that
+`@/core/protocols/tls/__tests__/certificates.test.ts` asserts it of every failure mode in
+isolation, and `scenarios.test.ts` asserts it of the three shipped scenarios, along with the fact that
 between them they break three *different* steps.
 
 The checks are genuinely independent — no check may consult another's verdict.
@@ -119,9 +124,9 @@ wildcard, as the complete content of the leftmost label, covering exactly one la
 ## What must never be imported here
 
 - Anything under `src/modules/<other>/` — `eslint.config.mjs` enforces it. That is why
-  `records.ts` takes a **string of bytes** rather than an `HttpRequest`: it cannot reach
-  into `http-explorer`, and it should not want to. The record layer does not know what it
-  is carrying.
+  `records.ts` takes a **string of bytes** rather than an `HttpRequest`: living in
+  `src/core` it could not reach for one even if it wanted to, and it should not want to.
+  The record layer does not know what it is carrying.
 - `Date.now()` or `Math.random()`. Certificate validity windows take an explicit `now`
   in epoch milliseconds — `SCENARIO_EPOCH` in `scenarios/common.ts`, a written-down
   constant — and everything else runs on virtual milliseconds from zero. Every run is

@@ -6,7 +6,7 @@
  * insufficient to reconstruct it. There is no trick and no trusted third party; there is
  * one asymmetry, applied once, and then a lot of careful bookkeeping.
  *
- * The module splits it in two, because they are genuinely two different ideas:
+ * The file splits it in two, because they are genuinely two different ideas:
  *
  * 1. **{@link dheExchange}** -- the asymmetry. Both sides send a public value, keep a
  *    private one, and combine them to reach the same shared secret. The observer sees
@@ -101,7 +101,7 @@ export interface GroupInfo {
   readonly note: string;
 }
 
-/** The groups this module knows, in the order a browser offers them. */
+/** The groups this layer knows, in the order a browser offers them. */
 export const NAMED_GROUPS: readonly GroupInfo[] = [
   {
     name: 'x25519',
@@ -698,7 +698,7 @@ export function buildKeySchedule(input: KeyScheduleInput): KeySchedule {
     'c ap traffic',
     'application',
     transcriptToServerFinished,
-    'Protects everything the client sends after the handshake -- the HTTP request, in this module.',
+    'Protects everything the client sends after the handshake -- the HTTP request, in this layer.',
     width,
     connection,
   );

@@ -12,7 +12,7 @@
  * why a screenshot of one stays true.
  */
 
-import { formatHttpDate, type HttpClock } from '../sim/message';
+import { formatHttpDate, type HttpClock } from '@/core/protocols/http/message';
 
 /**
  * Virtual time zero: 2026-03-01T12:00:00Z, as an epoch millisecond.

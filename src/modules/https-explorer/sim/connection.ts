@@ -69,9 +69,12 @@ import {
   type CertificateChain,
   type ChainValidation,
   type TrustStore,
-} from './certificates';
-import type { CipherSuite, TlsVersion } from './cipher';
-import { buildTls12Handshake, type Tls12Handshake } from './handshake12';
+} from '@/core/protocols/tls/certificates';
+import type { CipherSuite, TlsVersion } from '@/core/protocols/tls/cipher';
+import {
+  buildTls12Handshake,
+  type Tls12Handshake,
+} from '@/core/protocols/tls/handshake12';
 import {
   DEFAULT_TIMING,
   DOWNGRADE_SENTINEL_TLS12,
@@ -83,8 +86,8 @@ import {
   type HandshakeMessage,
   type HandshakeTiming,
   type Tls13Handshake,
-} from './handshake13';
-import type { KeySchedule, NamedGroup } from './keyschedule';
+} from '@/core/protocols/tls/handshake13';
+import type { KeySchedule, NamedGroup } from '@/core/protocols/tls/keyschedule';
 import {
   CLOSE_NOTIFY,
   alert as buildAlert,
@@ -101,7 +104,7 @@ import {
   type ObserverFact,
   type ProtectionLevel,
   type TlsRecord,
-} from './records';
+} from '@/core/protocols/tls/records';
 
 // ---------------------------------------------------------------------------
 // The cast

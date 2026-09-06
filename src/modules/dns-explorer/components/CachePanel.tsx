@@ -14,8 +14,8 @@ import {
   type CacheEntryKind,
   type DnsCache,
   type DnsCacheEntry,
-} from '../sim/cache';
-import { displayName, rdataText } from '../sim/records';
+} from '@/core/protocols/dns/cache';
+import { displayName, rdataText } from '@/core/protocols/dns/records';
 
 /**
  * The resolver's memory, counting down.

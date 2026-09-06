@@ -31,7 +31,7 @@ import {
   type HttpRun,
   type HttpScenario,
 } from '../sim/exchange';
-import { headerValue, serializeMessage } from '../sim/message';
+import { headerValue, serializeMessage } from '@/core/protocols/http/message';
 
 import {
   CONDITIONAL_REQUEST,

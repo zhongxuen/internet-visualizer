@@ -11,7 +11,9 @@ how any of it is drawn.
   classification, the well-known port table, hex/binary rendering). The same validators
   guard real-network input in phase 12, which is why they are strict.
 - `types/` — shared domain types (packets, nodes, links, events).
-- `protocols/` — per-protocol logic (IPv4/TTL, DNS, TCP, TLS records) added from phase 03.
+- `protocols/` — per-protocol logic shared by more than one module: `ipv4/`, `udp/`,
+  `tcp/`, `dns/`, `tls/`, `http/`. What a protocol *is*, never what a module does with it. See
+  `protocols/README.md` for where that line falls.
 
 ## What must NEVER be imported here
 

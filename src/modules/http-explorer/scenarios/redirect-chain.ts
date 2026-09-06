@@ -32,7 +32,7 @@
  * confirmation page instead of submitting the form a second time.
  */
 
-import { header } from '../sim/message';
+import { header } from '@/core/protocols/http/message';
 import type { HttpScenario } from '../sim/exchange';
 
 import { FIXTURE_ADDRESSES, HTTP_CLOCK, daysBefore } from './common';

@@ -33,7 +33,7 @@
 import type { RfcRef } from '@/core/types/events';
 
 import { TRANSPORT_LABELS } from './lookup';
-import { displayName, type DnsMessage } from './sim/records';
+import { displayName, type DnsMessage } from '@/core/protocols/dns/records';
 import type {
   DnsEndpoint,
   DnsResolution,
@@ -42,7 +42,7 @@ import type {
   ServerTier,
   StepOutcome,
   StepPurpose,
-} from './sim/resolver';
+} from '@/core/protocols/dns/resolver';
 
 /** Whether a rung is a message going out, or the reply coming back. */
 export type RungKind = 'query' | 'response';

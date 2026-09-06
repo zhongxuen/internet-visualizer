@@ -26,16 +26,43 @@ reason it refused, because both a form field and a test need that reason.
 - `bytes.ts` — hex and binary rendering at a header field's real width, hex dumps, byte
   sizes, and finding/rendering the header fields of a `PDU`.
 
-## Planned (phase 12)
+## Built (phase 12, prompt 12.1)
 
-- `guard.ts` — the SSRF guard. The highest-risk file in the project; requires ≥ 95% test
-  coverage. Restricts scheme to http(s) and ports to {80, 443}, refuses every non-public
-  scope `classifyIp` reports, and re-checks every address **after DNS resolution** to
-  defeat rebinding.
-- `ratelimit.ts` — token bucket keyed by client IP.
+- `guard.ts` — the SSRF guard, and the highest-risk file in the project. Validates the
+  target with `zod`, restricts the scheme to http(s) and the port to {80, 443}, refuses
+  every non-public scope `classifyIp` reports (including IPv4-mapped disguises and the
+  cloud metadata endpoints by name), and re-checks **every** address a hostname resolves
+  to, which is what defeats DNS rebinding. Also owns the outbound shape of a live
+  request: a 5 s ceiling on the timeout, a response-size cap enforced while reading, an
+  allow-list of forwardable headers, and redirects that are reported rather than
+  followed. `npm run test:coverage` reports 100% of its statements and lines.
+- `ratelimit.ts` — a token bucket keyed by client, with a global bucket behind it, an
+  LRU bound on how many clients it will track, and the `Retry-After` / `X-RateLimit-*`
+  headers a 429 needs.
 
-Both will be pure too: they decide whether a request is allowed, they do not make it.
-The requests themselves live in `src/app/api/diagnostics/`.
+Both are pure too: they decide whether a request is allowed, they do not make it. DNS
+resolution is injected into `guardTarget` as a `HostResolver` and the clock is injected
+into `createRateLimiter`, so both the rebinding case and the refill arithmetic are
+testable with no network and no sleeping.
+
+The requests themselves live in `src/app/api/diagnostics/` (prompt 12.3), which is the
+only place in the product that opens a socket. Every live call there passes through the
+single `guardedFetch` chokepoint in `_lib/outbound.ts`, which calls the functions above
+in the order section 3 of the phase doc sets out; see that folder's `README.md` for the
+invariants it enforces.
+
+## Built (phase 12, prompt 12.4)
+
+- `diagnostics.ts` — the contract the three Route Handlers and the Live-mode UI both
+  read. The URL builders (`dohUrlFor`, `rdapUrlFor`, `normalizeReachTarget`), the
+  resolver and bootstrap constants, the `REACH_NOT_ICMP` sentence, and every response
+  type live here so that `LiveDisclosure` can show the exact URL a handler will request
+  *before* it requests it. Two copies of that URL would drift, and the first time they
+  did, the UI would be lying about a real network request.
+
+  It performs no I/O either. A browser importing it gains the ability to *name* a live
+  request and nothing else: every live call is still made by a route handler, under the
+  guard, or it is not made at all.
 
 ## What must never be imported here
 

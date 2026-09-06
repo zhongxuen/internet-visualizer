@@ -14,8 +14,8 @@ import {
   negativeTtlSeconds,
   purgeExpired,
   remainingSeconds,
-} from './cache';
-import { rr, type ResourceRecord } from './records';
+} from '../cache';
+import { rr, type ResourceRecord } from '../records';
 
 const SECOND = 1000;
 

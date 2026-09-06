@@ -13,13 +13,15 @@ Simulated only. Nothing here can send a request to a real server; see the rules 
 All of phase 08: the pure logic, the version model, the seven scenarios, and the module
 surface on `/http-explorer`. The registry entry is `ready`, `usesRealNetwork: false`.
 
+The protocol itself is not all in this folder. `message.ts`, `semantics.ts`,
+`caching.ts`, `cookies.ts` and `versions.ts` were promoted to **`@/core/protocols/http`**
+in phase 11, so the Internet Simulator's HTTP stage speaks the same HTTP this module
+explains. `exchange.ts` stayed, because a browser with a cookie jar, two caches and a
+CORS policy is this module's lesson rather than the protocol's.
+
 ```
+@/core/protocols/http/  # the protocol: message, semantics, caching, cookies, versions
 sim/                    # pure HTTP logic -- no React, no DOM, no clock of its own
-  message.ts            # the models, and exact HTTP/1.1 wire serialization
-  semantics.ts          # safe / idempotent / cacheable, and the status-code table
-  caching.ts            # freshness arithmetic, ETag revalidation, and the 304 path
-  cookies.ts            # Set-Cookie parsing, the attributes, and the jar matching rules
-  versions.ts           # h1/h2/h3 connections and streams, and the two head-of-line blockings
   exchange.ts           # the scenario runner: SimEvents out, no idea anything is drawn
 scenarios/              # seven runs declared as data -- a screenful each, no logic
   common.ts             # the fixed clock origin, and the documentation addresses
@@ -44,7 +46,7 @@ The UI adds nothing to the protocol. `wire.ts`, `headers.ts`, `statuses.ts` and
 return, and `HttpExplorerModule.tsx` holds five pieces of state and no logic. Delete every
 file outside `sim/` and `scenarios/` and HTTP behaves identically.
 
-### The one derivation the UI needed that `sim/` does not expose
+### The one derivation the UI needed that the simulation does not expose
 
 `HttpExchange.response` is the response **as the client finally saw it**, and for a
 revalidation that is not what crossed the network: the origin sent a 304 with no body, and
@@ -55,7 +57,9 @@ would lose the most useful thing about conditional requests. `wire.ts` reconstru
 used, which is exact rather than approximate, and `wire.test.ts` asserts it is bodyless
 and smaller than the body it replaced.
 
-## The six files in `sim/`
+## The six files it runs on
+
+The first five are `@/core/protocols/http`; the sixth is this module's `sim/exchange.ts`.
 
 | File           | The one idea it is arranged around                                          |
 | -------------- | --------------------------------------------------------------------------- |
@@ -150,7 +154,8 @@ anything, and `showLineEndings` backs the CRLF toggle.
 Timestamps are **virtual milliseconds** on the simulation clock. Ages, lifetimes, and
 `Max-Age` are **seconds**, as on the wire. `Expires`, `Date`, and `Last-Modified` are
 absolute instants and are converted through `HttpClock` in `message.ts` — the one place
-wall-clock time enters the module, and the reason `Date.now()` appears nowhere in it.
+wall-clock time enters the HTTP layer, and the reason `Date.now()` appears nowhere in
+either half.
 A scenario pins its clock origin and gets the same result on every run: `common.ts` fixes
 it at 2026-03-01T12:00:00Z for all seven, so every `Date` and `Expires` in the module is a
 literal in everything but syntax.
@@ -175,20 +180,24 @@ Cited throughout, and only the current ones:
 
 The obsolete RFC 723x series and RFC 2616 are the source of most of what people still
 believe about HTTP that stopped being true in 2014. Nothing here cites them, and
-`semantics.test.ts` fails the build if a table row ever does.
+`@/core/protocols/http/__tests__/semantics.test.ts` fails the build if a table row ever
+does.
 
 ## What must NEVER be imported here
 
 - Another module (`src/modules/<b>/**`). Shared code goes through `@/core` or
   `@/components` — enforced by `eslint.config.mjs`.
-- Anything in `sim/` may import `@/core` and nothing else. No React, no DOM, no
-  `Math.random()`, no `Date.now()`: randomness comes from `@/core/sim/rng` seeded by the
-  caller, and time is virtual milliseconds the caller advances explicitly.
+- Anything in `sim/` may import `@/core` — including `@/core/protocols/http` — and
+  nothing else. No React, no DOM, no `Math.random()`, no `Date.now()`: randomness comes
+  from `@/core/sim/rng` seeded by the caller, and time is virtual milliseconds the caller
+  advances explicitly. The same holds for the protocol layer itself.
 
 ## Safety
 
-There is no network path in this folder. `sim/` builds and serialises message objects; it
-has no `fetch`, no socket, and nothing that could acquire one. Every origin a scenario
+There is no network path in this folder or in the layer under it.
+`@/core/protocols/http` builds and serialises message objects; it has no `fetch`, no
+socket, and nothing that could acquire one, and `sim/exchange.ts` answers every request
+from a fixture. Every origin a scenario
 talks to is an `OriginFixture` declared in `scenarios/`, answered by a pure function, and
 addressed from `203.0.113.0/24` — one of the ranges RFC 5737 reserves for documentation,
 so no address here could reach a real host even if something one day tried.

@@ -22,8 +22,8 @@ import { describe, expect, it } from 'vitest';
 import { classifyIp, ip } from '@/core/net/address';
 import type { SimEvent } from '@/core/types/events';
 
-import { UDP_MAX_PAYLOAD } from '../sim/records';
-import { STUB_LATENCY_MS } from '../sim/resolver';
+import { UDP_MAX_PAYLOAD } from '@/core/protocols/dns/records';
+import { STUB_LATENCY_MS } from '@/core/protocols/dns/resolver';
 
 import {
   CDN_LOOKUP,

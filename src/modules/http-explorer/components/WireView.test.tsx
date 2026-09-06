@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CONDITIONAL_REQUEST, SIMPLE_GET } from '../scenarios';
 import { runHttpScenario } from '../sim/exchange';
-import type { CrlfDisplay, HttpVersion } from '../sim/message';
+import type { CrlfDisplay, HttpVersion } from '@/core/protocols/http/message';
 import { wireMessages, wireResponse } from '../wire';
 
 import { WireView } from './WireView';

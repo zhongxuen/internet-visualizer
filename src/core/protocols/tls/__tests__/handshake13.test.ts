@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { certificate, dnsName, DAY_MS, type CertificateChain } from './certificates';
+import { certificate, dnsName, DAY_MS, type CertificateChain } from '../certificates';
 import {
   buildTls13Handshake,
   cleartextMessages,
@@ -14,7 +14,7 @@ import {
   observableFields,
   type HandshakeMessage,
   type Tls13Handshake,
-} from './handshake13';
+} from '../handshake13';
 
 const NOW = Date.UTC(2026, 5, 1);
 

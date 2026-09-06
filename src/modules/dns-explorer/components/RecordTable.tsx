@@ -13,7 +13,7 @@ import {
   type DnsMessage,
   type Rcode,
   type ResourceRecord,
-} from '../sim/records';
+} from '@/core/protocols/dns/records';
 
 /**
  * One DNS message, in the three sections it actually has.

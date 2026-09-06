@@ -14,7 +14,7 @@
  * \r\n
  * ```
  *
- * This file is the only place in the module that knows that syntax. Everything above it
+ * This file is the only place in the HTTP layer that knows that syntax. Everything above it
  * -- semantics, caching, cookies -- works on the structured {@link HttpRequest} and
  * {@link HttpResponse} models, and only ever comes here to turn one into bytes.
  *
@@ -23,7 +23,8 @@
  * {@link HttpHeader} lines are held as an ordered list because both properties of that
  * list are load-bearing:
  *
- * - **Order is preserved on the wire** and the wire view is the point of this module.
+ * - **Order is preserved on the wire**, and a view that reordered the fields would be
+ *   showing a message that was never sent.
  * - **Duplicates are legal.** `Set-Cookie` is sent once per cookie and, uniquely among
  *   fields, may *not* be combined into one comma-separated line (RFC 9110 s5.3). A
  *   `Record<string, string>` would silently destroy a login.
@@ -42,7 +43,7 @@
  *
  * HTTP dates are absolute wall-clock instants (RFC 9110 s5.6.7); the simulation runs on
  * virtual milliseconds from zero. {@link HttpClock} is the one conversion between them,
- * so `Date.now()` never appears anywhere in this module.
+ * so `Date.now()` never appears anywhere in this layer.
  */
 
 import { fail, ok, type ParseResult } from '@/core/net/result';
@@ -51,7 +52,7 @@ import { fail, ok, type ParseResult } from '@/core/net/result';
 // Versions
 // ---------------------------------------------------------------------------
 
-/** The three versions this module compares. */
+/** The three versions this layer compares. */
 export type HttpVersion = 'HTTP/1.1' | 'HTTP/2' | 'HTTP/3';
 
 /** In the order the version-comparison view lists them. */
@@ -83,7 +84,7 @@ export function hasTextWireFormat(version: HttpVersion): boolean {
 export type HttpMethod =
   'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE';
 
-/** Every method this module knows, in RFC 9110 s9.3 order with PATCH after PUT. */
+/** Every method this layer knows, in RFC 9110 s9.3 order with PATCH after PUT. */
 export const HTTP_METHODS: readonly HttpMethod[] = [
   'GET',
   'HEAD',
@@ -97,7 +98,7 @@ export const HTTP_METHODS: readonly HttpMethod[] = [
 ];
 
 /**
- * Whether a string is a method this module models.
+ * Whether a string is a method this layer models.
  *
  * Methods are case-**sensitive** on the wire (RFC 9110 s9), which is why `get` is not a
  * GET. That trips people up often enough to be worth not papering over here.
@@ -124,7 +125,7 @@ export function header(name: string, value: string): HttpHeader {
   return { name, value };
 }
 
-/** Lower-case: the form every comparison in this module uses (RFC 9110 s5.1). */
+/** Lower-case: the form every comparison in this layer uses (RFC 9110 s5.1). */
 export function normalizeFieldName(name: string): string {
   return name.trim().toLowerCase();
 }
@@ -148,7 +149,7 @@ export function isValidFieldName(name: string): boolean {
  * The rule that matters is the one about CR and LF: a value containing either could end
  * the field line early and let an attacker inject headers or a whole second response
  * (**response splitting**). RFC 9112 s2.2 requires a recipient to reject such a message,
- * and this module refuses to build one in the first place.
+ * and this layer refuses to build one in the first place.
  */
 export function isValidFieldValue(value: string): boolean {
   return !value.includes('\r') && !value.includes('\n') && !value.includes('\0');
@@ -532,7 +533,7 @@ export function dateHeaderAt(
 // ---------------------------------------------------------------------------
 
 /**
- * The line terminator, and the reason this module exists.
+ * The line terminator, and the reason this layer exists.
  *
  * Every line of an HTTP/1.1 message ends with CR LF -- carriage return then line feed,
  * `0x0D 0x0A` -- not with the bare LF a text editor produces. The header section then

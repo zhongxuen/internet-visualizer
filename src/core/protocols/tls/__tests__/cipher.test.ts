@@ -15,7 +15,7 @@ import {
   TLS12_SUITES,
   TLS13_SUITES,
   type CipherSuite,
-} from './cipher';
+} from '../cipher';
 
 const suite = (name: string): CipherSuite => getCipherSuite(name) as CipherSuite;
 

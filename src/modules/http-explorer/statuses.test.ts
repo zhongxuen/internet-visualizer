@@ -17,7 +17,7 @@ import {
 } from './builder';
 import { getHttpScenario } from './scenarios';
 import { runHttpScenario, type HttpScenario } from './sim/exchange';
-import { statusSemantics } from './sim/semantics';
+import { statusSemantics } from '@/core/protocols/http/semantics';
 import { REACHABLE_STATUS_CODES, STATUS_SOURCES, type StatusSource } from './statuses';
 import { wireResponse } from './wire';
 

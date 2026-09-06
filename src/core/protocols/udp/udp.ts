@@ -13,7 +13,7 @@
  *
  * One consequence worth showing in the packet journey: a UDP datagram larger than the
  * path MTU is fragmented by IPv4, with no MSS negotiation to prevent it, so a large DNS
- * response really does arrive in pieces. That is `fragmentIpv4` in `ipv4.ts`, driven
+ * response really does arrive in pieces. That is `fragmentIpv4` in `../ipv4/ipv4.ts`, driven
  * from a datagram built here.
  */
 

@@ -12,7 +12,7 @@ import {
   type KeySchedule,
   type KeyScheduleStep,
   type Party,
-} from '../sim/keyschedule';
+} from '@/core/protocols/tls/keyschedule';
 
 /**
  * Where the keys come from, and why watching every byte does not get you them.

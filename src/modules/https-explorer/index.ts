@@ -1,17 +1,20 @@
 /**
  * HTTPS Explorer's public surface.
  *
- * The route imports the composition root from here; the scenarios, the certificate model,
- * the handshake models and the record layer are re-exported so the Learning Center can
- * name the same seven runs and cite the same sentences, and so phase 11's Internet
- * Simulator can compose a TLS connection into a whole page load rather than restating
- * one. Note that another *module* may not import any of this (`eslint.config.mjs`);
- * shared code belongs in `@/core` or `@/components`.
+ * The route imports the composition root from here; the scenarios and the five views are
+ * re-exported so the Learning Center can name the same seven runs and reuse the same
+ * diagrams. Note that another *module* may not import any of this
+ * (`eslint.config.mjs`); shared code belongs in `@/core` or `@/components`.
+ *
+ * TLS itself is not here and is not re-exported through here. It is
+ * `@/core/protocols/tls`, which anything may import: the Internet Simulator composes a
+ * TLS connection into a whole page load out of that layer rather than restating one, and
+ * never touches this module to do it.
  *
  * Nothing exported here can reach a network, and nothing exported here is cryptography.
  * `runTlsScenario` reads bundled fixtures and nothing else, every key and signature is a
- * labelled placeholder from `sim/placeholder.ts`, and there is no code path from any of
- * it to a socket. That is the property the whole module rests on.
+ * labelled placeholder from `@/core/protocols/tls/placeholder.ts`, and there is no code
+ * path from any of it to a socket. That is the property the whole module rests on.
  */
 
 export { HttpsExplorerModule } from './HttpsExplorerModule';
@@ -60,76 +63,3 @@ export {
   type TlsScenario,
   type WireRecord,
 } from './sim/connection';
-
-export {
-  formatDistinguishedName,
-  formatInstant,
-  matchHostname,
-  primaryFailure,
-  stepById,
-  validateChain,
-  VALIDATION_STEP_IDS,
-  type Certificate,
-  type CertificateChain,
-  type ChainValidation,
-  type TrustStore,
-  type ValidationStep,
-  type ValidationStepId,
-} from './sim/certificates';
-
-export {
-  ALL_SUITES,
-  decomposeSuite,
-  getCipherSuite,
-  namedComponentCount,
-  suitesForVersion,
-  TLS12_SUITES,
-  TLS13_SUITES,
-  type CipherSuite,
-  type SuiteComponent,
-  type TlsVersion,
-} from './sim/cipher';
-
-export {
-  buildTls13Handshake,
-  cleartextMessages,
-  messageById,
-  observableFields,
-  type Flight,
-  type HandshakeMessage,
-  type HandshakeNote,
-  type MessageEncryption,
-  type MessageField,
-  type Tls13Handshake,
-} from './sim/handshake13';
-
-export {
-  buildTls12Handshake,
-  tradeOffs,
-  VERSION_COMPARISON,
-  type Tls12Handshake,
-  type VersionComparisonRow,
-} from './sim/handshake12';
-
-export {
-  buildKeySchedule,
-  knowledgeOf,
-  observerLosesTrackAt,
-  type DerivedSecret,
-  type KeySchedule,
-  type KeyScheduleStep,
-  type NamedGroup,
-  type Party,
-  type TrafficKeys,
-} from './sim/keyschedule';
-
-export {
-  observerFacts,
-  observerView,
-  stillVisible,
-  type ObservedRecord,
-  type ObserverFact,
-  type TlsRecord,
-} from './sim/records';
-
-export { PLACEHOLDER_NOTICE, PLACEHOLDER_PREFIX } from './sim/placeholder';

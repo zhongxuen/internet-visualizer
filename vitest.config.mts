@@ -7,6 +7,10 @@ import { defineConfig } from 'vitest/config';
  * - `core` runs in **node**. `src/core/**` is framework-free simulation logic, so its
  *   tests must not need a DOM. If a core test ever requires jsdom, that is a signal the
  *   boundary rule in eslint.config.mjs has been violated.
+ * - `routes` runs in **node** too. The phase-12 diagnostics Route Handlers are server
+ *   code: they use `Request`/`Response`, `node:dns` and `fetch`, and never a DOM. They
+ *   are their own project rather than part of `core` so a failure names which side of
+ *   the boundary broke -- the pure guard, or the handler wiring around it.
  * - `ui` runs in **jsdom** for components, modules, and shared UI helpers.
  */
 export default defineConfig({
@@ -19,6 +23,14 @@ export default defineConfig({
           name: 'core',
           environment: 'node',
           include: ['src/core/**/*.test.ts'],
+        },
+      },
+      {
+        resolve: { tsconfigPaths: true },
+        test: {
+          name: 'routes',
+          environment: 'node',
+          include: ['src/app/api/**/*.test.ts'],
         },
       },
       {
@@ -46,7 +58,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
-      include: ['src/core/**', 'src/modules/**/sim/**', 'src/lib/**'],
+      include: [
+        'src/core/**',
+        'src/modules/**/sim/**',
+        'src/lib/**',
+        // `*.ts` rather than `**`: the folder carries a README, and v8 tries to parse
+        // every included file as source before deciding it is not one.
+        'src/app/api/**/*.ts',
+      ],
       exclude: ['**/*.test.*', '**/index.ts', '**/types/**'],
     },
   },

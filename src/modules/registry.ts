@@ -144,7 +144,7 @@ export const MODULES: ModuleMeta[] = [
     route: '/internet-simulator',
     summary:
       'End to end: type a URL and watch DNS, TCP, TLS, and HTTP compose into a page load.',
-    status: 'planned',
+    status: 'ready',
     topics: ['DNS', 'TCP/IP', 'SSL/TLS', 'HTTP', 'CDN', 'Load Balancers'],
     usesRealNetwork: false,
   },
@@ -155,11 +155,16 @@ export const MODULES: ModuleMeta[] = [
     route: '/network-diagnostics',
     summary:
       'Learn ping, traceroute, DNS lookup, and WHOIS -- simulated by default, with an explicit opt-in live mode.',
-    status: 'planned',
-    // The only module permitted to reach a real network, and only in Live mode.
-    // Flipped to true in phase 12, never before.
+    // Both halves shipped in phase 12: Learn mode's four simulated tools, and Live
+    // mode's three read-only lookups behind the acknowledgement gate.
+    status: 'ready',
     topics: ['ICMP', 'DNS', 'Traceroute', 'WHOIS/RDAP'],
-    usesRealNetwork: false,
+    // The one module this may ever be true for, and it is true now: Live mode reaches a
+    // real network through the Route Handlers under src/app/api/diagnostics. It is a
+    // statement about capability -- the badge that tracks what the module is doing right
+    // now lives in the mode switch inside the module. `tests/registry.test.ts` asserts
+    // that no other entry sets this.
+    usesRealNetwork: true,
   },
   {
     id: 'learning-center',

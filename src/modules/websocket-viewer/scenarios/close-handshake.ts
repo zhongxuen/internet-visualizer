@@ -72,7 +72,8 @@ export const CLOSE_HANDSHAKE: WebSocketScenario = {
         id: 'in-progress',
         title: 'Ordinary traffic',
         from: 'client',
-        intent: 'A message on a connection nobody has any reason to think is about to end.',
+        intent:
+          'A message on a connection nobody has any reason to think is about to end.',
         text: 'draft saved',
         afterMs: 110,
       },

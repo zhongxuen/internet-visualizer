@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { HTTP_METHODS, header, response, type HttpMethod } from './message';
+import { HTTP_METHODS, header, response, type HttpMethod } from '../message';
 import {
   allowsContent,
   describeStatus,
@@ -21,7 +21,7 @@ import {
   STATUS_SEMANTICS,
   statusClass,
   statusSemantics,
-} from './semantics';
+} from '../semantics';
 
 describe('the method table', () => {
   it('covers every method the message model can express', () => {

@@ -16,7 +16,7 @@ import {
   type ChainValidation,
   type TrustStore,
   type ValidationStep,
-} from '../sim/certificates';
+} from '@/core/protocols/tls/certificates';
 
 /**
  * The chain, and the five checks the padlock is actually a claim about.

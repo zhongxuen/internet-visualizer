@@ -705,7 +705,7 @@ export function statusClass(code: number): StatusClass {
   }
 }
 
-/** The table row for a code, or `undefined` if it is not one this module documents. */
+/** The table row for a code, or `undefined` if it is not one this layer documents. */
 export function statusSemantics(code: number): StatusSemantics | undefined {
   return STATUS_BY_CODE.get(code);
 }

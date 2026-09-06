@@ -18,7 +18,7 @@ import {
   ipv4TotalLength,
   reassembleIpv4,
   type Ipv4Header,
-} from './ipv4';
+} from '../ipv4';
 
 /**
  * The worked example from the IPv4 header checksum literature, chosen because it can be

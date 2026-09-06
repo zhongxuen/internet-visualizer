@@ -31,7 +31,7 @@ import { parseIpv4 } from '@/core/net/address';
 import { fail, ok, type ParseResult } from '@/core/net/result';
 
 import type { DnsLookup, DnsScenario } from './scenarios';
-import type { DnsTransport } from './sim/resolver';
+import type { DnsTransport } from '@/core/protocols/dns/resolver';
 
 import {
   ancestorsOf,
@@ -45,7 +45,7 @@ import {
   type DnsZone,
   type RrType,
   type SimulatedInternet,
-} from './sim/records';
+} from '@/core/protocols/dns/records';
 
 /** The scenario id a lookup typed into the input runs under. */
 export const CUSTOM_LOOKUP_ID = 'custom-lookup';

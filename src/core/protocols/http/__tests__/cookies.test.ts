@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatHttpDate, header, response } from './message';
+import { formatHttpDate, header, response } from '../message';
 import {
   clearSessionCookies,
   COOKIE_DEFENCES,
@@ -27,7 +27,7 @@ import {
   type CookieContext,
   type CookieJar,
   type RequestContext,
-} from './cookies';
+} from '../cookies';
 
 const SECOND = 1000;
 

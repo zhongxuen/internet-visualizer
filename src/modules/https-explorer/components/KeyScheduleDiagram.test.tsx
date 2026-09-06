@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 import { TLS12_FRESH, TLS13_FRESH, TLS13_RESUMPTION } from '../scenarios';
 import { runTlsScenario } from '../sim/connection';
-import { observerLosesTrackAt } from '../sim/keyschedule';
-import { PLACEHOLDER_PREFIX } from '../sim/placeholder';
+import { observerLosesTrackAt } from '@/core/protocols/tls/keyschedule';
+import { PLACEHOLDER_PREFIX } from '@/core/protocols/tls/placeholder';
 
 import { KeyScheduleDiagram } from './KeyScheduleDiagram';
 

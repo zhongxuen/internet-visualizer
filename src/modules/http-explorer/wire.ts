@@ -22,8 +22,8 @@ import {
   type HttpRequest,
   type HttpResponse,
   type WireSegment,
-} from './sim/message';
-import { notModifiedResponse } from './sim/caching';
+} from '@/core/protocols/http/message';
+import { notModifiedResponse } from '@/core/protocols/http/caching';
 import type { HttpExchange } from './sim/exchange';
 
 /**

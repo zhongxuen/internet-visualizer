@@ -18,7 +18,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createRng } from '@/core/sim/rng';
 
-import { HTTP_VERSIONS } from './message';
+import { HTTP_VERSIONS } from '../message';
 import {
   DEFAULT_CONDITIONS,
   FIRST_REQUEST_HEADER_RATIO,
@@ -39,7 +39,7 @@ import {
   type NetworkConditions,
   type ResourceRequest,
   type StreamTiming,
-} from './versions';
+} from '../versions';
 
 // ---------------------------------------------------------------------------
 // Fixtures

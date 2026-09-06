@@ -39,7 +39,7 @@
  *
  * This file describes algorithms; it does not contain any. `keyBits`, `ivBytes` and
  * `tagBytes` are the parameter *sizes* the real algorithms use, carried so `records.ts`
- * can compute honest overhead numbers. Nothing in this module encrypts anything -- see
+ * can compute honest overhead numbers. Nothing in this layer encrypts anything -- see
  * the notice in `keyschedule.ts`.
  */
 
@@ -73,7 +73,7 @@ export const RFC_8996: RfcRef = {
 // Protocol versions
 // ---------------------------------------------------------------------------
 
-/** The two versions this module models end to end. */
+/** The two versions this layer models end to end. */
 export type TlsVersion = 'TLS 1.2' | 'TLS 1.3';
 
 /**
@@ -368,7 +368,7 @@ export const TLS12_SUITES: readonly CipherSuite[] = [
   },
 ];
 
-/** Every suite this module knows, TLS 1.3 first. */
+/** Every suite this layer knows, TLS 1.3 first. */
 export const ALL_SUITES: readonly CipherSuite[] = [...TLS13_SUITES, ...TLS12_SUITES];
 
 /** The suite the TLS 1.3 scenarios negotiate unless told otherwise. */

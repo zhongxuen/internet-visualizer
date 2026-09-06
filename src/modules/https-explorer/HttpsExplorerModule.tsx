@@ -30,10 +30,13 @@ import {
   DEFAULT_TLS13_SUITE,
   getCipherSuite,
   type CipherSuite,
-} from './sim/cipher';
+} from '@/core/protocols/tls/cipher';
 import { runTlsScenario, type TlsRun } from './sim/connection';
-import { VERSION_COMPARISON, type Tls12Handshake } from './sim/handshake12';
-import type { HandshakeMessage, Tls13Handshake } from './sim/handshake13';
+import {
+  VERSION_COMPARISON,
+  type Tls12Handshake,
+} from '@/core/protocols/tls/handshake12';
+import type { HandshakeMessage, Tls13Handshake } from '@/core/protocols/tls/handshake13';
 
 /**
  * HTTPS Explorer: the handshake, the keys, and what the padlock actually checked.

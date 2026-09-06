@@ -10,11 +10,18 @@ Simulated only. No address here is ever contacted; see the address rules below.
 ## Layout
 
 ```
+@/core/protocols/tcp/tcp.ts    # the state machine and seq/ack arithmetic, promoted in
+                               # phase 11 so the Internet Simulator opens the same
+                               # connection this module takes apart
+@/core/protocols/ipv4/ipv4.ts  # header, TTL, real RFC 1071 checksum, fragmentation,
+                               # reassembly, and the two ICMP messages forwarding
+                               # generates -- promoted in phase 12 so Network
+                               # Diagnostics builds traceroute out of the same TTL
+                               # decrement this module animates
+@/core/protocols/udp/udp.ts    # eight bytes and no state, which is the lesson --
+                               # promoted in phase 12 to carry traceroute's probes
 sim/            # pure protocol logic -- no React, no DOM, no clock of its own
   ethernet.ts   # framing, and the MAC rewrite every hop performs
-  ipv4.ts       # header, TTL, real RFC 1071 checksum, fragmentation, reassembly
-  tcp.ts        # state machine and seq/ack arithmetic, send and deliver kept separate
-  udp.ts        # eight bytes and no state, which is the lesson
   nat.ts        # the NAPT translation table, in both directions
   journey.ts    # the engine: walks a packet across a path and emits SimEvents
 scenarios/      # typed scenario data -- what to send, over which network
@@ -104,7 +111,8 @@ neither test can hide the other.
 - Another module (`src/modules/<b>/**`). Shared code goes through `@/core` or
   `@/components` — this is enforced by `eslint.config.mjs`, and it is why the shared
   topologies live in `src/core/topologies`.
-- Anything from `sim/` may import `@/core` and nothing else. No React, no DOM, no
+- Anything from `sim/` may import `@/core` — including `@/core/protocols/tcp` — and
+  nothing else. No React, no DOM, no
   `Math.random()`, no `Date.now()`: randomness comes from `@/core/sim/rng` seeded by the
   scenario, and time is virtual milliseconds that the engine advances explicitly.
 

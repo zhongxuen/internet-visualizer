@@ -11,7 +11,7 @@ import type {
   HandshakeNote,
   MessageEncryption,
   MessageField,
-} from '../sim/handshake13';
+} from '@/core/protocols/tls/handshake13';
 
 import type { OverlayView } from './EncryptionOverlay';
 

@@ -618,10 +618,7 @@ function framePdu(record: FrameRecord): PDU {
   return {
     id: record.id,
     layers: [
-      ipLayer(
-        outbound ? CLIENT_NODE : SERVER_NODE,
-        outbound ? SERVER_NODE : CLIENT_NODE,
-      ),
+      ipLayer(outbound ? CLIENT_NODE : SERVER_NODE, outbound ? SERVER_NODE : CLIENT_NODE),
       tcpLayer(outbound),
       application,
     ],
@@ -847,7 +844,9 @@ function runHandshake(
     path: pathFrom('server'),
     at: replyAt,
     arriveNote:
-      outcome.kind === 'accepted' ? 'verifying Sec-WebSocket-Accept' : 'handshake refused',
+      outcome.kind === 'accepted'
+        ? 'verifying Sec-WebSocket-Accept'
+        : 'handshake refused',
   });
 
   const accepted = outcome.kind === 'accepted';
@@ -1138,7 +1137,9 @@ function messageFrames(
   }
 
   const options = masked ? { maskingKey: nextMaskingKey(build) } : {};
-  return [isText ? textFrame(stepDef.text ?? '', options) : binaryFrame(payload, options)];
+  return [
+    isText ? textFrame(stepDef.text ?? '', options) : binaryFrame(payload, options),
+  ];
 }
 
 function fragmentReason(index: number, total: number): string {
@@ -1632,7 +1633,10 @@ function runComparisonPlan(
     });
   });
 
-  return { detail: { kind: 'comparison', comparison }, endsAt: comparison.options.durationMs };
+  return {
+    detail: { kind: 'comparison', comparison },
+    endsAt: comparison.options.durationMs,
+  };
 }
 
 // ---------------------------------------------------------------------------

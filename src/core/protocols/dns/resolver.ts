@@ -42,7 +42,7 @@
  *
  * Every number comes from the fixtures or from a seeded {@link createRng}: transaction
  * ids, which root server is tried first, the jitter on each round trip. There is no
- * `Math.random()` and no `Date.now()` anywhere in this module, so the same question with
+ * `Math.random()` and no `Date.now()` anywhere in this layer, so the same question with
  * the same seed produces a deep-equal result -- which `resolver.test.ts` asserts.
  */
 
@@ -297,7 +297,7 @@ const RECURSIVE: DnsEndpoint = {
   label: 'recursive resolver',
   name: 'resolver.example.net',
   // A documentation address (RFC 5737) standing in for a public resolver. Nothing in
-  // this module ever sends a packet, and no real address appears here for that reason.
+  // this layer ever sends a packet, and no real address appears here for that reason.
   address: '192.0.2.53',
   tier: 'recursive',
 };

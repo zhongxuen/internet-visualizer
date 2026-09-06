@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getCipherSuite, LEGACY_RECORD_VERSION, type CipherSuite } from './cipher';
+import { getCipherSuite, LEGACY_RECORD_VERSION, type CipherSuite } from '../cipher';
 import {
   alert,
   byteLength,
@@ -23,7 +23,7 @@ import {
   totalPayloadBytes,
   totalWireBytes,
   type ObserverContext,
-} from './records';
+} from '../records';
 
 const SUITE = getCipherSuite('TLS_AES_128_GCM_SHA256') as CipherSuite;
 const CCM8 = getCipherSuite('TLS_AES_128_CCM_8_SHA256') as CipherSuite;

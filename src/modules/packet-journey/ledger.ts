@@ -42,9 +42,9 @@ import type { Topology } from '@/core/types/topology';
 /**
  * One header field, by layer and by the name the RFC gives it.
  *
- * The names are the ones `sim/ethernet.ts`, `sim/ipv4.ts`, `sim/tcp.ts`, and `sim/udp.ts`
- * write, and the tests below pin them: if a header is renamed there, a column here goes
- * blank rather than wrong, and the test says so.
+ * The names are the ones `sim/ethernet.ts` and the promoted
+ * `@/core/protocols/{ipv4,udp,tcp}` write, and the tests below pin them: if a header is
+ * renamed there, a column here goes blank rather than wrong, and the test says so.
  */
 function field(pdu: PDU, layer: LayerKey, name: string): string | undefined {
   const found = pdu.layers.find((entry) => entry.layer === layer);

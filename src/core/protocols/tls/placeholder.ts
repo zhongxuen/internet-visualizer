@@ -1,16 +1,16 @@
 /**
- * Placeholder values -- the one file in this module allowed to look like cryptography.
+ * Placeholder values -- the one file in the TLS layer allowed to look like cryptography.
  *
- * # THERE IS NO CRYPTOGRAPHY IN THIS MODULE
+ * # THERE IS NO CRYPTOGRAPHY IN THIS LAYER
  *
- * Every "key", "secret", "signature", "fingerprint" and "ciphertext" the HTTPS Explorer
+ * Every "key", "secret", "signature", "fingerprint" and "ciphertext" the TLS layer
  * shows comes from here, and every one of them is a deterministic FNV-1a hash of a label
  * string. They are:
  *
  * - **not secret** -- computed from public inputs anyone can read in this file,
  * - **not random** -- the same label always gives the same value,
  * - **not one-way** -- FNV-1a is a hash table function, not a cryptographic hash,
- * - **not a key** -- nothing in this module encrypts, signs, or verifies anything.
+ * - **not a key** -- nothing in this layer encrypts, signs, or verifies anything.
  *
  * That is the point. A convincing-looking fake implementation is worse than an honest
  * diagram, because a learner cannot tell the difference and might reach for it. So the
@@ -24,14 +24,14 @@
  * Real TLS values are random, and a real handshake never repeats. A teaching simulation
  * has the opposite requirement: the same scenario must produce the same screen every
  * time, so a learner can step back and forth, and so a test can assert on it. Every value
- * here is a pure function of its label, and no scenario in this module ever calls
+ * here is a pure function of its label, and no scenario in this layer ever calls
  * `Math.random()` or `Date.now()`.
  *
  * ## What is modelled faithfully
  *
  * The *structure*: which input goes into which derivation, what depends on what, who can
  * compute what and when, and the sizes involved. That structure is checkable against RFC
- * 8446 and it is what the module teaches. The mathematics is absent on purpose.
+ * 8446 and it is what this layer teaches. The mathematics is absent on purpose.
  */
 
 /** Prefix stamped on every rendered value so it can never be mistaken for a real one. */

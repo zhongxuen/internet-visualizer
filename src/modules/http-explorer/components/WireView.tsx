@@ -13,8 +13,8 @@ import {
   type HttpMessage,
   type HttpVersion,
   type WireSegment,
-} from '../sim/message';
-import { compressedHeaderBytes, VERSION_PROFILES } from '../sim/versions';
+} from '@/core/protocols/http/message';
+import { compressedHeaderBytes, VERSION_PROFILES } from '@/core/protocols/http/versions';
 import type { WireMessage } from '../wire';
 
 /**

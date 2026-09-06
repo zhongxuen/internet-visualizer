@@ -148,7 +148,7 @@ export function formatDistinguishedName(name: DistinguishedName): string {
 }
 
 /**
- * The kinds of `subjectAltName` this module models.
+ * The kinds of `subjectAltName` this layer models.
  *
  * `dns` and `ip` are the two that matter for server identity. RFC 9525 keeps them
  * strictly apart: an IP literal is matched only against an `iPAddress` entry (s 6.4), and
@@ -177,11 +177,11 @@ export function ipAddress(value: string): SubjectAltName {
 // Extensions
 // ---------------------------------------------------------------------------
 
-/** The `keyUsage` bits this module models (RFC 5280 s 4.2.1.3). */
+/** The `keyUsage` bits this layer models (RFC 5280 s 4.2.1.3). */
 export type KeyUsage =
   'digitalSignature' | 'keyEncipherment' | 'keyAgreement' | 'keyCertSign' | 'cRLSign';
 
-/** The `extKeyUsage` purposes this module models (RFC 5280 s 4.2.1.12). */
+/** The `extKeyUsage` purposes this layer models (RFC 5280 s 4.2.1.12). */
 export type ExtendedKeyUsage =
   'serverAuth' | 'clientAuth' | 'codeSigning' | 'emailProtection';
 
@@ -269,11 +269,11 @@ export interface OcspResponse {
 /**
  * One certificate.
  *
- * Times are **epoch milliseconds**, not the module's virtual clock: a certificate's
+ * Times are **epoch milliseconds**, not the simulation clock: a certificate's
  * validity window is an absolute wall-clock fact about the real world, and comparing it
  * to a virtual millisecond offset would be meaningless. {@link ValidationOptions.now} is
  * the one place a wall-clock instant enters the validation, and it is always passed in --
- * `Date.now()` appears nowhere in this module, so every scenario is reproducible.
+ * `Date.now()` appears nowhere in this layer, so every scenario is reproducible.
  */
 export interface Certificate {
   /** Stable id, used to link a chain together and as a React key. */
@@ -303,7 +303,7 @@ export interface Certificate {
    * whose `issuer` equals its `subject`.
    *
    * A real client matches issuer DN plus authority key identifier and then verifies a
-   * signature. This module models the *result* of that as an explicit link, which is what
+   * signature. This layer models the *result* of that as an explicit link, which is what
    * lets a scenario break the chain by pointing at a CA the client does not have.
    */
   readonly issuedBy?: string;
@@ -311,7 +311,7 @@ export interface Certificate {
    * Set by a scenario to model a certificate whose bytes were altered after signing.
    *
    * This is the one hook for "the signature does not verify" that does not require real
-   * cryptography. Nothing else in the module sets it.
+   * cryptography. Nothing else in the TLS layer sets it.
    */
   readonly tampered?: boolean;
   /** Revocation status as known to the client, if any is available. */
@@ -452,7 +452,7 @@ export function normalizeHost(host: string): string {
  * - `*.*.example.com` -- not legal. Only one wildcard.
  * - `foo.*.example.com` -- not legal. Only the leftmost label.
  *
- * A wildcard also may not be the entire name (`*`), and this module additionally refuses
+ * A wildcard also may not be the entire name (`*`), and this layer additionally refuses
  * a two-label wildcard such as `*.com`: matching a whole top-level domain is what RFC
  * 9525 s 7 warns about, and no CA will issue one.
  */
@@ -640,7 +640,7 @@ export interface ChainValidation {
  * A modelled signature check.
  *
  * Real path validation verifies `issuer.publicKey` against `subject.signature` over the
- * subject's encoded body. There is no cryptography in this module, so this asserts the
+ * subject's encoded body. There is no cryptography in this layer, so this asserts the
  * two modelled facts that stand in for it: the certificates are actually linked, and
  * nobody set {@link Certificate.tampered}.
  */

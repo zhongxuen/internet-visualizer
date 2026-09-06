@@ -12,7 +12,7 @@ import {
   type CacheEntryView,
   type CacheOutcome,
   type CacheTier,
-} from '../sim/caching';
+} from '@/core/protocols/http/caching';
 import type { HttpExchange } from '../sim/exchange';
 
 /**

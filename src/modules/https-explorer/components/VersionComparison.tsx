@@ -3,8 +3,11 @@
 import { Badge, Panel } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
-import type { Tls12Handshake, VersionComparisonRow } from '../sim/handshake12';
-import type { HandshakeMessage, Tls13Handshake } from '../sim/handshake13';
+import type {
+  Tls12Handshake,
+  VersionComparisonRow,
+} from '@/core/protocols/tls/handshake12';
+import type { HandshakeMessage, Tls13Handshake } from '@/core/protocols/tls/handshake13';
 
 /**
  * TLS 1.2 and TLS 1.3, on one scale.

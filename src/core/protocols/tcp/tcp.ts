@@ -22,7 +22,7 @@
  * ## What is not modelled
  *
  * Congestion control, selective acknowledgement, timestamps, and window scaling. The
- * window is a constant. This module is about what the numbers in the header mean, not
+ * window is a constant. This file is about what the numbers in the header mean, not
  * about how fast a real stack would go.
  */
 
@@ -179,7 +179,7 @@ export function splitForMss(bytes: number, mss: number = DEFAULT_MSS): number[] 
 // ---------------------------------------------------------------------------
 
 /**
- * The states of the TCP state machine this module walks through.
+ * The states of the TCP state machine this layer walks through.
  *
  * Shown as a label on each endpoint in the UI, because "the client is in `FIN_WAIT_2`"
  * explains a half-closed connection far better than any prose can.
@@ -634,7 +634,7 @@ function cap(role: TcpRole): string {
  * every byte of payload, and this simulation models payload *lengths* rather than
  * payload bytes -- so a value here would be a decoration, not a checksum. The IPv4
  * header checksum, which covers only fields that do exist here, is computed for real
- * (`ipv4.ts`).
+ * (`../ipv4/ipv4.ts`).
  */
 export function buildTcpLayer(segment: TcpSegment): ProtocolLayer {
   const fields = [

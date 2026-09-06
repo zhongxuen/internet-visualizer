@@ -14,7 +14,7 @@ import {
   zoneKeys,
   type DnsZone,
   type ResourceRecord,
-} from './records';
+} from '../records';
 import {
   buildChain,
   describeValidation,
@@ -24,7 +24,7 @@ import {
   verifyRrset,
   verifySignature,
   zoneChain,
-} from './dnssec';
+} from '../dnssec';
 
 const exampleOrg = findZone(SIMULATED_INTERNET, 'example.org') as DnsZone;
 

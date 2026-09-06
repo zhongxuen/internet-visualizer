@@ -43,7 +43,7 @@
  * Timestamps are virtual milliseconds on the simulation clock; ages, lifetimes, and
  * every delta-seconds directive are **seconds**, as on the wire. Absolute `Date` and
  * `Expires` fields are converted through {@link HttpClock} in `message.ts`, which is the
- * only place wall-clock time enters the module.
+ * only place wall-clock time enters the HTTP layer.
  */
 
 import {
@@ -265,7 +265,7 @@ export function cacheControlOf(headers: HeaderList): CacheControl {
  *
  * Exported as data rather than written into a component so the wording is testable and
  * so the caching panel, the header explainer, and the learning centre cannot drift apart
- * on the one explanation in this module that most needs to be identical everywhere.
+ * on the one explanation in this layer that most needs to be identical everywhere.
  */
 export const NO_CACHE_VS_NO_STORE: readonly {
   readonly directive: 'no-cache' | 'no-store';
@@ -1132,7 +1132,7 @@ export const NOT_MODIFIED_HEADERS: readonly string[] = [
  * **No body, ever** -- that is the entire saving, and it is why a conditional request is
  * worth a round trip. The status also forbids content structurally
  * (`forbidsContent` in `semantics.ts`), so a 304 with a body is not something this
- * module can produce.
+ * layer can produce.
  */
 export function notModifiedResponse(current: HttpResponse): HttpResponse {
   return response({

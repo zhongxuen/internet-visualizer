@@ -30,8 +30,8 @@ import { describe, expect, it } from 'vitest';
 import { classifyIp, ip } from '@/core/net/address';
 import type { SimEvent } from '@/core/types/events';
 
-import type { ValidationStepId } from '../sim/certificates';
-import { decomposeSuite } from '../sim/cipher';
+import type { ValidationStepId } from '@/core/protocols/tls/certificates';
+import { decomposeSuite } from '@/core/protocols/tls/cipher';
 import {
   CLIENT_NODE,
   OBSERVER_NODE,
@@ -43,7 +43,7 @@ import {
   type TlsRun,
   type TlsScenario,
 } from '../sim/connection';
-import { isProtected } from '../sim/records';
+import { isProtected } from '@/core/protocols/tls/records';
 
 import {
   CERTIFICATE_FAILURE_SCENARIOS,

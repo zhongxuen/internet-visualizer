@@ -4,13 +4,55 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Phases 01–09 and phase 10 part A are complete: the scaffolding, the design system and app
-shell, the simulation core, the visualization layer, and six modules — **Network Map**
+Phases 01–12 are complete: the scaffolding, the design system and app shell, the
+simulation core, the visualization layer, and nine finished modules — **Network Map**
 (phase 05), **Packet Journey** (phase 06), **DNS Explorer** (phase 07), **HTTP Explorer**
-(phase 08), **HTTPS Explorer** (phase 09), and **API Visualizer** (phase 10A), the only six
-entries in `src/modules/registry.ts` with `status: 'ready'`. Every other module is still
-`'planned'`. Phase 10 part B (WebSocket Viewer) is next; it reuses the phase-08 HTTP
-message model for the `Upgrade` handshake and must not modify the API Visualizer.
+(phase 08), **HTTPS Explorer** (phase 09), **API Visualizer** (phase 10A), **WebSocket
+Viewer** (phase 10B), **Internet Simulator** (phase 11), and **Network Diagnostics**
+(phase 12), the only nine entries in `src/modules/registry.ts` with `status: 'ready'`.
+The Learning Center (phase 13) is still `'planned'`.
+
+**Network Diagnostics is the only module with `usesRealNetwork: true`, and no other
+module may ever set it.** `tests/registry.test.ts` asserts that; tighten that test, never
+relax it. The flag means the module *can* reach a network, not that it is:
+
+- **Learn mode is the default** and mounts nothing that can make a request. Everything
+  under `src/modules/network-diagnostics/sim/` is a pure function of a bundled fixture.
+- **Live mode requires the acknowledgement gate** in `components/ModeSwitch.tsx`, is held
+  in component state, and is never persisted — a reload returns to Learn mode.
+- The `live` `SafetyBadge` is shown by the mode switch whenever Live mode is active, and
+  again on the live console itself. The chrome badge (from the registry) states
+  capability; those two state what is happening now.
+
+Three live operations exist and there is no fourth: a DoH lookup, an RDAP lookup, and one
+`HEAD` with timing — labelled *Reachability (TCP + HTTP timing)*, never "ping", because a
+serverless runtime cannot send ICMP. There is no live traceroute for the same reason, and
+the console says so where one would be.
+
+The pieces, in the order they were built:
+
+- prompt 12.1 — `src/core/net/{guard,ratelimit}.ts`, the SSRF guard and token bucket.
+- prompt 12.2 — Learn mode: simulated `ping`, `traceroute`, DNS lookup, and WHOIS/RDAP,
+  all four composed through `SimulationView`.
+- prompt 12.3 — the three `GET`-only Route Handlers under `src/app/api/diagnostics/`.
+  Read that folder's `README.md` before touching it: every live call goes through the
+  single `guardedFetch` chokepoint in `_lib/outbound.ts`, and the invariants listed there
+  are asserted in `src/app/api/diagnostics/__tests__/` (the `routes` vitest project).
+- prompt 12.4 — Live mode's UI: `ModeSwitch`, `TargetInput`, `LiveDisclosure`,
+  `RateLimitNotice`, and the `LiveConsole` that drives them. `live/client.ts` is the
+  module's only I/O — one same-origin `GET` per press of Run, never retried.
+
+`src/core/net/diagnostics.ts` is the contract both sides read: the URL builders, the
+resolver and bootstrap constants, the `REACH_NOT_ICMP` sentence, and every payload type.
+`LiveDisclosure` shows the exact URL a handler will request before it requests it, which
+is only honest because the panel and the handler call the same function — so do not
+rebuild a diagnostics URL anywhere else.
+
+Shared protocol logic lives in `src/core/protocols/{ipv4,udp,tcp,dns,tls,http}` — `dns`,
+`tcp`, `tls`, and `http` promoted in phase 11 for the Internet Simulator, and `ipv4` and
+`udp` in phase 12 so Network Diagnostics builds traceroute out of the same `forwardIpv4`
+TTL decrement Packet Journey animates. Nothing under `src/modules/*/sim/` may reimplement a
+protocol.
 
 The step-by-step build plan lives in `docs/implementation/` (start at `00-overview.md`),
 which is committed and is the source of truth for _how_ to build. The full project spec
@@ -37,6 +79,7 @@ Run a **single test file**, or a single test by name:
 npx vitest run tests/registry.test.ts
 npx vitest run tests/registry.test.ts -t "seeds all ten spec modules"
 npx vitest run --project core     # only the node-environment (src/core) tests
+npx vitest run --project routes   # only the diagnostics Route Handler tests
 ```
 
 `npm run typecheck` needs `npm run build` (or `npm run dev`) to have run at least once:

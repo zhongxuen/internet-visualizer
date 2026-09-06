@@ -694,7 +694,7 @@ export interface CookieSelection {
 /**
  * Which cookies go on this request, in the order the `Cookie` field lists them.
  *
- * Every rule in this module meets here. The exclusions are returned alongside the matches
+ * Every rule in this layer meets here. The exclusions are returned alongside the matches
  * rather than discarded, because "why was my cookie not sent?" is the question the jar
  * panel exists to answer, and the answer is always one of these lines.
  *

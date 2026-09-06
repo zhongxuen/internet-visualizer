@@ -3,8 +3,11 @@ import { describe, expect, it } from 'vitest';
 
 import { TLS12_FRESH, TLS13_FRESH } from '../scenarios';
 import { runTlsScenario } from '../sim/connection';
-import { VERSION_COMPARISON, type Tls12Handshake } from '../sim/handshake12';
-import type { Tls13Handshake } from '../sim/handshake13';
+import {
+  VERSION_COMPARISON,
+  type Tls12Handshake,
+} from '@/core/protocols/tls/handshake12';
+import type { Tls13Handshake } from '@/core/protocols/tls/handshake13';
 
 import { VersionComparison } from './VersionComparison';
 

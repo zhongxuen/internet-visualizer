@@ -22,8 +22,8 @@ import {
   HTTP_VERSIONS,
   type HttpMethod,
   type HttpVersion,
-} from '../sim/message';
-import { methodSemantics } from '../sim/semantics';
+} from '@/core/protocols/http/message';
+import { methodSemantics } from '@/core/protocols/http/semantics';
 
 /**
  * Describe a request, and watch it happen.

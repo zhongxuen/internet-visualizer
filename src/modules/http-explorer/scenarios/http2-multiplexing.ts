@@ -78,7 +78,7 @@
  */
 
 import type { HttpScenario } from '../sim/exchange';
-import type { ResourceRequest } from '../sim/versions';
+import type { ResourceRequest } from '@/core/protocols/http/versions';
 
 import { FIXTURE_ADDRESSES, HTTP_CLOCK } from './common';
 

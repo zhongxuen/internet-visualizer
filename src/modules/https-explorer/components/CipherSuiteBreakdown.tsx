@@ -11,7 +11,7 @@ import {
   namedComponentCount,
   type CipherSuite,
   type SuiteComponent,
-} from '../sim/cipher';
+} from '@/core/protocols/tls/cipher';
 
 /**
  * A suite name, taken apart.
