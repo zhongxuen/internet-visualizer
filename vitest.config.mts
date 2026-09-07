@@ -1,4 +1,6 @@
+import mdx from '@mdx-js/rollup';
 import react from '@vitejs/plugin-react';
+import remarkGfm from 'remark-gfm';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -35,7 +37,18 @@ export default defineConfig({
       },
       {
         resolve: { tsconfigPaths: true },
-        plugins: [react()],
+        /*
+         * `mdx()` before `react()`, and `enforce: 'pre'` so it claims `.mdx` before
+         * esbuild tries to parse one as TypeScript.
+         *
+         * Next compiles lessons through `@next/mdx`; this compiles the same files for
+         * the test run. Two compilers for one file type is a real duplication, and the
+         * alternative -- testing lessons as strings, or not at all -- is worse: the
+         * Learning Center's whole claim is that a lesson is executable, so a lesson
+         * has to be able to fail a test. `remark-gfm` is listed in both places for the
+         * same reason, and is the only plugin either side runs.
+         */
+        plugins: [{ enforce: 'pre', ...mdx({ remarkPlugins: [remarkGfm] }) }, react()],
         test: {
           name: 'ui',
           environment: 'jsdom',

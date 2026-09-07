@@ -1,0 +1,111 @@
+{/* Track 3, lesson 1. The reader met DNS in passing in track 1 (a UDP exchange) and */}
+{/* track 2 (a stage of a page load). This is where it becomes a system: a tree, cut */}
+{/* into zones, walked from the top by somebody else on your behalf. */}
+
+# How a name is resolved
+
+There is no list of every domain name anywhere. No machine has one, and no machine could
+keep one current. <Term>DNS</Term> answers a question nobody holds the answer to, by
+asking three servers that each hold one piece of it.
+
+Read a name right to left and you are reading a path down a tree:
+
+```text
+www.example.com.
+                ^ the root (the trailing dot, almost never typed)
+            ^^^ the top-level domain: who runs .com
+    ^^^^^^^ the domain: delegated by .com to its owner
+^^^ a name inside that owner's zone
+```
+
+Each dot is a place the tree may have been handed to somebody else. A
+
+<Term>zone</Term> is one such slice, and every boundary between two of them is where a
+referral happens.
+
+<EmbeddedSim module="dns-explorer" scenario="cold-cache" />
+
+## Recursive at the top, iterative below
+
+Your machine asks one question and waits. The <Term>resolver</Term> does the walking:
+it asks the root, which does not know the answer and says who does; it asks the
+`.com` servers, which do not know either and say who does; it asks the
+
+<Term>authoritative server</Term>, which finally answers.
+
+| Asked         | Knows the answer? | What comes back                  |
+| ------------- | ----------------- | -------------------------------- |
+| Root server   | No, and never     | A referral to the TLD servers    |
+| TLD server    | No                | A referral to the zone’s servers |
+| Authoritative | Yes               | The record, with a TTL           |
+
+A referral carries addresses as well as names — otherwise resolving `ns1.example.com`
+would require resolving `ns1.example.com`. Those extra records are called glue, and they
+are what stops the whole system from being circular.
+
+<Quiz
+  id="what-root-returns"
+  question="The root server is asked for www.example.com. What does it return?"
+  options={[
+    {
+      id: 'referral',
+      label: 'A referral: the names and addresses of the .com servers',
+      correct: true,
+      why: 'The root delegates every top-level domain and stores nothing below that. Thirteen root server addresses can serve the whole Internet precisely because they answer with pointers rather than data.',
+    },
+    {
+      id: 'address',
+      label: 'The address of www.example.com',
+      why: 'It has never heard of it. If the roots held real records they would need every name on the Internet, which is the exact problem delegation exists to avoid.',
+    },
+    {
+      id: 'error',
+      label: 'An error, since it is not authoritative for that name',
+      why: 'It is authoritative — for the root zone, whose contents are the delegations. Handing back the right delegation is a successful answer to the question it can actually answer.',
+    },
+  ]}
+/>
+
+## The transport underneath
+
+A lookup is normally one <Term>UDP</Term> datagram out and one back — no connection, no
+handshake, no teardown. That is the same exchange you watched in track 1, seen from the
+other side:
+
+<EmbeddedSim module="packet-journey" scenario="udp-dns-query" />
+
+<Quiz
+  id="predict-truncated"
+  kind="predict"
+  question="A DNS response is larger than will fit in a UDP datagram. What does the server do?"
+  revealLabel="What actually happens"
+  reveal="It sends what it can with the TC (truncated) bit set — which is not the answer, it is an instruction. The resolver throws the partial response away and asks the identical question again over TCP, where there is no size limit. So an oversized answer costs a handshake and a second full exchange, which is one reason DNSSEC and large record sets are more expensive than they look. EDNS(0) is the other half of the story: it lets a client advertise a larger UDP buffer so the truncation is avoided in the first place."
+  options={[
+    {
+      id: 'tc',
+      label: 'Sets a truncated flag, and the resolver asks again over TCP',
+      correct: true,
+      why: 'The flag is a signal, not a partial answer — the resolver discards what it received and retries. DNS has always been able to use TCP; UDP is simply the default because it is cheaper when it fits.',
+    },
+    {
+      id: 'split',
+      label: 'Splits the answer across several datagrams',
+      why: 'There is no sequencing or reassembly in DNS over UDP to make that work. IP fragmentation can happen at a lower layer, but it is unreliable across the Internet and is exactly what the truncation mechanism exists to avoid depending on.',
+    },
+    {
+      id: 'error',
+      label: 'Returns SERVFAIL',
+      why: 'SERVFAIL means the server could not produce an answer. Here it produced one perfectly well and just cannot fit it in this envelope, which is a transport problem with a transport-level fix.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'The namespace is a tree read right to left, cut into zones, and every zone boundary is a delegation to somebody else.',
+    'Your machine asks one recursive question; the resolver asks as many iterative ones as the walk requires.',
+    'The root never answers with data. It answers with a referral, which is why thirteen addresses can serve everyone.',
+    'Glue records carry the addresses of nameservers inside a referral, which is what keeps delegation from being circular.',
+    'A lookup is normally one UDP datagram each way; an oversized answer sets the truncated flag and is re-asked over TCP.',
+  ]}
+/>

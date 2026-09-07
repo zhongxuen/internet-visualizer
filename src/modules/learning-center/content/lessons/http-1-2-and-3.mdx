@@ -1,0 +1,108 @@
+{/* Track 4, lesson 6. Closes the track by separating semantics from framing, which is */}
+{/* the one idea that makes three version numbers stop being three protocols. Reuses */}
+{/* the h1/h2/h3 comparison run introduced in "why-pages-feel-slow", in more depth. */}
+
+# HTTP/1.1, HTTP/2, HTTP/3
+
+Everything in this track so far — methods, status codes, fields, caching, cookies — is
+identical across all three versions. That is not a coincidence; it is how the
+specifications are organised. RFC 9110 defines HTTP's semantics once, and RFC 9112, 9113
+and 9114 each define a different way to put those semantics on a wire.
+
+So the version number is a statement about <Term>frame</Term> format and multiplexing,
+and about nothing else.
+
+<EmbeddedSim module="http-explorer" scenario="http2-multiplexing" />
+
+## Two different queues, fixed one at a time
+
+HTTP/1.1 sends one request at a time per connection. Browsers work around that by opening
+about six connections per host, which turns twenty-four resources into four rounds of
+queueing. That is application-layer
+
+<Term id="head-of-line-blocking">head-of-line blocking</Term>, and HTTP/2 removes it
+completely: requests become numbered streams interleaved over one connection, all in
+flight at once.
+
+What HTTP/2 could not remove is the queue underneath. TCP delivers bytes in order and has
+no idea the multiplexing exists, so one lost segment stalls every stream sharing the
+connection — which is _worse_ than HTTP/1.1, where a loss stalls one of six.
+
+| Version  | Requests in flight | App-layer HOL | Transport HOL           |
+| -------- | ------------------ | ------------- | ----------------------- |
+| HTTP/1.1 | ~6, one per conn   | Yes           | Per connection          |
+| HTTP/2   | Many, one conn     | No            | Yes, across all streams |
+| HTTP/3   | Many, one conn     | No            | No                      |
+
+<Quiz
+  id="h2-worse"
+  question="In what situation is HTTP/2 measurably worse than HTTP/1.1?"
+  options={[
+    {
+      id: 'loss',
+      label:
+        'On a lossy link — one lost segment stalls every stream instead of one of six',
+      correct: true,
+      why: 'Multiplexing over a single ordered connection concentrates the risk. HTTP/1.1’s six connections are an accidental form of loss isolation, and HTTP/2 gave that up in exchange for removing the request queue.',
+    },
+    {
+      id: 'small',
+      label: 'On pages with very few resources',
+      why: 'There is little to gain there, but nothing to lose either — one request over one connection behaves much the same in both. Being no better is not the same as being worse.',
+    },
+    {
+      id: 'never',
+      label: 'Never — HTTP/2 is a strict improvement',
+      why: 'It is a large improvement on a clean link and a regression on a lossy one. That specific regression is why QUIC exists rather than a further revision of HTTP/2.',
+    },
+  ]}
+/>
+
+## Why HTTP/3 had to leave TCP
+
+The transport queue cannot be fixed inside HTTP, because the ordering guarantee belongs
+to TCP and TCP cannot be told about streams. So QUIC replaces it: a transport built on
+UDP that tracks loss per stream, so a gap in one stream delivers nothing but that stream.
+
+QUIC folds the TLS handshake into its own, which is the other saving — an HTTP/3
+connection is usable a full round trip before an HTTP/1.1 or HTTP/2 one over TLS.
+
+The compression story is the same idea twice. HPACK in HTTP/2 and QPACK in HTTP/3 keep a
+shared table of previously-seen header fields, so repeated fields are sent as a small
+index. The saving starts on the _second_ request, not the first.
+
+<Quiz
+  id="predict-h3-udp"
+  kind="predict"
+  question="HTTP/3 runs over UDP. Does that make it unreliable?"
+  revealLabel="What actually happens"
+  reveal="No — QUIC rebuilds everything TCP provided, and then some, on top of UDP. Sequence numbers, acknowledgements, retransmission, flow control and congestion control are all there; they are simply implemented in QUIC rather than in the operating system's TCP stack. UDP was chosen precisely because it adds almost nothing, which means QUIC can implement its own semantics without asking every router and middlebox on the Internet to be upgraded first. Building a genuinely new transport protocol was tried, and middleboxes dropped it."
+  options={[
+    {
+      id: 'rebuilt',
+      label: 'No — QUIC rebuilds reliability itself, on top of UDP',
+      correct: true,
+      why: 'UDP is used as a thin substrate, not as a set of guarantees. Doing it in userspace is what allowed per-stream loss recovery, which TCP could not have been changed to provide.',
+    },
+    {
+      id: 'yes',
+      label: 'Yes — UDP has no retransmission, so HTTP/3 can lose data',
+      why: 'UDP has no retransmission; QUIC has plenty. The layer that provides a guarantee moved, and the guarantee itself did not disappear.',
+    },
+    {
+      id: 'partly',
+      label: 'Partly — only critical streams are made reliable',
+      why: 'QUIC does define an unreliable datagram extension, but ordinary HTTP/3 traffic is fully reliable on every stream. The per-stream part is about independence, not about dropping the guarantee.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'HTTP’s semantics are defined once, in RFC 9110. A version number describes framing and multiplexing and nothing else.',
+    'HTTP/1.1 queues requests behind about six connections per host; HTTP/2 removes that queue entirely.',
+    'HTTP/2 inherits TCP’s in-order delivery, so a single loss stalls every stream — worse than HTTP/1.1 on a lossy link.',
+    'HTTP/3 escapes it by replacing TCP with QUIC, which tracks loss per stream and folds in the TLS handshake.',
+    'HPACK and QPACK compress headers against a shared table, so the saving begins on the second request rather than the first.',
+  ]}
+/>

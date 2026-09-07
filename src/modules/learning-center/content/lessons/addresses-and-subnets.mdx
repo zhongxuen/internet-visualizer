@@ -1,0 +1,114 @@
+{/* Track 1, lesson 2. Builds on what-is-a-network: the reader has met addresses and */}
+{/* routers, and now needs the one decision every host makes before it sends anything. */}
+{/* Both sims are Network Map topologies, because this lesson is about a network */}
+{/* standing still rather than a packet moving through one. */}
+
+# Addresses, subnets, and the default gateway
+
+Your laptop almost certainly has an address starting `192.168.1.` — and so does a laptop
+in every other house on your street. That is not a collision. It is the design.
+
+An <Term id="ip-address">IP address</Term> alone is not enough to send anything. A host
+also needs to know which addresses are its **neighbours**, reachable directly across the
+local link, and which are somewhere else entirely. That is what a
+
+<Term>subnet</Term> mask encodes, and it drives the only routing decision a host ever
+makes.
+
+<EmbeddedSim module="network-map" scenario="home-lan" />
+
+## The one decision a host makes
+
+Before sending, a host masks the destination address and compares it with its own
+network:
+
+```text
+my address        192.168.1.24     /24  ->  network 192.168.1.0
+destination A     192.168.1.31           ->  network 192.168.1.0   same: send direct
+destination B     93.184.216.34          ->  network 93.184.216.0  different: send to gateway
+```
+
+Same network, and the packet goes straight out of the link with the neighbour's hardware
+address on the front. Different network, and it goes to the
+
+<Term>default gateway</Term> — still addressed to the far-off destination at the IP layer,
+but handed to the router at the link layer. One test, two outcomes, and no host anywhere
+needs to know more than that.
+
+<Quiz
+  id="local-or-gateway"
+  question="A host at 10.0.4.9/22 wants to reach 10.0.7.200. Direct, or via the gateway?"
+  options={[
+    {
+      id: 'direct',
+      label: 'Direct — they are on the same network',
+      correct: true,
+      why: 'A /22 covers 10.0.4.0 through 10.0.7.255, so both addresses mask to 10.0.4.0. The third octet differing is a red herring: only the prefix length decides where the boundary falls.',
+    },
+    {
+      id: 'gateway',
+      label: 'Via the gateway — the third octet is different',
+      why: 'That would be true at /24, where the boundary sits exactly on the third octet. At /22 the boundary is two bits further left, and it swallows 10.0.4 through 10.0.7 into one network.',
+    },
+    {
+      id: 'depends',
+      label: 'It depends what the routing table says',
+      why: 'A router has a routing table. An ordinary host has essentially two entries — my subnet, and everything else — and the mask is what chooses between them before any table is consulted.',
+    },
+  ]}
+/>
+
+## Private addresses, and why they repeat
+
+Three ranges are set aside by RFC 1918 for use inside networks and nowhere else:
+`10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16`. No router on the public Internet
+will carry them, which is precisely what makes them safe to reuse in every building on
+Earth.
+
+That is also why a household of a dozen devices appears from outside as one address:
+the router rewrites the sender as packets leave, a mechanism called <Term>NAT</Term>.
+Nothing configures any of this by hand — a machine joining the network asks, and
+
+<Term>DHCP</Term> hands it an address, a mask, a gateway and a <Term>resolver</Term> in
+one exchange.
+
+Scale the same rules up and you get an office: one physical switch, several separate
+networks, and a firewall standing at the boundary between them.
+
+<EmbeddedSim module="network-map" scenario="small-office" />
+
+<Quiz
+  id="predict-two-tens"
+  kind="predict"
+  question="Two different companies both number their internal networks 10.0.0.0/8. What happens when one acquires the other and joins the networks?"
+  revealLabel="What actually happens"
+  reveal="Nothing works, and it is a famously expensive problem. Every host in both companies now has a plausible route to two different machines with the same address, and no protocol can disambiguate them because the addresses are genuinely identical. The fixes are all painful: renumber one side, or wrap one side in a second layer of NAT so it presents different addresses to the other. Choosing an unusual slice of RFC 1918 space up front costs nothing and avoids this entirely."
+  options={[
+    {
+      id: 'clash',
+      label: 'The address ranges collide and traffic goes to the wrong machines',
+      correct: true,
+      why: 'Private addresses are only unique within one network. The moment two such networks are joined, that assumption is broken and there is no tie-breaker anywhere in IP to fall back on.',
+    },
+    {
+      id: 'nat',
+      label: 'NAT sorts it out automatically',
+      why: 'NAT translates between a private network and the public Internet, where the outside addresses are unique. It has no way to resolve two identical private ranges facing each other unless somebody deliberately configures a second translation layer.',
+    },
+    {
+      id: 'fine',
+      label: 'Nothing — private ranges are designed to be reused',
+      why: 'They are designed to be reused by networks that never meet. Reuse is safe exactly as long as the two networks stay apart, and a merger is the event that ends that.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'An address on its own is not routable information. An address plus a prefix length is.',
+    'Every host makes exactly one decision: masked destination equals my network, or not. Same means direct, different means the default gateway.',
+    'The IP destination never changes across that decision — only the link-layer address on the front of the frame does.',
+    'RFC 1918 ranges are unique only inside one network, which is what lets every home reuse them and what breaks when two such networks are joined.',
+    'DHCP is what supplies the address, the mask, the gateway and the resolver, which is why an unfamiliar network needs no configuration.',
+  ]}
+/>

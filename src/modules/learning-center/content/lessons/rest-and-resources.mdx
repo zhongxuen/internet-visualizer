@@ -1,0 +1,118 @@
+{/* Track 6, lesson 1. Track 4 taught HTTP for browsers; this re-reads the same */}
+{/* protocol with a program as the client. GraphQL is in the same lesson as REST on */}
+{/* purpose: it is only comprehensible as a set of trades against what REST gives up. */}
+
+# REST, and what GraphQL changes
+
+An <Term>API</Term> is ordinary HTTP with the audience changed. Because the caller is
+code rather than a person, the parts that matter most are the ones a human would forgive:
+exact status codes, stable shapes, and errors that say what to do next.
+
+<Term>REST</Term>'s organising rule is that the URL names a thing and the method is the
+only verb.
+
+```http
+GET    /posts        list them
+POST   /posts        create one; the server names it
+GET    /posts/7      read that one
+PUT    /posts/7      replace it entirely
+PATCH  /posts/7      change part of it
+DELETE /posts/7      remove it
+```
+
+Putting the verb in the method rather than the path is what lets every cache and proxy
+between the client and the server reason about a request without understanding the
+application at all.
+
+<EmbeddedSim module="api-visualizer" scenario="rest-crud" />
+
+## Idempotency is about the state, not the status
+
+The run above sends POST and PUT twice each, because this is the property everything else
+depends on. Two identical POSTs create two resources; two identical PUTs leave one. That
+is why a client library may safely retry a PUT after a timeout and may not retry a POST.
+
+DELETE answering 404 the second time is _still_ <Term>idempotent</Term>. Idempotency is a
+claim about the state left behind, not about the response.
+
+| Status | Says                              | Carries                          |
+| ------ | --------------------------------- | -------------------------------- |
+| 201    | A resource now exists             | `Location`, naming it            |
+| 202    | Accepted, not done                | `Location`, pointing at progress |
+| 204    | Done, and there is nothing to say | No body at all — not even `{}`   |
+| 405    | Wrong method for a real resource  | `Allow`, listing what works      |
+| 422    | The JSON parsed and made no sense | An explanation                   |
+
+<Quiz
+  id="retry-safe"
+  question="A client sends POST /orders and the connection times out with no response. May it safely retry?"
+  options={[
+    {
+      id: 'no',
+      label: 'No — POST is not idempotent, so the order may already exist',
+      correct: true,
+      why: 'A timeout means the answer was lost, not that the request was. Retrying a POST risks a second order, which is why idempotency keys exist for exactly this case.',
+    },
+    {
+      id: 'yes',
+      label: 'Yes — nothing was received, so nothing happened',
+      why: 'Nothing was received by the *client*. The server may have processed the request completely and had its response lost on the way back, and the two are indistinguishable from here.',
+    },
+    {
+      id: 'depends-status',
+      label: 'Only if it first checks the status code',
+      why: 'There is no status code to check. That is the entire problem: the client has silence, and silence is compatible with both outcomes.',
+    },
+  ]}
+/>
+
+## What GraphQL trades away
+
+<Term>GraphQL</Term> takes the opposite position: one endpoint, one POST, and the client
+describes the shape of the response it wants. A screen needing a user, their posts, and
+each post's comment count is one request instead of several, and returns no field the
+client did not ask for.
+
+<EmbeddedSim module="api-visualizer" scenario="rest-vs-graphql" />
+
+What is given up is everything that came from having a method and a URL. HTTP caching
+does not apply to a POST to one endpoint. Per-resource authorisation has to be
+reimplemented inside the resolver layer. And the cost of a request is no longer obvious
+before it runs, because the client wrote the query.
+
+<Quiz
+  id="predict-graphql-cache"
+  kind="predict"
+  question="A GraphQL API is behind a CDN. How much of it can the CDN cache?"
+  revealLabel="What actually happens"
+  reveal="Essentially none of it, without special support. Every query is a POST to /graphql, and POST is not cacheable — and even if it were, the cache key is the URL, which is identical for every possible query. So a shared cache cannot distinguish 'give me a username' from 'give me every post on the site'. The workarounds are real but are all reconstructions of what REST got for free: persisted queries turn a query into a GET with a hash in the URL, and everything else moves caching into the application. This is the clearest single trade in the REST-versus-GraphQL comparison."
+  options={[
+    {
+      id: 'none',
+      label:
+        'Essentially none — every query is a POST to one URL, so there is nothing to key on',
+      correct: true,
+      why: 'HTTP caching keys on method and URL, and GraphQL deliberately makes both constant. Persisted queries exist precisely to put the distinguishing information back into the URL.',
+    },
+    {
+      id: 'all',
+      label: 'All of it — the response body is still cacheable content',
+      why: 'Cacheability is a property of the request, not of how useful the body looks. A POST is not cacheable, and one URL cannot key many different answers.',
+    },
+    {
+      id: 'reads',
+      label: 'The read queries, since they have no side effects',
+      why: 'They have no side effects, but nothing in the HTTP layer can tell that: read and write queries are identical POSTs to the same path. The cache would have to parse GraphQL to know the difference.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'A web API is ordinary HTTP with a program as the client, so exact status codes and stable shapes matter more than they do for a person.',
+    'REST puts the noun in the URL and the verb in the method, which lets intermediaries reason about requests without understanding the application.',
+    'Idempotency describes the state left behind, not the response — a second DELETE returning 404 is still idempotent.',
+    'A timed-out POST cannot be safely retried, because a lost response and a lost request look identical from the client.',
+    'GraphQL buys exact response shapes and one round trip, and gives up HTTP caching, per-resource authorisation, and predictable cost.',
+  ]}
+/>

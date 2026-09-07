@@ -1,0 +1,105 @@
+{/* Track 4, lesson 2. Short by design -- one sim, two quizzes. The redirect codes are */}
+{/* the substance; the 1xx-5xx grouping is the frame that makes them memorable. */}
+
+# Status codes and redirects
+
+Every HTTP response opens with three digits, and the first of them is the one that
+matters. A client that understands only the first digit still behaves correctly, which is
+exactly why the ranges are grouped the way they are.
+
+| Range | Means                        | What a client should do              |
+| ----- | ---------------------------- | ------------------------------------ |
+| 1xx   | Still going                  | Keep waiting                         |
+| 2xx   | It worked                    | Use the response                     |
+| 3xx   | It is somewhere else         | Go there instead                     |
+| 4xx   | Your request was the problem | Fix the request; retrying won’t help |
+| 5xx   | Our end was the problem      | Retry may well help                  |
+
+The 4xx/5xx split is a statement about blame, and it is the most useful distinction in
+the whole list: it tells a client whether retrying is sensible. That is why a request
+that parsed cleanly and then said something impossible gets 422 rather than 400, and why
+a method that is simply wrong for an existing resource gets 405 — with an `Allow` field
+naming what would have worked.
+
+<Quiz
+  id="four-or-five"
+  question="A client sends valid JSON that references a user id that does not exist. Which status?"
+  options={[
+    {
+      id: '4xx',
+      label:
+        '4xx — the request was the problem, and retrying it unchanged will fail again',
+      correct: true,
+      why: 'Nothing on the server is broken and nothing will change by waiting. Signalling 4xx tells the client to alter the request, which is the only thing that can help.',
+    },
+    {
+      id: '5xx',
+      label: '5xx — the server could not complete the operation',
+      why: 'A 5xx invites a retry, and a well-behaved client will retry on a backoff. Sending one here guarantees the same request arrives repeatedly and fails identically every time.',
+    },
+    {
+      id: '200',
+      label: '200 with an error object in the body',
+      why: 'This is common and it is a trap: every cache, proxy, retry policy and monitoring dashboard on the path reads the status code, and you have just told all of them the request succeeded.',
+    },
+  ]}
+/>
+
+## Redirects: four codes that disagree about POST
+
+A 3xx says the thing you want is elsewhere and `Location` says where. The cost is a
+whole extra <Term>round trip</Term> before anything useful is served, and a chain of them
+costs one per hop.
+
+<EmbeddedSim module="http-explorer" scenario="redirect-chain" />
+
+The codes differ on two axes — whether the move is permanent, and what happens to a POST:
+
+| Code | Permanent? | A POST becomes       |
+| ---- | ---------- | -------------------- |
+| 301  | Yes        | A GET (historically) |
+| 302  | No         | A GET (historically) |
+| 303  | No         | A GET, deliberately  |
+| 307  | No         | A POST, preserved    |
+| 308  | Yes        | A POST, preserved    |
+
+The "historically" is not a footnote. Early browsers rewrote POST to GET on 301 and 302
+in defiance of the specification, enough of the web came to depend on it that the
+behaviour was standardised, and 307 and 308 exist purely to provide the codes that mean
+what 302 and 301 were supposed to mean.
+
+<Quiz
+  id="predict-post-redirect-get"
+  kind="predict"
+  question="A form POST succeeds and the server answers 303 See Other. Why not just return the page?"
+  revealLabel="What actually happens"
+  reveal="Because of the reload. If the POST itself returned the confirmation page, then the browser's address bar still points at the POST, and pressing refresh — or navigating back to it — re-submits the form. Answering 303 sends the browser to a fresh GET, so the page the user ends up on is safely reloadable and safely bookmarkable. This is the POST/Redirect/GET pattern, it costs one extra round trip, and it is why 303 exists as a distinct code rather than being folded into 302."
+  options={[
+    {
+      id: 'prg',
+      label: 'So a refresh reloads a GET instead of re-submitting the form',
+      correct: true,
+      why: 'It converts a non-idempotent request into an idempotent landing page. The extra round trip buys a URL that is safe to reload, bookmark and share.',
+    },
+    {
+      id: 'caching',
+      label: 'So the confirmation page can be cached',
+      why: 'A confirmation page is usually personalised and not worth caching. The problem being solved is duplicate submission, not delivery cost.',
+    },
+    {
+      id: 'seo',
+      label: 'Because search engines cannot index POST responses',
+      why: 'True but irrelevant — a form confirmation is not something you want indexed. The motivation is the browser’s reload behaviour on the user’s own screen.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'The first digit carries the meaning; a client that reads only that still behaves correctly.',
+    'The 4xx/5xx split tells a client whether retrying can possibly help, which makes it the most operationally useful distinction in HTTP.',
+    'Returning 200 with an error in the body lies to every cache, proxy and retry policy on the path.',
+    'Each redirect is a full extra round trip, and chains multiply it.',
+    '301 and 302 turn a POST into a GET because browsers did it first; 307 and 308 exist to mean what those two were meant to mean.',
+  ]}
+/>

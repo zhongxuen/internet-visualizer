@@ -1,0 +1,118 @@
+{/* Track 1, lesson 4, and the last of the foundations. IP has been established as */}
+{/* unreliable; this is the lesson about the two answers to that. UDP first because it */}
+{/* is the smaller idea, then TCP shown through the failure it exists to handle. */}
+
+# TCP and UDP: two ways to use a network
+
+IP promises almost nothing. A packet may be lost, duplicated, delayed, or delivered out
+of order, and nothing will tell you which happened. Everything dependable on the
+Internet is built on top of that, not into it.
+
+There are two common answers. <Term>UDP</Term> adds <Term id="port">ports</Term> and a
+checksum to IP and stops there — eight bytes of header, no connection, no promises.
+
+<Term>TCP</Term> adds a great deal more, and charges a <Term>handshake</Term> for it.
+
+<EmbeddedSim module="packet-journey" scenario="udp-dns-query" />
+
+## What UDP is good for
+
+That run is a DNS lookup: one datagram out, one back, done. No connection was
+established because there was nothing to establish — a single question and a single
+answer need no ordering, and if the answer never arrives the application simply asks
+again.
+
+That is the pattern UDP fits: query/response exchanges, real-time media where a late
+frame is worse than a missing one, and anything that would rather implement its own
+recovery than accept TCP's. What UDP never does is hide a problem from you.
+
+```text
+The entire UDP header:
+
++-----------------+-----------------+
+| source port     | dest port       |
++-----------------+-----------------+
+| length          | checksum        |
++-----------------+-----------------+
+```
+
+<Quiz
+  id="why-udp-for-dns"
+  question="Why is a DNS query sent over UDP rather than TCP by default?"
+  options={[
+    {
+      id: 'roundtrip',
+      label:
+        'A TCP handshake would cost a round trip before the question could even be asked',
+      correct: true,
+      why: 'The whole exchange is two small messages. Paying a three-way handshake first would more than double the time to an answer, to provide ordering guarantees that a single question does not need.',
+    },
+    {
+      id: 'reliable',
+      label: 'DNS answers are unimportant enough that loss does not matter',
+      why: 'Loss matters a great deal — no answer means no page. UDP is chosen because recovery is trivially cheap at the application layer, not because the answer is disposable: the resolver just asks again.',
+    },
+    {
+      id: 'never',
+      label: 'DNS cannot use TCP at all',
+      why: 'It can, and regularly does. When a response is too large for a datagram the server sets the truncated flag and the resolver retries the identical question over TCP — something you can watch happen in the DNS Explorer.',
+    },
+  ]}
+/>
+
+## What TCP rebuilds
+
+TCP numbers every byte it sends and expects an acknowledgement for it. That single
+mechanism gives ordering, deduplication and recovery — but recovery starts with a
+problem: nothing on the network reports a loss. No router sends an apology. The sender
+finds out because an acknowledgement it was expecting does not arrive before a timer
+expires.
+
+Watch the timer do the work:
+
+<EmbeddedSim module="packet-journey" scenario="lossy-link" />
+
+<Quiz
+  id="predict-retransmit"
+  kind="predict"
+  question="A segment is lost mid-transfer. The segments after it arrive fine. What does the receiver hand to the application while it waits?"
+  revealLabel="What actually happens"
+  reveal="Nothing. The later segments sit in the receive buffer — they arrived, they are intact, and the application is not allowed to see them — because TCP guarantees in-order delivery and there is now a hole. Only when the retransmission of the missing segment arrives does the whole run get released at once. This is head-of-line blocking at the transport layer, and it is the reason HTTP/3 abandoned TCP entirely."
+  options={[
+    {
+      id: 'nothing',
+      label: 'Nothing — the later data is held back until the gap is filled',
+      correct: true,
+      why: 'In-order delivery is the promise, so a gap stops delivery even though the bytes after it are safely in memory. The cost of the guarantee is paid exactly here.',
+    },
+    {
+      id: 'later',
+      label: 'The later segments, with a note that some data is missing',
+      why: 'That is what a UDP-based protocol could choose to do, and it is precisely the option TCP gives up. The socket API has no way to express “here is some data, with a hole in it”.',
+    },
+    {
+      id: 'error',
+      label: 'An error — the connection is reset',
+      why: 'A single loss is completely routine and TCP is built to absorb it. A reset comes from something structural instead, like a peer that has gone away or a port with nothing listening.',
+    },
+  ]}
+/>
+
+## One last thing that can go wrong: size
+
+Every link has a maximum packet size, its <Term>MTU</Term> — usually 1500 bytes, and
+less on anything tunnelled. Send something larger and it is fragmented into pieces, or
+dropped with an ICMP error telling the sender to try smaller. Neither outcome is
+reported to the application, and the second one is invisible if the error is filtered.
+
+<EmbeddedSim module="packet-journey" scenario="fragmented-packet" />
+
+<KeyTakeaways
+  items={[
+    'IP guarantees nothing. Both transports are answers to that, and neither changes the network underneath.',
+    'UDP is ports and a checksum: eight bytes, no connection, no recovery, and no hidden delay.',
+    'TCP numbers bytes and acknowledges them, which buys ordering and reliability at the price of a handshake and a wait.',
+    'Loss is silent. The sender discovers it when a timer expires, not because anything reported it.',
+    'In-order delivery means one lost segment stalls everything behind it — the transport-layer head-of-line blocking HTTP/3 exists to escape.',
+  ]}
+/>

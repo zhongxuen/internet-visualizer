@@ -1,0 +1,106 @@
+{/* Track 5, lesson 3. The performance lesson of the security track, and the one that */}
+{/* pays off "why-pages-feel-slow": every difference between 1.2 and 1.3 is a round */}
+{/* trip removed. 0-RTT is included because its trade-off is genuinely uncomfortable. */}
+
+# Handshakes, versions, and resumption
+
+A <Term>handshake</Term> costs at least one <Term>round trip</Term>, and by track 2 you
+know what a round trip costs. Almost every difference between TLS 1.2 and TLS 1.3 is an
+attempt to remove one.
+
+Here is the older version, for comparison:
+
+<EmbeddedSim module="https-explorer" scenario="tls12-fresh" />
+
+## Why 1.2 needed two round trips
+
+The client could not send a key share in its first message, because it did not yet know
+which group the server would choose. So: hello, wait for the server to name a group,
+send a share, wait again. Two round trips before any application data.
+
+TLS 1.3 makes the client **guess**. It sends a key share for the group it thinks the
+server will pick, along with its hello, and is right almost every time. When it is wrong
+the server asks it to retry — costing exactly the round trip 1.2 always paid.
+
+|                              | TLS 1.2             | TLS 1.3                 |
+| ---------------------------- | ------------------- | ----------------------- |
+| Round trips, cold            | 2                   | 1                       |
+| Certificate on the wire      | In the clear        | Encrypted               |
+| Encryption begins            | At ChangeCipherSpec | Right after ServerHello |
+| <Term>Forward secrecy</Term> | Optional            | Mandatory               |
+| Cipher suite names           | Four components     | Two                     |
+
+The plaintext certificate is more than an aesthetic problem: under TLS 1.2 anyone
+watching learned the identity of the site from the connection itself, with no need for
+SNI.
+
+<Quiz
+  id="why-13-faster"
+  question="What lets TLS 1.3 complete a fresh handshake in one round trip where 1.2 needed two?"
+  options={[
+    {
+      id: 'guess',
+      label:
+        'The client guesses the key exchange group and sends its share with the first message',
+      correct: true,
+      why: 'Removing the wait for the server to name a group removes the entire second trip. The list of viable groups is short, so the guess is right nearly always, and being wrong costs only what 1.2 always cost.',
+    },
+    {
+      id: 'faster-crypto',
+      label: 'The cryptographic operations are faster',
+      why: 'They are somewhat faster, but the handshake cost is dominated by waiting for the network rather than by computation. Removing a wait is worth far more than speeding up the maths.',
+    },
+    {
+      id: 'smaller',
+      label: 'The messages are smaller, so they fit in fewer packets',
+      why: 'The messages did shrink, and it does not matter much: a round trip costs the same whether it carries one packet or three. The saving is in the number of trips.',
+    },
+  ]}
+/>
+
+## Resumption, and the temptation of zero
+
+If the client has spoken to this server before, it holds a ticket. Presenting it replaces
+the whole identity exchange — no certificate, no signature, no verification — because
+holding the pre-shared key is itself the proof.
+
+And once there is a key before the handshake begins, the client can send its request
+immediately, in the very first flight. That is 0-RTT.
+
+<EmbeddedSim module="https-explorer" scenario="tls13-resumption" />
+
+<Quiz
+  id="predict-zero-rtt"
+  kind="predict"
+  question="0-RTT sends the request in the first flight, before the server has spoken. What can an attacker do with a recorded copy of it?"
+  revealLabel="What actually happens"
+  reveal="Replay it — send the identical bytes again, later, and have the server execute the request a second time. Early data is encrypted from the ticket and the ClientHello alone, with nothing fresh from the server mixed in, and that is exactly the property that lets it be sent immediately. No protocol change can fix it: the server has to add anti-replay itself, and until it does, only requests that are safe to execute more than once belong in early data. GET, never POST. Early data is also not forward secret; everything after the handshake completes is."
+  options={[
+    {
+      id: 'replay',
+      label: 'Replay it, causing the server to execute the request again',
+      correct: true,
+      why: 'Nothing from the server contributes to the early-data keys, so a recorded flight remains valid on its own. It is an unavoidable consequence of sending before the server has spoken, not a bug to be patched.',
+    },
+    {
+      id: 'decrypt',
+      label: 'Decrypt it, since no fresh key exchange has happened yet',
+      why: 'It is properly encrypted under keys derived from the ticket, which the attacker does not hold. Replay is possible; reading is not.',
+    },
+    {
+      id: 'nothing',
+      label: 'Nothing — the ClientHello includes a nonce that prevents reuse',
+      why: 'The server can record nonces and reject repeats, and good implementations do. But that is anti-replay machinery the operator has to add; the protocol itself does not provide it.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'A handshake costs round trips, and the version history of TLS is largely a record of removing them.',
+    'TLS 1.2 needed two because the client could not send a key share until the server named a group; 1.3 guesses and is nearly always right.',
+    'TLS 1.3 encrypts the certificate. Under 1.2 it crossed the wire in the clear, revealing the site to any observer.',
+    'Resumption replaces the certificate exchange with a ticket: holding the pre-shared key is itself the proof of identity.',
+    '0-RTT data is replayable by construction and is not forward secret, so only idempotent requests belong in it.',
+  ]}
+/>

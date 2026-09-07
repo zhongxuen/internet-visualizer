@@ -1,0 +1,115 @@
+{/* Track 4, lesson 3. "the-second-visit" showed caching as one of four savings; this */}
+{/* is the mechanism in detail. The freshness formula is the spine -- everything else */}
+{/* in RFC 9111 is a way of setting one of its two terms. */}
+
+# HTTP caching
+
+There is one rule underneath all of it. A stored response may be reused without asking
+anyone if, and only if:
+
+```text
+freshness lifetime  >  current age
+        ^                    ^
+   what the server said      how long since it was generated
+   (s-maxage, then max-age,  (the Age field, plus local time
+    then Expires)             since it arrived)
+```
+
+Everything else — every directive, every field — is a way of setting one of those two
+terms. Get that formula and the rest of RFC 9111 stops being a list of magic words.
+
+<EmbeddedSim module="http-explorer" scenario="conditional-request" />
+
+## Fresh, stale, and the 304
+
+A **fresh** entry is used with no network activity at all. Not a faster request — no
+request. Nothing is sent, nothing is waited for, and the server never learns the page was
+viewed.
+
+A **stale** entry is not useless. The client still holds the body; what it has lost is
+the right to assume it is current. So it asks a conditional question using a
+
+<Term>validator</Term> it was given earlier, and a `304 Not Modified` says "still good,
+keep what you have". The round trip is spent; the body is saved.
+
+| Directive    | Says                                         |
+| ------------ | -------------------------------------------- |
+| `max-age=N`  | Fresh for N seconds, in any cache            |
+| `s-maxage=N` | …but N for shared caches specifically        |
+| `no-cache`   | Store it, but always revalidate before use   |
+| `no-store`   | Do not write it down at all                  |
+| `private`    | Browsers may store it; shared caches may not |
+| `immutable`  | Do not even revalidate on a reload           |
+
+`no-cache` and `no-store` are the pair people reach for interchangeably and should not:
+the first still caches, it just always asks first.
+
+<Quiz
+  id="no-cache-vs-no-store"
+  question="A response is marked no-cache. A user views it twice. What happens the second time?"
+  options={[
+    {
+      id: 'revalidate',
+      label: 'The stored copy is revalidated, and probably answered 304 with no body',
+      correct: true,
+      why: 'no-cache means “do not use without asking”, not “do not keep”. The copy is stored and reused after a conditional request, so the round trip is paid and the body is usually not.',
+    },
+    {
+      id: 'refetch',
+      label: 'The full response is downloaded again from scratch',
+      why: 'That is no-store. Under no-cache the client still holds the body and can validate it, which is exactly the difference between the two directives.',
+    },
+    {
+      id: 'served',
+      label: 'It is served from cache without contacting the server',
+      why: 'That is what max-age buys. no-cache explicitly withholds it: the entry is never considered fresh, so it is never used without a check.',
+    },
+  ]}
+/>
+
+## Two validators, and who the cache is for
+
+An <Term>ETag</Term> is an opaque version marker — the strong validator, since only the
+server knows what it means. `Last-Modified` is a timestamp with one-second resolution,
+which is a real weakness for anything that changes more often than that.
+
+The other half of the design is _whose_ cache. A browser cache holds one user's
+responses; a shared cache — a CDN edge, a reverse proxy — holds everybody's. That is why
+`private` exists, and why marking a personalised page publicly cacheable is one of the
+more spectacular ways to leak data.
+
+<Quiz
+  id="predict-private-leak"
+  kind="predict"
+  question="A logged-in dashboard is served with Cache-Control: max-age=600 and no other directive. It sits behind a CDN. What happens?"
+  revealLabel="What actually happens"
+  reveal="The first user to load it fills the edge cache, and for the next ten minutes every other visitor to that URL is served that user's dashboard — name, balance, everything. The response never said it was personal, so the shared cache did exactly what it was told. The fix is a single token: `private` restricts storage to the user's own browser, and `no-store` refuses storage entirely for anything genuinely sensitive. This is one of the most common serious caching bugs, and it produces no error anywhere."
+  options={[
+    {
+      id: 'leak',
+      label: 'The CDN serves one user’s dashboard to everybody for ten minutes',
+      correct: true,
+      why: 'A shared cache keys on the URL, and nothing in the response told it the content varied by user. The directive that would have prevented it is `private`, and its absence is not an error anyone reports.',
+    },
+    {
+      id: 'safe',
+      label: 'Nothing — the session cookie makes each request unique',
+      why: 'The cache key is the URL and whatever `Vary` names. A cookie is not part of it unless the response explicitly says so, and even then varying on Cookie usually makes the entry useless rather than safe.',
+    },
+    {
+      id: 'bypass',
+      label: 'CDNs automatically bypass the cache for authenticated requests',
+      why: 'Some products do this by default as a safety net, and it is a configuration rather than a guarantee. The response is what carries the truth, and this one asserted the opposite.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'One rule underlies all of it: reuse without asking is allowed while freshness lifetime exceeds age.',
+    'A fresh hit is no request at all. A 304 is a real round trip that saves only the body — still usually worth it.',
+    'no-cache stores and always revalidates; no-store refuses to store. They are not interchangeable.',
+    'ETags are strong validators because only the server knows what they mean; Last-Modified has one-second resolution.',
+    'Shared caches hold everybody’s responses, so anything personalised needs `private` — its absence leaks silently and produces no error.',
+  ]}
+/>

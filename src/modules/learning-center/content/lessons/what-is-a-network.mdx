@@ -1,0 +1,124 @@
+{/* Authoring notes live one per line: Prettier mangles a multi-line MDX comment. */}
+{/* The first lesson, and the proof the phase 13.1 pipeline works end to end -- */}
+{/* prose, a glossary term, a code sample, both kinds of quiz, a GFM table and */}
+{/* the takeaways, with no import statement in this file. Capitalised tags come */}
+{/* from LESSON_COMPONENTS; everything lowercase is markdown, styled by */}
+{/* src/mdx-components.tsx. Phase 13.2 replaced the second code sample -- an ASCII */}
+{/* sketch of a path -- with the live Packet Journey run it was standing in for. */}
+{/* The first stays a code block on purpose: it is a wire format, and the phase doc */}
+{/* requires those be text rather than a picture of text. */}
+
+# What a network actually is
+
+A network is not a cable. It is an agreement.
+
+Two machines joined by a wire can pass voltage back and forth, and that is all. To
+send anything meaningful they need to have settled a set of questions in advance: where
+does a message start and stop, who is it for, and how does the receiver know it arrived
+intact. That settlement is a <Term>protocol</Term>, and every layer of the Internet is
+one.
+
+The smallest useful version has three parts. Two <Term id="host">hosts</Term>, a link
+between them, and a message with an <Term id="ip-address">address</Term> on the front:
+
+```text
++-----------------------------------------------+
+| to: 192.0.2.30   from: 192.0.2.11   len: 1400 |  <- header
++-----------------------------------------------+
+| GET /index.html HTTP/1.1 ...                  |  <- payload
++-----------------------------------------------+
+```
+
+The top half is the <Term>header</Term>: fixed fields, in a fixed order, for machines.
+The bottom half is the <Term>payload</Term> — the thing you actually wanted to send,
+which the network carries without reading.
+
+<Quiz
+  id="header-vs-payload"
+  question="A router on the path needs to decide which link to send this out of. Which part does it read?"
+  options={[
+    {
+      id: 'header',
+      label: 'The header only',
+      correct: true,
+      why: 'A forwarding decision needs the destination address and nothing else. Routers read the front of the packet and pass the rest along untouched, which is why they stay fast and why the payload can be anything at all.',
+    },
+    {
+      id: 'both',
+      label: 'Both, so it can prioritise important traffic',
+      why: 'Some networks do inspect payloads, but that is a policy decision layered on top, not how forwarding works. The base design deliberately keeps routers ignorant of what they carry.',
+    },
+    {
+      id: 'payload',
+      label: 'The payload, to find the hostname',
+      why: 'The hostname was resolved to an address before the packet was sent — that is what DNS is for. By the time a packet is on the wire, the name is gone and only the number matters.',
+    },
+  ]}
+/>
+
+## Why packets, and not files
+
+A link is shared. If one machine could hold it for the length of a whole file, everyone
+else would wait for the length of a whole file.
+
+So data is cut into <Term id="packet">packets</Term>: bounded chunks, each with its own
+header, each routed independently. Many conversations then interleave on one wire, a
+chunk lost to interference is resent on its own rather than restarting the transfer, and
+no single sender can monopolise the link. The cost is that packets can arrive out of
+order, twice, or not at all — which is precisely the mess TCP exists to clean up.
+
+Each step across a link is a <Term>hop</Term>, and each hop is a fresh decision by a
+fresh <Term>router</Term> that has no memory of the ones before it. Press play and
+follow one packet across all six:
+
+<EmbeddedSim module="packet-journey" scenario="tcp-web-request" />
+
+<Quiz
+  id="predict-ttl"
+  kind="predict"
+  question="Nothing in that packet says how long the path is, and no router knows the whole route. If a routing mistake sends a packet in a circle, what stops it circulating forever?"
+  revealLabel="What actually happens"
+  reveal="Every IPv4 header carries a Time To Live: a small integer, usually starting at 64. Each router decrements it by one before forwarding, and any router that decrements it to zero drops the packet and sends an error back to the sender. Nothing detects the loop -- the packet simply runs out of budget. Packet Journey animates the field going down, hop by hop."
+  options={[
+    {
+      id: 'ttl',
+      label: 'A counter in the header that every router decrements',
+      correct: true,
+      why: 'This is the Time To Live field. It is a budget, not a clock, and it works without any router knowing there is a loop at all -- which is the only kind of fix that scales.',
+    },
+    {
+      id: 'detection',
+      label: 'A router notices it has seen the packet before',
+      why: 'That would mean remembering every packet it has forwarded. A busy router handles millions per second, so the memory alone makes this impossible -- and routers are deliberately stateless about individual packets.',
+    },
+    {
+      id: 'sender',
+      label: 'The sender times out and withdraws it',
+      why: 'The sender can give up on getting an answer, but it has no way to reach out and remove a packet already in flight. Once sent, a packet is out of its hands entirely.',
+    },
+  ]}
+/>
+
+## Latency is not bandwidth
+
+The last idea to fix before anything else makes sense: two different things are called
+"speed", and confusing them is behind most wrong guesses about why a page is slow.
+
+|                        | What it measures                              | Fixed by                    |
+| ---------------------- | --------------------------------------------- | --------------------------- |
+| <Term>latency</Term>   | How long one message takes to arrive          | Being closer. Nothing else. |
+| <Term>bandwidth</Term> | How much data flows per second once it starts | A fatter link               |
+
+A page load is not one big transfer; it is dozens of small round trips, each waiting on
+the one before it. That is why a fast connection on the other side of an ocean still
+feels slow, and why the fastest request is always the one that is never made.
+
+<KeyTakeaways
+  items={[
+    'A network is an agreement about message format and ordering — a protocol — not the wire underneath it.',
+    'Every packet is a header for the machines in between and a payload for the machine at the end. Routers read only the first.',
+    'Data is split into packets so one link can carry many conversations, and so a loss costs one chunk rather than one file.',
+    'A router decides one hop at a time with no memory and no view of the whole path. The TTL counter is what makes that safe.',
+    'Latency is a delay and bandwidth is a rate. Distance sets a floor on the first that money cannot buy through.',
+  ]}
+/>

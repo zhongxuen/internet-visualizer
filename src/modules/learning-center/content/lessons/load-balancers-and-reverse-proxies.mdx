@@ -1,0 +1,105 @@
+{/* Track 7, lesson 2. The datacenter topology is the only place in the product where */}
+{/* the whole server side is visible at once, so this lesson is mostly about reading */}
+{/* it: what each tier is, and why the data tier is the one that does not scale. */}
+
+# Load balancers and reverse proxies
+
+One hostname is not one machine. Behind `www.example.com` there is a tier of caches, a
+tier of balancers, a tier of proxies, several application servers, and — almost always —
+one database that cannot simply be cloned.
+
+<EmbeddedSim module="network-map" scenario="datacenter" />
+
+## Balancing, at two different layers
+
+A <Term>load balancer</Term> spreads incoming connections across a pool and stops sending
+traffic to the sick ones. It can work at either of two layers, and the difference decides
+what it is capable of:
+
+|                             | Layer 4          | Layer 7                        |
+| --------------------------- | ---------------- | ------------------------------ |
+| Sees                        | TCP connections  | HTTP requests                  |
+| Can route on                | Address and port | Path, host, headers, cookies   |
+| Terminates <Term>TLS</Term> | No               | Yes                            |
+| Cost per connection         | Very low         | Higher, and it can do far more |
+
+Health checks are the half people forget, and they are what turns a crashed server into a
+non-event: the balancer keeps asking each backend whether it is well, and quietly removes
+the ones that stop answering.
+
+<Quiz
+  id="l4-vs-l7"
+  question="You want /api/* to go to one pool and everything else to another. Which balancer?"
+  options={[
+    {
+      id: 'l7',
+      label: 'Layer 7 — routing on a path means reading the HTTP request',
+      correct: true,
+      why: 'A path exists only inside the HTTP request, which is inside the TLS session, which is inside the TCP connection. Reading it means terminating both, which is exactly what a layer-7 balancer does.',
+    },
+    {
+      id: 'l4',
+      label: 'Layer 4 — it is faster and can inspect the connection',
+      why: 'It is faster precisely because it does not inspect anything above the transport. It sees an encrypted byte stream to a port, and no path is visible in it.',
+    },
+    {
+      id: 'dns',
+      label: 'Neither — split it in DNS instead',
+      why: 'DNS resolves a name, and both paths share one name here. You would have to move the API to its own hostname, which is a valid design and a much larger change than a routing rule.',
+    },
+  ]}
+/>
+
+## Reverse proxy: the same box, wearing a different hat
+
+A <Term>reverse proxy</Term> accepts requests on behalf of the real application and
+forwards them on. The client believes it is talking to the site; the application never
+sees the raw Internet.
+
+That position is so convenient that one process usually ends up doing all of it:
+terminating TLS, caching, compressing, rate limiting, rewriting paths, and adding the
+`Forwarded` header that tells the application who the real client was — because from the
+application's point of view, every request now comes from the proxy.
+
+<Quiz
+  id="predict-scale-db"
+  kind="predict"
+  question="Traffic doubles. You double the application servers and it barely helps. Why?"
+  revealLabel="What actually happens"
+  reveal="Because the application tier was not the bottleneck — the database was, and it is the one tier that does not scale by adding copies. Application servers are stateless and interchangeable, so adding one genuinely adds capacity. A database holds state, and two copies of state have to be kept in agreement, which is a fundamentally harder problem than running two identical processes. The tools are different in kind — read replicas, caching in front, sharding, connection pooling — and each of them trades away something: freshness, simplicity, or the ability to query across the whole dataset."
+  options={[
+    {
+      id: 'data-tier',
+      label: 'The bottleneck is the data tier, and it does not scale by adding copies',
+      correct: true,
+      why: 'Stateless tiers scale horizontally because the copies never have to agree about anything. A database holds state, so every additional copy is a consistency problem rather than free capacity.',
+    },
+    {
+      id: 'lb',
+      label: 'The load balancer cannot handle the extra backends',
+      why: 'Balancers handle far larger pools than this routinely. It is worth checking, but it is not the structural reason doubling the app tier stops helping.',
+    },
+    {
+      id: 'network',
+      label: 'The datacenter network is saturated',
+      why: 'Possible, and easy to rule out by looking at interface counters. The reason this pattern is so common, though, is the one tier that cannot be cloned.',
+    },
+  ]}
+/>
+
+## Where TLS ends, and how many times
+
+Something worth tracing in the diagram: TLS is often terminated at the edge, re-encrypted
+to the load balancer, and terminated again at the proxy. Each hop is a place the traffic
+exists in plaintext, inside somebody's trust boundary — which is fine when that boundary
+is yours, and is exactly the question to ask when it is not.
+
+<KeyTakeaways
+  items={[
+    'One hostname is a stack of tiers: edge cache, balancer, reverse proxy, application servers, and a data tier.',
+    'A layer-4 balancer forwards connections; a layer-7 balancer reads the HTTP request and can route on its contents.',
+    'Health checks are what make a crashed backend a non-event, and they are the part most often left unconfigured.',
+    'A reverse proxy is the natural place for TLS, caching, compression and rate limiting — which is why one process usually does all five.',
+    'Stateless tiers scale by adding copies. The data tier does not, which is why doubling application servers so often changes nothing.',
+  ]}
+/>

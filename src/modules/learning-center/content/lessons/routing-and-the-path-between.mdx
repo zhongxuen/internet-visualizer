@@ -1,0 +1,105 @@
+{/* Track 1, lesson 3. The reader can now say whether a destination is local. This */}
+{/* lesson is about everything that is not: the sequence of independent decisions that */}
+{/* adds up to a path nobody chose. ISP path for the shape of the Internet, then */}
+{/* Packet Journey for what one packet experiences crossing it. */}
+
+# Routing: how a packet finds its way
+
+There is no map of the Internet, and no machine anywhere holds the route your packet
+will take. Each <Term>router</Term> knows only which of its links leads _closer_ to a
+given block of addresses, and forwards accordingly. The path is what emerges.
+
+That has a strange consequence worth sitting with: the packet does not know where it is,
+the sender does not know the route, and the route may differ from the one the reply
+takes. Every <Term>hop</Term> is a fresh decision by a machine with no memory of the one
+before it.
+
+<EmbeddedSim module="network-map" scenario="isp-path" />
+
+## The Internet is a graph of networks, not routers
+
+Zoom out and the units stop being machines. The Internet is roughly a hundred thousand
+
+<Term id="autonomous-system">autonomous systems</Term> — an ISP, a university, a large
+company — each running whatever it likes internally and announcing to its neighbours which
+addresses it can reach. That announcement protocol is <Term>BGP</Term>.
+
+Two networks that exchange traffic directly are <Term>peering</Term>; a network that
+pays somebody to reach everywhere else is buying transit. Those commercial choices, not
+geography, decide the shape of the graph — which is why a CDN edge can be one hop away
+and a server on the next continent fifteen.
+
+| Traffic goes via   | Because                      | What you can measure     |
+| ------------------ | ---------------------------- | ------------------------ |
+| A peer             | Free, direct, usually short  | Low latency, few AS hops |
+| A transit provider | Paid, but reaches everything | Longer paths, more hops  |
+
+<Quiz
+  id="who-knows-the-route"
+  question="Who decides the full route your packet takes from Singapore to Frankfurt?"
+  options={[
+    {
+      id: 'nobody',
+      label: 'Nobody — it is the sum of independent per-hop decisions',
+      correct: true,
+      why: 'Each router applies its own table to the destination address and picks one outgoing link. The path is an emergent property of a few dozen such choices, and no participant ever computed it.',
+    },
+    {
+      id: 'sender',
+      label: 'The sending host, when it looks up the destination',
+      why: 'The host makes exactly one decision — local, or the default gateway. After that it has no influence at all, and nothing in an ordinary IP packet records a route to follow.',
+    },
+    {
+      id: 'bgp',
+      label: 'BGP computes the whole path in advance',
+      why: 'BGP distributes reachability between networks, which shapes each router’s table. But it produces per-router preferences, not an end-to-end route, and no router is ever handed a full path to execute.',
+    },
+  ]}
+/>
+
+## What one packet experiences
+
+Down at the level of a single packet, each hop does the same small set of things: check
+the header, decrement the <Term>TTL</Term>, rewrite the link-layer addresses for the
+next link, and forward. The IP addresses on the packet never change; the hardware
+addresses change every single hop.
+
+Watch one make the crossing, and watch the TTL count down as it goes:
+
+<EmbeddedSim module="packet-journey" scenario="tcp-web-request" />
+
+<Quiz
+  id="predict-asymmetric"
+  kind="predict"
+  question="You measure the path out to a server as eight hops. How many hops will the reply take coming back?"
+  revealLabel="What actually happens"
+  reveal="Possibly eight, possibly not — and nothing makes them match. The return path is chosen by an entirely different set of routers applying their own policies to your address, and the two networks may have different arrangements in each direction. This is why a traceroute only ever shows you half the story, and why a one-way problem can be invisible from the end that is broken."
+  options={[
+    {
+      id: 'unknown',
+      label: 'Unknowable from here — the return path is routed independently',
+      correct: true,
+      why: 'Routing is per-destination, and the reply has a different destination: you. Asymmetric paths are normal on the Internet rather than a fault, which is exactly what makes one-way problems hard to diagnose.',
+    },
+    {
+      id: 'eight',
+      label: 'Eight — packets retrace their route',
+      why: 'Nothing in the packet records the route it took, so there is nothing to retrace. Each direction is routed from scratch, by different machines.',
+    },
+    {
+      id: 'fewer',
+      label: 'Fewer, because the connection is now established',
+      why: 'IP has no notion of an established connection. TCP does, but that state lives only in the two endpoints — no router on the path knows or cares that a handshake happened.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'No machine holds the route. A path is the emergent result of one independent decision per router.',
+    'The unit of Internet structure is the autonomous system, not the router, and BGP is how those units tell each other what they can reach.',
+    'Peering and transit are commercial relationships, and they shape the topology more than distance does.',
+    'IP addresses survive every hop; link-layer addresses are rewritten at every one of them.',
+    'The return path is routed independently and is often different, which is why one-way faults exist at all.',
+  ]}
+/>

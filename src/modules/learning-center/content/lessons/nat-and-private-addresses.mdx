@@ -1,0 +1,111 @@
+{/* Track 7, lesson 3. addresses-and-subnets introduced NAT in one paragraph; this is */}
+{/* the mechanism and its consequences. The table rewrite is shown from the packet's */}
+{/* point of view, because that is what makes "the reverse on the way back" concrete. */}
+
+# NAT and private addresses
+
+IPv4 has about four billion addresses and the world has rather more than four billion
+connected devices. That arithmetic stopped working in the 1990s, and the workaround
+almost every home network on Earth runs on is <Term>NAT</Term>.
+
+The idea is small. Machines inside use private addresses that no public router will
+carry, and the boundary router rewrites the sender as packets leave:
+
+```text
+Leaving the house:
+  from 192.168.1.24:51820  ->  from 203.0.113.7:40001
+                                            ^ chosen by the router, recorded in a table
+
+Coming back:
+  to   203.0.113.7:40001   ->  to   192.168.1.24:51820
+                                            ^ the exact reverse, from the same table
+```
+
+The router keeps one entry per conversation, and the reply is matched against it. That is
+the whole mechanism — and everything odd about NAT follows from it.
+
+<EmbeddedSim module="network-map" scenario="home-lan" />
+
+## Ports are what make it work
+
+The translation needs somewhere to record which inside machine a returning packet
+belongs to, and it uses the <Term>port</Term> number for that. Which means NAT works for
+TCP and UDP, and does not work for anything without ports — the reason a plain ICMP echo
+needs special handling rather than falling out of the design.
+
+Watch the rewrite happen and be reversed on the return trip:
+
+<EmbeddedSim module="packet-journey" scenario="tcp-web-request" />
+
+<Quiz
+  id="why-ports"
+  question="Why does NAT rewrite the port number as well as the address?"
+  options={[
+    {
+      id: 'demux',
+      label:
+        'Because the port is the only field left to record which inside machine the reply belongs to',
+      correct: true,
+      why: 'Every inside machine is being mapped onto one outside address, so the address can no longer distinguish them. The port becomes the key into the translation table, which is why this is properly called NAPT.',
+    },
+    {
+      id: 'security',
+      label: 'To hide which service the inside machine was using',
+      why: 'It is the *source* port being rewritten, which reveals nothing about a service — the destination port is untouched. Any privacy effect is incidental.',
+    },
+    {
+      id: 'checksum',
+      label: 'Because the checksum requires both fields to change together',
+      why: 'The checksum does have to be recomputed after any rewrite, but that is a consequence rather than a motive. The motive is having somewhere to store the mapping.',
+    },
+  ]}
+/>
+
+## What NAT quietly took away
+
+The end-to-end principle held that any host could address any other host. NAT ends that,
+and the consequences are everywhere:
+
+- An unsolicited inbound connection has no table entry, so there is nowhere to send it.
+  That is why hosting a service at home needs a port forward.
+- Two machines both behind NAT cannot connect directly without help, which is why
+  video-call and peer-to-peer software carries an entire subsystem — STUN, TURN, ICE —
+  to negotiate around it.
+- Table entries expire. An idle connection whose entry is evicted stops working with no
+  notification to either end, which is the exact reason a WebSocket needs a heartbeat.
+
+<Quiz
+  id="predict-nat-timeout"
+  kind="predict"
+  question="A connection sits idle for ten minutes behind a home router. What happens to it?"
+  revealLabel="What actually happens"
+  reveal="Quite possibly nothing visible — until somebody tries to use it. The router's translation table is finite, so idle entries are evicted, often after 30 to 60 seconds for UDP and a few minutes for TCP. Neither endpoint is told. Both still believe the connection is open, because nothing in TCP requires periodic traffic to stay open. The next packet either way arrives at a router with no matching entry and is dropped, and the sender discovers it only when a timer expires. This is the single most common reason long-lived connections need a keepalive, and it is why the interval is usually chosen at 25 to 30 seconds."
+  options={[
+    {
+      id: 'evicted',
+      label: 'The translation entry may be evicted, and neither end is told',
+      correct: true,
+      why: 'The state that makes the connection work lives in a middlebox that neither endpoint can see. When it is discarded, both ends carry on believing everything is fine until something is actually sent.',
+    },
+    {
+      id: 'closed',
+      label: 'The router sends a TCP reset to both ends',
+      why: 'That would be considerate and is not what typically happens. Entries are usually dropped silently, which is precisely what makes the failure so hard to diagnose.',
+    },
+    {
+      id: 'nothing',
+      label: 'Nothing — TCP connections stay open indefinitely with no traffic',
+      why: 'True of TCP itself, and irrelevant here: the connection depends on state in a device that is not a TCP endpoint and applies its own rules.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'NAT exists because IPv4 ran out of addresses, and it works by rewriting the source of packets leaving a boundary.',
+    'The port number is what records which inside machine a reply belongs to, which is why NAT needs a transport with ports.',
+    'Private ranges are unique only inside one network, so they can be reused everywhere and break when two such networks meet.',
+    'Unsolicited inbound connections have no table entry and nowhere to go — hence port forwarding, and hence STUN and TURN.',
+    'Translation entries expire silently, which is the most common reason a long-lived connection needs a keepalive.',
+  ]}
+/>

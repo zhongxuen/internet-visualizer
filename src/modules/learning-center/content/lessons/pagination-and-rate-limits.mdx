@@ -1,0 +1,112 @@
+{/* Track 6, lesson 3. Two problems that only exist at scale, paired because both are */}
+{/* about a client and a server disagreeing about time. Offset-vs-cursor is shown */}
+{/* rather than argued: the sim runs identical edits through both. */}
+
+# Pagination and rate limits
+
+A collection endpoint that returns everything is fine until the collection is large, and
+a client that asks politely is fine until there are ten thousand of them. Both problems
+appear only at scale, and both come down to the same thing: the server and the client
+disagree about what time it is.
+
+<EmbeddedSim module="api-visualizer" scenario="paginated-collection" />
+
+## Offset pagination is correct arithmetic on the wrong list
+
+`?offset=5&limit=5` means "skip five, take five", and it is exactly right — over a list
+that has not changed. On a newest-first feed, one row inserted at the front while the
+client is between pages shifts everything down by one, so item five arrives twice. One
+row deleted shifts everything up, and an item the client never saw is skipped entirely.
+
+A cursor names a _position in the ordering_ rather than a count from the start, so edits
+elsewhere in the list cannot move it:
+
+|                       | Offset            | Cursor      |
+| --------------------- | ----------------- | ----------- |
+| Stable under edits    | No                | Yes         |
+| Jump to page 50       | Yes               | No          |
+| Show "page 3 of 27"   | Yes               | Not usually |
+| Cost on a large table | Grows with offset | Constant    |
+
+The `Link` header carries the next cursor, so the client follows a URL rather than
+constructing one — which means the scheme can change without breaking every caller.
+
+<Quiz
+  id="offset-duplicate"
+  question="A client reads page 1 of a newest-first feed, then a new item is posted, then it reads page 2. What does it see?"
+  options={[
+    {
+      id: 'duplicate',
+      label: 'A duplicate — the last item of page 1 appears again at the top of page 2',
+      correct: true,
+      why: 'The insert pushed every existing row down one position, so the offset that used to point past the end of page 1 now points at its last item. The arithmetic never went wrong; the list did.',
+    },
+    {
+      id: 'missing',
+      label: 'A gap — one item is skipped',
+      why: 'That is the delete case. An insert shifts rows down and causes repetition; a delete shifts them up and causes omission. Both happen with offsets, and for opposite reasons.',
+    },
+    {
+      id: 'nothing',
+      label: 'Nothing unusual — the new item is simply on page 1, which it already read',
+      why: 'It would be, if pages were snapshots. Each page is a fresh query against the live table, so the second query sees a list that is one row longer than the first one did.',
+    },
+  ]}
+/>
+
+## Rate limits: a level and a timestamp
+
+A <Term>rate limit</Term> is usually a token bucket, and the implementation is smaller
+than people expect: no timers, no background jobs, no queue. Just a level and the time it
+was last updated, recomputed whenever a request arrives.
+
+<EmbeddedSim module="api-visualizer" scenario="rate-limited" />
+
+Capacity and refill rate are different numbers doing different jobs: capacity is how big
+a burst you tolerate, and the refill rate is the sustained limit. A refused request costs
+no token, or a client hammering the endpoint could hold its own bucket permanently empty.
+
+When the bucket is dry the answer is `429`, and `Retry-After` turns a refusal into an
+instruction. It is expressed as a delta rather than an absolute time because clocks
+disagree.
+
+<Quiz
+  id="predict-ignore-retry-after"
+  kind="predict"
+  question="A client ignores Retry-After and keeps retrying every 100 ms. What happens to it?"
+  revealLabel="What actually happens"
+  reveal="It stays refused, and it gets back into the allowance no faster than a client that waited politely — because a refused request costs no token, and the bucket refills purely on elapsed time. All the hammering achieves is load on the server and, on many APIs, a longer penalty or a block. The deeper point is that Retry-After is not a courtesy: it is the server telling you the exact moment the answer will change, and no amount of asking earlier moves that moment."
+  options={[
+    {
+      id: 'nothing-gained',
+      label:
+        'It stays refused and recovers no sooner — the bucket refills on time, not on attempts',
+      correct: true,
+      why: 'Refusals cost no tokens, so retrying neither helps nor further empties the bucket. It only adds load, which is what makes ignoring Retry-After purely self-defeating.',
+    },
+    {
+      id: 'faster',
+      label: 'It gets through sooner, because it is first in line when a token appears',
+      why: 'There is no line — a token bucket has no queue and no fairness ordering. The first request after the refill wins, whether it arrived by hammering or by waiting.',
+    },
+    {
+      id: 'empties',
+      label: 'It keeps the bucket permanently empty and locks itself out',
+      why: 'A correct implementation charges nothing for a refusal precisely so this cannot happen. Charging for refusals would let a badly-written client deny itself service forever.',
+    },
+  ]}
+/>
+
+One caution on the headers: `429` and `Retry-After` are standardised and dependable. The
+`RateLimit-*` family is still a draft, and `X-RateLimit-*` is a convention with no
+specification at all — so read them if they are there and never require them.
+
+<KeyTakeaways
+  items={[
+    'Offset pagination is correct arithmetic over a list that changed underneath it: one insert duplicates a row, one delete hides one.',
+    'A cursor names a position in the ordering, so it survives edits — at the cost of random access and “page 3 of 27”.',
+    'A token bucket is a level and a timestamp computed on arrival. There is no timer anywhere.',
+    'Capacity is the burst you tolerate; the refill rate is the sustained limit. They are different numbers.',
+    'Refused requests cost no token, so ignoring Retry-After gains nothing — and only 429 and Retry-After are actually standardised.',
+  ]}
+/>

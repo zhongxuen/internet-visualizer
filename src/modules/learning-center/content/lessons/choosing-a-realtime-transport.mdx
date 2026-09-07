@@ -1,0 +1,100 @@
+{/* Track 6, lesson 5. The comparison has to come before the WebSocket lessons or the */}
+{/* reader learns the mechanism without ever being told when not to use it. The whole */}
+{/* lesson hangs off one sim, which is the point: the numbers are the argument. */}
+
+# Choosing a real-time transport
+
+"Real-time" is four different mechanisms with very different bills. Here are all four
+delivering the same eight updates over the same sixty seconds:
+
+<EmbeddedSim module="websocket-viewer" scenario="transport-comparison" />
+
+## Polling's problem is arithmetic, not engineering
+
+Ask every five seconds and an update that arrives just after a poll waits nearly five
+seconds. On average it waits half the interval — and no amount of network speed changes
+that, because the delay is in the schedule rather than in the wire.
+
+Halving the interval halves the delay and doubles the request count. There is no setting
+that gives you both, which is the whole reason the other three exist.
+
+| Transport              | Requests / min | Latency           | Direction       |
+| ---------------------- | -------------- | ----------------- | --------------- |
+| Polling                | 60/interval    | Half the interval | Both, awkwardly |
+| Long polling           | ~1 per event   | Near zero         | Both, awkwardly |
+| <Term>SSE</Term>       | 1              | Near zero         | Server → client |
+| <Term>WebSocket</Term> | 1              | Near zero         | Both, natively  |
+
+<Quiz
+  id="polling-latency"
+  question="You poll every 10 seconds and the network is fast. What is the average delay before a user sees an update?"
+  options={[
+    {
+      id: 'five',
+      label: 'About five seconds — half the interval',
+      correct: true,
+      why: 'An update can arrive at any point in the window, so on average it sits for half of it. The network round trip is a rounding error next to that, which is why a faster connection does not help.',
+    },
+    {
+      id: 'network',
+      label: 'One network round trip — the poll fetches it as soon as it exists',
+      why: 'Only if the update happens to arrive just before a poll. It arrives at a random moment in the interval, and the wait until the next poll dominates entirely.',
+    },
+    {
+      id: 'ten',
+      label: 'Ten seconds — the full interval',
+      why: 'That is the worst case, when an update lands immediately after a poll returns. The average across uniformly distributed arrivals is half of it.',
+    },
+  ]}
+/>
+
+## Picking one
+
+Long polling removes the delay by holding a request open until there is something to say
+— at the cost of one held-open request per connected client, which is real server-side
+capacity.
+
+SSE is one ordinary HTTP response that never ends, with events at roughly eight bytes
+each. It gives up sending anything back, and in exchange gets automatic reconnection and
+event replay via `Last-Event-ID` for free.
+
+A WebSocket pays a few hundred bytes once and then costs two to fourteen bytes of header
+per message, in both directions. It is the right answer when the client genuinely needs
+to send — a chat, a collaborative editor, a game — and overkill when it does not.
+
+<Quiz
+  id="predict-sse-vs-ws"
+  kind="predict"
+  question="You are building a live notification feed: server sends, client only reads. SSE or WebSocket?"
+  revealLabel="What actually happens"
+  reveal="SSE, in almost every case, and the deciding factor is not bytes. Reconnection and message replay after a gap are built into SSE — the browser reconnects automatically and sends Last-Event-ID so the server can resume where it left off. On a WebSocket both of those are your problem: you write the backoff, you write the resume protocol, and you get them wrong the first time. Choosing a WebSocket for one-directional traffic means volunteering to reimplement the two hardest parts of what SSE already gives you. Reach for a WebSocket when the client genuinely needs to send."
+  options={[
+    {
+      id: 'sse',
+      label:
+        'SSE — reconnection and replay are built in, and the traffic is one-directional anyway',
+      correct: true,
+      why: 'Matching the transport to the direction of the data means the browser handles the failure modes for you. Automatic reconnect and Last-Event-ID are exactly the machinery you would otherwise write by hand.',
+    },
+    {
+      id: 'ws',
+      label: 'WebSocket — it is the modern option and has lower per-message overhead',
+      why: 'The per-message saving is a handful of bytes on a notification feed, and it is bought by taking on reconnection and replay yourself. That is a poor trade for traffic that only goes one way.',
+    },
+    {
+      id: 'either',
+      label: 'Either — they are equivalent for one-directional traffic',
+      why: 'They deliver equivalently while everything is working. They differ sharply in what happens when the connection drops, which on mobile networks is constantly.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'Polling’s average delay is half the interval, and no network improvement changes it.',
+    'Halving the poll interval halves the delay and doubles the request count — there is no setting that gives both.',
+    'Long polling removes the delay but holds one open request per connected client.',
+    'SSE is one HTTP response with events on it, and gets reconnection and Last-Event-ID replay for free.',
+    'A WebSocket earns its complexity when the client genuinely needs to send; for one-directional traffic it means rebuilding what SSE already does.',
+  ]}
+/>

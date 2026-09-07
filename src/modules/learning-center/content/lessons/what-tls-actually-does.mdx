@@ -1,0 +1,108 @@
+{/* Track 5, lesson 1. Leads with the three guarantees as separable things, because */}
+{/* every later lesson in this track is about one of them failing independently of the */}
+{/* other two. tls13-fresh is the reference run the whole track measures against. */}
+
+# What TLS actually does
+
+<Term>TLS</Term> gives three guarantees, and the most useful thing to know about them is
+that they are separate:
+
+| Guarantee       | Means                                         | Broken by                   |
+| --------------- | --------------------------------------------- | --------------------------- |
+| Confidentiality | Nobody on the path can read the traffic       | A weak or leaked key        |
+| Integrity       | Nobody can alter it without being detected    | A forged authentication tag |
+| Authentication  | The far end is who the certificate says it is | A bad certificate check     |
+
+HTTPS is exactly HTTP carried inside that. Not a different protocol — the methods,
+status codes and fields from track 4 are byte-for-byte identical. Only the envelope
+changed.
+
+<EmbeddedSim module="https-explorer" scenario="tls13-fresh" />
+
+## Agreeing on a key in public
+
+The strange part of that run is where the key comes from. Everything you watched crossed
+a wire an attacker is reading in full, and at the end both sides share a secret the
+attacker cannot reconstruct.
+
+That is an ephemeral Diffie–Hellman exchange. Each side generates a temporary key pair,
+sends the public half, and combines its own private half with the other's public half.
+Both arrive at the same value; an observer who saw both public halves cannot.
+
+The word _ephemeral_ is doing real work: the keys are thrown away when the connection
+ends, which gives <Term>forward secrecy</Term>. Traffic recorded today stays unreadable
+even to somebody who steals the server's long-term private key tomorrow.
+
+<Quiz
+  id="what-cert-proves"
+  question="During the handshake, what does the certificate actually prove?"
+  options={[
+    {
+      id: 'name-key',
+      label:
+        'That a CA vouched for this key belonging to this name — and, with the signature, that the server holds the matching private key',
+      correct: true,
+      why: 'Two separate things: the certificate is a signed claim binding a name to a public key, and CertificateVerify proves the far end holds the private half. Neither says anything about the operator’s honesty.',
+    },
+    {
+      id: 'safe',
+      label: 'That the site is safe to use',
+      why: 'Nothing in the handshake evaluates a site’s behaviour, and issuance is automated and free. A phishing site can hold a perfectly valid certificate for its own perfectly real domain.',
+    },
+    {
+      id: 'encrypted',
+      label: 'That the connection is encrypted',
+      why: 'Encryption comes from the key exchange and works with any certificate, including a self-signed one. The certificate answers “who”, not “is this encrypted” — which is exactly why an encrypted connection to the wrong server is worthless.',
+    },
+  ]}
+/>
+
+## What survives the encryption
+
+A great deal less is hidden than people assume. An observer on the path still learns:
+
+- the IP address you connected to, because packets have to be routed;
+- the hostname, in most deployments, from the SNI field in the ClientHello;
+- the size and timing of every message, which is often enough to identify a page;
+- that a connection happened at all, and for how long.
+
+The body is confidential. The metadata around it largely is not — and that is a
+structural property, not an implementation gap.
+
+<Quiz
+  id="predict-plaintext-hello"
+  kind="predict"
+  question="Only two TLS 1.3 messages are sent in the clear. Which, and why must they be?"
+  revealLabel="What actually happens"
+  reveal="ClientHello and ServerHello — the two messages that establish the keys. They cannot be encrypted because there is no key yet; encrypting them would require the key they exist to negotiate. Everything after them, including the server's certificate, is already encrypted, which is a real change from TLS 1.2 where the certificate crossed the wire in plaintext and told any observer exactly which site you were visiting. The remaining leak in TLS 1.3 is SNI, inside ClientHello, and Encrypted Client Hello is the extension being deployed to close it."
+  options={[
+    {
+      id: 'hellos',
+      label:
+        'ClientHello and ServerHello — they negotiate the keys, so no key exists yet',
+      correct: true,
+      why: 'A bootstrap cannot use what it is bootstrapping. Everything from the server’s certificate onward is encrypted, which is one of TLS 1.3’s significant privacy improvements over 1.2.',
+    },
+    {
+      id: 'cert',
+      label:
+        'ServerHello and Certificate — the client must read the certificate to verify it',
+      why: 'The client does need to read it, but it can decrypt it first: the key exchange completes at ServerHello, so Certificate arrives already protected. TLS 1.2 sent it in the clear, and that is a difference worth remembering.',
+    },
+    {
+      id: 'none',
+      label: 'None — TLS 1.3 encrypts the entire handshake',
+      why: 'It encrypts as much as is logically possible, which is everything after the two hellos. Those two cannot be, because they are what produces the key.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'TLS gives confidentiality, integrity and authentication, and all three can fail independently of each other.',
+    'HTTPS is HTTP unchanged, inside a TLS envelope. None of the semantics from track 4 differ.',
+    'The shared key comes from an ephemeral Diffie–Hellman exchange an observer can watch in full and cannot reproduce.',
+    'Ephemeral keys give forward secrecy: today’s recorded traffic survives tomorrow’s key theft.',
+    'The address, the hostname via SNI, and the sizes and timings all remain visible. Only the content is confidential.',
+  ]}
+/>

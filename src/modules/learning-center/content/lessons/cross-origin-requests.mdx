@@ -1,0 +1,119 @@
+{/* Track 4, lesson 5. The single most misunderstood thing in the browser, so the */}
+{/* lesson leads with the correction -- the request IS sent -- and returns to it in */}
+{/* both quizzes. CORS is also the one topic here that is not in an RFC, and says so. */}
+
+# Origins, CORS, and the preflight
+
+Almost everything a browser enforces about who may read what is expressed in one unit:
+the <Term>origin</Term>. That is the scheme, the host and the port, taken together, and
+all three must match.
+
+```text
+https://example.com/a      and  https://example.com/b       same origin
+https://example.com        and  http://example.com          different (scheme)
+https://example.com        and  https://api.example.com     different (host)
+https://example.com        and  https://example.com:8443    different (port)
+```
+
+The same-origin policy says a page may not _read_ a response from another origin. It has
+never said a page may not send one — and that distinction is where nearly all the
+confusion lives.
+
+<EmbeddedSim module="http-explorer" scenario="cors-preflight" />
+
+## The request is sent. The answer is withheld.
+
+In that first exchange the cross-origin GET went out, reached the server, was executed,
+and came back. The browser then declined to hand the response to the page, because the
+response carried no header saying it was allowed to.
+
+<Term>CORS</Term> is therefore a **relaxation** mechanism, not an enforcement one. It is
+how a server opts in to being read by another origin. It protects the server not at all —
+anything that is not a browser ignores it entirely — and it is why "CORS blocked my
+request" is almost always the wrong description of what happened.
+
+<Quiz
+  id="cors-blocked"
+  question="A page at https://app.example makes a cross-origin GET and the console reports a CORS error. Did the server receive the request?"
+  options={[
+    {
+      id: 'yes',
+      label:
+        'Yes — it was sent and executed; only the response was withheld from the page',
+      correct: true,
+      why: 'For a simple request the browser sends first and checks the response headers afterwards. If the endpoint had a side effect, that side effect happened, which is one reason side effects do not belong behind a simple GET.',
+    },
+    {
+      id: 'no',
+      label: 'No — the browser blocked it before it left',
+      why: 'That is true only for requests that require a preflight, where the real request is withheld pending permission. A simple GET has no preflight, so it goes out unconditionally.',
+    },
+    {
+      id: 'depends-server',
+      label: 'Only if the server has CORS configured',
+      why: 'Backwards: CORS configuration affects whether the *page* may read the answer. The server’s handler runs either way, because the request arrives as an ordinary HTTP request.',
+    },
+  ]}
+/>
+
+## When permission is asked first
+
+Some requests are too dangerous to send speculatively, so the browser asks first with an
+`OPTIONS` request — a preflight — and only sends the real one if the answer allows it.
+
+The dividing line is historical rather than principled: a request is "simple" if a 1999
+HTML form could have made it. That means GET, HEAD, and POST with form-ish content
+types, and a short list of headers.
+
+| Request                                       | Simple? | Because                                 |
+| --------------------------------------------- | ------- | --------------------------------------- |
+| `GET` with no custom headers                  | Yes     | A link could do it                      |
+| `POST` of `application/x-www-form-urlencoded` | Yes     | A form could do it                      |
+| `POST` of `application/json`                  | No      | No form could produce that content type |
+| Anything with `Authorization`                 | No      | Not a header a form could set           |
+| `PUT`, `PATCH`, `DELETE`                      | No      | Forms cannot issue these methods        |
+
+So the modern JSON API call is never simple, and pays a full extra round trip before its
+first request. `Access-Control-Max-Age` caches that permission, and almost nobody sets
+it.
+
+<Quiz
+  id="predict-preflight-cost"
+  kind="predict"
+  question="A single-page app makes forty JSON API calls to another origin during a page load. How many preflights?"
+  revealLabel="What actually happens"
+  reveal="Up to forty — one per distinct method-and-URL combination — unless the server sets Access-Control-Max-Age, in which case the browser caches the permission and sends one. This is the single cheapest CORS optimisation and it is skipped constantly, because the preflights are invisible in most application-level metrics: they never reach your handler and never appear in your logs. On a high-latency connection this doubles the effective cost of every API call the app makes."
+  options={[
+    {
+      id: 'many',
+      label:
+        'Up to forty, unless Access-Control-Max-Age lets the browser cache the permission',
+      correct: true,
+      why: 'The preflight result is cached per method and URL, and only for as long as Max-Age says. With no Max-Age the browser re-asks, and each ask is a full round trip before the real request starts.',
+    },
+    {
+      id: 'one',
+      label: 'One — the browser remembers the origin is allowed',
+      why: 'Permission is granted per resource and method, not per origin, so a different path or a different method needs asking again. Only Max-Age makes the answer persist at all.',
+    },
+    {
+      id: 'zero',
+      label: 'None — preflights only apply to the first request after page load',
+      why: 'There is no such rule. What bounds preflights is the preflight cache, and its lifetime is exactly what the server said in Access-Control-Max-Age.',
+    },
+  ]}
+/>
+
+CORS is defined in the WHATWG Fetch Standard rather than in an RFC, which is worth
+knowing when you go looking for it: there is no RFC number to cite, and the living
+standard is the authority.
+
+<KeyTakeaways
+  items={[
+    'An origin is scheme, host and port together. All three must match, so https and http are different origins.',
+    'The same-origin policy governs reading a response, never sending a request.',
+    'CORS is how a server opts in to being read by another origin. It relaxes a browser restriction and protects the server not at all.',
+    'A simple request is one a 1999 HTML form could have made — which excludes every application/json call.',
+    'Non-simple requests pay a preflight round trip, cacheable with Access-Control-Max-Age, which almost nobody sets.',
+  ]}
+/>

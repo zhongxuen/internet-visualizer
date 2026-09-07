@@ -1,0 +1,99 @@
+{/* Track 3, lesson 3. The scaling lesson: the walk from lesson 1 is the exception, not */}
+{/* the rule. Warm cache for the positive case, NXDOMAIN for the negative one -- which */}
+{/* is the half people are surprised is cached at all. */}
+
+# Caching, TTLs, and saying no
+
+The walk you learned in lesson 1 — root, then TLD, then authoritative — almost never
+happens. If it did, the root servers would field every DNS query on Earth and the system
+would have collapsed in about 1985.
+
+What happens instead is that somebody already asked. Watch the same question twice:
+
+<EmbeddedSim module="dns-explorer" scenario="warm-cache" />
+
+## A hit skips the whole hierarchy, not part of it
+
+The second lookup contacted nobody. That is the shape of the saving: a
+
+<Term>cache</Term> hit does not shorten the walk, it removes it entirely, and the answer
+comes back before the first attempt had finished talking to the root.
+
+Two details decide how well this works:
+
+- The <Term>TTL</Term> counts **down** as an answer is passed along, and never restarts.
+  A record with 300 seconds left is served with 300 seconds left, not 300 fresh ones.
+- Delegations and glue are cached separately from answers, and usually for far longer.
+  So even a genuine miss on `www.example.com` normally skips the root and the TLD, and
+  goes straight to the authoritative server.
+
+<Quiz
+  id="ttl-countdown"
+  question="A record has a TTL of 3600. Your resolver has held it for 3000 seconds. What TTL do you receive?"
+  options={[
+    {
+      id: '600',
+      label: '600 — the remaining lifetime',
+      correct: true,
+      why: 'The TTL is a remaining lifetime, not a restarting timer. Serving it fresh would let a chain of caches extend a record indefinitely, and the zone operator would lose all control over how long an answer lives.',
+    },
+    {
+      id: '3600',
+      label: '3600 — you get a full copy of the record',
+      why: 'You do get the record’s data, but not a fresh clock with it. Otherwise every hop between you and the origin could reset the lifetime, and a 3600-second record could persist for days.',
+    },
+    {
+      id: '0',
+      label: '0 — cached records are served as non-cacheable',
+      why: 'That would defeat the purpose: your own machine could never cache anything it learned from a resolver. Caches are meant to be chained, which is why the countdown is passed along intact.',
+    },
+  ]}
+/>
+
+## Caching "no"
+
+Negative answers get cached too, and this surprises people. When a name genuinely does
+not exist, the <Term>NXDOMAIN</Term> comes back with an SOA record from the closest
+enclosing zone, and a field in that SOA says how long the "no" may be remembered.
+
+Without it, every typo, every stale link and every misconfigured client in the world
+would walk the tree from the root, forever, on every attempt.
+
+<EmbeddedSim module="dns-explorer" scenario="nxdomain" />
+
+<Quiz
+  id="predict-lowered-ttl"
+  kind="predict"
+  question="You are moving servers tomorrow. This afternoon you lower the record's TTL from 86400 to 60. When does that help?"
+  revealLabel="What actually happens"
+  reveal="Not tomorrow — you needed to do it a day ago. Resolvers that already hold the record hold it with the *old* TTL attached, and will keep serving it for up to 86 400 seconds regardless of what the zone now says. The new short TTL only applies to lookups made after the change, by resolvers whose copy has already expired. The rule of thumb is to lower the TTL at least one old-TTL-period before the migration, and raise it again afterwards."
+  options={[
+    {
+      id: 'too-late',
+      label:
+        'It is too late — resolvers holding the old record keep it for its old lifetime',
+      correct: true,
+      why: 'A TTL travels with the copy that was handed out. Changing the zone cannot reach into caches that already answered, so the change has to be made a full old-TTL ahead of the migration.',
+    },
+    {
+      id: 'immediately',
+      label: 'Immediately — the zone is authoritative and overrides caches',
+      why: 'Authority decides what the next asker is told, not what previous askers still remember. There is no invalidation mechanism in DNS; there is only expiry.',
+    },
+    {
+      id: 'nxdomain',
+      label: 'Only if the old record is deleted first',
+      why: 'Deleting it makes things worse, not better — cached copies still answer, and new lookups now get NXDOMAIN. The change still has to wait out the original TTL.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'The full walk is the exception. Almost every DNS query in the world is answered from a cache, and that is why the system scales.',
+    'A cache hit removes the hierarchy entirely rather than shortening it.',
+    'TTLs count down as an answer is passed on and are never refreshed, so a zone operator keeps control of how long an answer can live.',
+    'Delegations and glue are cached separately and for longer, so even a miss usually skips the root and the TLD.',
+    'Negative answers are cached too, with the duration set by the SOA — and a TTL you lower today only takes effect after the old one expires.',
+  ]}
+/>

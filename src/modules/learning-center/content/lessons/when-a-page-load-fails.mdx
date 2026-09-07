@@ -1,0 +1,95 @@
+{/* Track 2, lesson 4. Closes the track by running the same load into three different */}
+{/* walls. The organising idea is diagnostic: each failure is identified by which stage */}
+{/* it stopped at and by how long it took to fail, which is what the reader can use. */}
+
+# When a page load fails
+
+A browser has roughly three error pages and they cover dozens of causes. Underneath,
+each failure stops at a specific stage — and the stage it stopped at is usually
+recoverable from how long it took.
+
+The first one fails before anything is sent anywhere at all.
+
+<EmbeddedSim module="internet-simulator" scenario="failure-dns" />
+
+## Failing fast is a good sign
+
+<Term>NXDOMAIN</Term> is not a failure to get an answer. It is an answer: the hierarchy
+was walked, an <Term>authoritative server</Term> was reached, and it said the name does
+not exist. That is why it comes back in milliseconds — somebody was there to say no.
+
+The result is negatively cached too, so the second attempt is faster and equally wrong.
+Contrast that with a name that resolves perfectly to an address where nothing answers:
+
+<EmbeddedSim module="internet-simulator" scenario="failure-timeout" />
+
+<Quiz
+  id="fast-or-slow"
+  question="A site fails instantly for one user and takes fifteen seconds for another. What does that difference most likely tell you?"
+  options={[
+    {
+      id: 'stage',
+      label: 'They failed at different stages — a definite answer versus a silence',
+      correct: true,
+      why: 'Anything that fails in milliseconds got a reply: NXDOMAIN, a TCP reset, an HTTP error. Anything that takes seconds got nothing at all and had to wait out a timer. Speed is the cheapest signal you have for which happened.',
+    },
+    {
+      id: 'network',
+      label: 'The slow user has a worse connection',
+      why: 'A slow link makes a working page take longer; it does not turn a fast failure into a fifteen-second one. Timeouts are set by the client’s own retry schedule, not by link speed.',
+    },
+    {
+      id: 'server',
+      label: 'The server is overloaded for one of them',
+      why: 'An overloaded server that is still running usually answers, and answers quickly — often with a 503. Fifteen seconds of silence points at nothing listening or something dropping, not at something busy.',
+    },
+  ]}
+/>
+
+## A refusal is not a breakage
+
+The third failure gets further than either: the name resolved, the connection opened,
+and the server answered. The browser then read the certificate and stopped.
+
+<EmbeddedSim module="internet-simulator" scenario="failure-tls" />
+
+Four of the five certificate checks passed. The chain was well-formed, trusted, and
+issued for this exact hostname — it simply expired three days ago. The alert the client
+sends is a real message on the wire, not a browser invention, and no application data is
+ever exchanged. There is no such thing as a partially secure connection.
+
+<Quiz
+  id="predict-refused-vs-filtered"
+  kind="predict"
+  question="Two hosts both refuse your connection. One answers immediately, one takes fifteen seconds. What is the difference?"
+  revealLabel="What actually happens"
+  reveal="The fast one sent a TCP reset: something is running at that address, nothing is listening on that port, and it said so. The slow one sent nothing — a firewall dropped the packet silently — so your machine had no choice but to assume the SYN was lost, retry on a doubling timer, and eventually give up. Dropping rather than rejecting is a deliberate firewall policy: it costs a scanner time and tells them nothing, at the price of making an honest client wait."
+  options={[
+    {
+      id: 'reset-vs-drop',
+      label: 'One host refused, the other silently dropped the packet',
+      correct: true,
+      why: 'A reset is an answer and arrives in one round trip. A drop is an absence, and an absence can only be detected by waiting — which is why filtered ports fail slowly and closed ones fail instantly.',
+    },
+    {
+      id: 'distance',
+      label: 'The slow one is further away',
+      why: 'Distance costs milliseconds, not seconds. Fifteen seconds is the shape of a retry schedule, not of a longer path.',
+    },
+    {
+      id: 'dns',
+      label: 'The slow one has a DNS problem',
+      why: 'A DNS failure stops before any connection is attempted, and usually fails fast with NXDOMAIN. Reaching a timeout means the name resolved and the address was tried.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'Every page-load failure stops at a specific stage, and identifying the stage is most of the diagnosis.',
+    'Fast failures are answers: NXDOMAIN, a reset, an HTTP error code. Something replied.',
+    'Slow failures are silences. Nothing answered, so a timer had to expire before anything could be concluded.',
+    'NXDOMAIN is a definite negative result, cached like any other, which is why the second attempt is quicker and equally wrong.',
+    'A certificate interstitial is a refusal, not a breakage — one check of five failed and the client stopped before sending anything.',
+  ]}
+/>

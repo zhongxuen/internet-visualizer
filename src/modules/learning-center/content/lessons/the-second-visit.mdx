@@ -1,0 +1,96 @@
+{/* Track 2, lesson 2. The contrast lesson: the same run as lesson 1, warm. The point */}
+{/* is that "cached" names four unrelated mechanisms, and the reader should leave able */}
+{/* to say which one saved what. Detail on each lives in tracks 3, 4 and 5. */}
+
+# The second visit
+
+Reload the page you just loaded and it appears almost instantly. That is not one
+optimisation doing its job. It is four, each removing a different part of the cost, and
+they have nothing to do with each other.
+
+<EmbeddedSim module="internet-simulator" scenario="repeat-visit-cached" />
+
+## Four savings, four mechanisms
+
+| Stage | What is reused             | Where it is remembered               |
+| ----- | -------------------------- | ------------------------------------ |
+| DNS   | The address for the name   | The resolver, for the record TTL     |
+| TCP   | The open connection itself | The browser, while it stays open     |
+| TLS   | A session ticket           | The client, until it expires         |
+| HTTP  | The response body          | The <Term>cache</Term>, per RFC 9111 |
+
+Notice how differently they fail. A DNS entry expires on a timer nobody consults; a
+connection is closed by whichever side loses patience first; a TLS ticket is a bearer
+credential with a lifetime; and an HTTP response can be _stale_ and still useful, which
+is a state the other three have no equivalent of.
+
+<Quiz
+  id="which-saving"
+  question="On the reload above, the document came back as a 304 with no body. What did that save, and what did it not?"
+  options={[
+    {
+      id: 'body',
+      label: 'It saved the body. It did not save the round trip.',
+      correct: true,
+      why: 'A 304 is a full request and a full response — the client still asked and still waited. What came back was headers only, which is the entire saving and is worth it whenever the body is larger than the exchange that asked about it.',
+    },
+    {
+      id: 'everything',
+      label: 'It saved the whole request — nothing went to the network',
+      why: 'That is a fresh cache hit, which is a different and better outcome. A 304 exists precisely because the entry was not fresh: the browser had to ask before it could reuse what it held.',
+    },
+    {
+      id: 'nothing',
+      label: 'Nothing — a 304 means the cache failed',
+      why: 'It means the cache could not be sure, not that it was wrong. The stored body was still valid and was used; only the certainty had to be re-bought, at the cost of one round trip and no body.',
+    },
+  ]}
+/>
+
+## Fresh, stale, and the four assets that were never asked for
+
+Four of the page's assets produced no network activity at all. Their cached copies were
+still _fresh_ — the time since they were stored is less than the lifetime the server
+gave them — so the browser used them without asking anyone.
+
+That is the strongest form of caching, and it is qualitatively different from the 304:
+a fresh hit is not a faster request, it is no request. It also explains why cache
+lifetimes are a design decision rather than a performance knob. A long lifetime means
+you cannot change the file; the usual answer is to change its name instead, and put a
+hash in it.
+
+<Quiz
+  id="predict-fingerprint"
+  kind="predict"
+  question="A stylesheet is served with a one-year max-age. You deploy a fix to it. What do returning visitors see?"
+  revealLabel="What actually happens"
+  reveal="The old file, for up to a year, and there is no mechanism that lets you take it back — the browser will not ask, so there is nothing to answer. This is why production builds emit app.4f2a91c.css rather than app.css: the URL is derived from the contents, so changing the contents changes the URL, and a URL that has never been requested cannot be cached. The immutable file gets a year; the HTML that references it gets seconds."
+  options={[
+    {
+      id: 'old',
+      label: 'The old stylesheet, until the year is up',
+      correct: true,
+      why: 'A fresh entry is used without contacting the server, so nothing you deploy can reach a browser that is not asking. Long lifetimes are only safe on URLs that never change meaning.',
+    },
+    {
+      id: 'revalidate',
+      label: 'The new one — the browser revalidates on reload',
+      why: 'A deliberate reload does force revalidation, but ordinary navigation does not, and most visitors never reload. Designing for the reload case means designing for the minority.',
+    },
+    {
+      id: 'purge',
+      label: 'The new one, once you purge the CDN',
+      why: 'Purging clears the shared cache at the edge, which helps the next new visitor. It has no reach at all into the copies already sitting in a hundred thousand browsers.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    '“Cached” is four unrelated mechanisms — a DNS entry, an open connection, a TLS ticket, and an HTTP response — each saving a different stage.',
+    'A fresh cache hit is not a faster request; it is no request, and no server is involved at all.',
+    'A 304 is a real round trip that saves only the body. That is still usually a very good trade.',
+    'Staleness is an HTTP idea. The other three mechanisms have no equivalent of “out of date but still useful”.',
+    'A long cache lifetime is unrecallable, which is why immutable assets get content-hashed URLs and the HTML that points at them does not.',
+  ]}
+/>

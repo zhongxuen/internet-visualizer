@@ -1,0 +1,111 @@
+{/* Track 4, lesson 1. Starts at the bytes deliberately: everything later in the track */}
+{/* (caching, cookies, CORS) is a field in this structure, and a reader who has seen */}
+{/* the literal message never has to wonder where a header "lives". */}
+
+# The anatomy of an HTTP message
+
+<Term>HTTP</Term> is a text format, and for one version of it you can read the whole thing
+on the wire. A request is a line, some fields, a blank line, and optionally a body.
+
+```http
+GET /index.html HTTP/1.1
+Host: www.example.com
+Accept: text/html
+User-Agent: ExampleBrowser/1.0
+
+```
+
+The first line names a method, a target and a version. The lines after it are fields —
+key, colon, value — in no significant order. Then a blank line, and that blank line is
+not a separator or a stylistic choice: it is the framing. It is the only thing that tells
+the receiver the fields have ended and a body may begin.
+
+<EmbeddedSim module="http-explorer" scenario="simple-get" />
+
+## The response has the same shape
+
+Status line, fields, blank line, body. `Content-Length` counts the octets of that body,
+which is how the receiver knows where the message ends on a connection that is about to
+carry another one.
+
+`Host` deserves a mention on its own: it is mandatory in HTTP/1.1 and is the reason a
+single address can serve thousands of sites. The connection went to an IP; the field is
+what says which of the many sites at that IP you meant.
+
+<Quiz
+  id="blank-line"
+  question="What is the blank line between the fields and the body actually doing?"
+  options={[
+    {
+      id: 'framing',
+      label: 'Ending the field section — it is the framing, not a separator',
+      correct: true,
+      why: 'A parser reads fields until it meets an empty line, and only then does it know the header section is complete and how to interpret what follows. Remove it and there is no way to tell a field from the first line of a body.',
+    },
+    {
+      id: 'readable',
+      label: 'Making the message easier for humans to read',
+      why: 'It does help, but that is a side effect. It is required by the grammar, and a message missing it is malformed rather than merely ugly.',
+    },
+    {
+      id: 'optional',
+      label: 'Nothing — it is optional when there is no body',
+      why: 'It is required either way. The GET above has no body and still ends with a blank line, because the receiver has to be told the fields are over before it can decide whether a body follows.',
+    },
+  ]}
+/>
+
+## Methods are promises
+
+The method is not just a label. Each one carries a contract that caches, proxies and
+client libraries rely on without asking the application:
+
+| Method | Safe? | <Term>Idempotent</Term>? | Meaning                            |
+| ------ | ----- | ------------------------ | ---------------------------------- |
+| GET    | Yes   | Yes                      | Give me this; change nothing       |
+| HEAD   | Yes   | Yes                      | The same, but headers only         |
+| PUT    | No    | Yes                      | Make this resource be exactly this |
+| DELETE | No    | Yes                      | Make this resource not exist       |
+| POST   | No    | No                       | Process this, however you like     |
+
+Safe means it changes nothing, so it can be prefetched. Idempotent means sending it twice
+leaves the same state, so it can be retried automatically. POST is neither, which is why
+a browser warns before resubmitting one.
+
+<EmbeddedSim module="http-explorer" scenario="post-form" />
+
+<Quiz
+  id="predict-get-with-side-effects"
+  kind="predict"
+  question="An app implements 'delete item' as a GET on /items/7/delete. What goes wrong?"
+  revealLabel="What actually happens"
+  reveal="Items start deleting themselves. GET is declared safe, so everything on the path is entitled to act on that: a browser prefetches links it thinks you might click, a link checker crawls the page, a corporate proxy warms its cache, a chat client fetches a preview of a pasted URL. None of them asked permission because the method already said it was safe. The classic version of this story is an admin panel wiped by a search engine crawler, and no amount of authentication helps if the crawler runs in a logged-in browser."
+  options={[
+    {
+      id: 'prefetch',
+      label: 'Anything that prefetches or crawls links will start deleting things',
+      correct: true,
+      why: 'Safety is a promise the method makes to intermediaries, and they act on it without consulting the application. Breaking the promise means every well-behaved crawler on the Internet becomes a hazard.',
+    },
+    {
+      id: 'nothing',
+      label: 'Nothing — the server decides what its own URLs do',
+      why: 'The server decides what it does, but not what everything between the user and it does. The whole value of HTTP method semantics is that intermediaries can act on them without understanding the application.',
+    },
+    {
+      id: 'slow',
+      label: 'It works, but is slower than a POST',
+      why: 'Performance is not the issue at all. The issue is that the method is a contract with the rest of the web, and this one makes a promise the endpoint does not keep.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'A request is a request-line, fields, a blank line, and maybe a body. The response has exactly the same shape.',
+    'The blank line is the framing that ends the field section — it is required even when there is no body.',
+    'Host is mandatory in HTTP/1.1 and is what lets one address serve many sites.',
+    'Content-Length counts octets, and is how a receiver knows where one message ends on a reused connection.',
+    'Safe and idempotent are promises intermediaries act on. A GET with side effects breaks a contract with the entire web, not just with your client.',
+  ]}
+/>

@@ -1,0 +1,113 @@
+{/* Track 3, lesson 4. Closes the track and sets up track 5: this is the first chain of */}
+{/* trust the reader meets, and the web PKI in "certificates-and-trust" is deliberately */}
+{/* introduced afterwards as the same idea with a different root. */}
+
+# DNSSEC and the chain of trust
+
+Everything you have learned about DNS so far has a hole in it. Nothing in a plain DNS
+answer proves who wrote it. A response is a UDP datagram with a matching query id, and
+anybody positioned to send one first has effectively answered your question.
+
+<Term>DNSSEC</Term> closes that hole — and it is worth being precise about how, because it
+is routinely misunderstood:
+
+| DNSSEC does                           | DNSSEC does not                     |
+| ------------------------------------- | ----------------------------------- |
+| Prove an answer came from the zone    | Hide the question from observers    |
+| Prove it was not altered in transit   | Encrypt anything at all             |
+| Prove a name genuinely does not exist | Say whether the site is trustworthy |
+
+It authenticates. It does not encrypt. A signed answer is still perfectly readable by
+anyone on the path — that is a different problem, solved by DNS over HTTPS.
+
+<EmbeddedSim module="dns-explorer" scenario="dnssec-validated" />
+
+## How the chain is linked
+
+Each <Term>zone</Term> signs its own records with its own key. The question is why you
+should believe that key, and the answer is that the parent vouched for it:
+
+```text
+root zone      DNSKEY  <- trusted because it is configured, never looked up
+  |            DS      <- a hash of .com's key, signed by the root
+  v
+com zone       DNSKEY  <- matches the DS above, so now trusted
+  |            DS      <- a hash of example.com's key, signed by .com
+  v
+example.com    DNSKEY  <- matches, so now trusted
+               RRSIG   <- signature over the actual answer
+```
+
+The DS record lives in the **parent** and the DNSKEY in the **child**, at exactly the
+same place the delegation happens. Validation walks that chain from a root key the
+resolver already holds — the one link that is configured rather than fetched, because a
+chain of trust has to start somewhere it cannot be told.
+
+<Quiz
+  id="where-trust-starts"
+  question="Where does a validating resolver get the root zone's key from?"
+  options={[
+    {
+      id: 'configured',
+      label: 'It is configured in advance — a trust anchor shipped with the software',
+      correct: true,
+      why: 'Looking it up would be circular: you would need to validate the answer that gave you the key you need to validate answers. Exactly one link must be established out of band, and this is it.',
+    },
+    {
+      id: 'lookup',
+      label: 'It queries the root servers for it, like any other record',
+      why: 'It does fetch the DNSKEY record, but fetching it proves nothing. What makes it trustworthy is comparing it against the anchor already on disk — the fetch without the anchor is worthless.',
+    },
+    {
+      id: 'ca',
+      label: 'From a certificate authority',
+      why: 'That is the web PKI, a separate trust system with its own roots. DNSSEC has exactly one root and it belongs to the DNS hierarchy, which is one of the two systems’ few structural differences.',
+    },
+  ]}
+/>
+
+## What a validator does when it cannot prove something
+
+A validating resolver that cannot verify a signature does not hand you the data with a
+warning. It returns SERVFAIL — no answer at all — because passing along data it cannot
+prove would make the whole exercise pointless.
+
+That is why a DNSSEC misconfiguration takes a domain completely offline for validating
+users while working perfectly for everyone else, and why it is one of the more
+alarming ways to break a website.
+
+<Quiz
+  id="predict-expired-sig"
+  kind="predict"
+  question="A zone's signatures expire because the automated re-signing job failed. What do visitors see?"
+  revealLabel="What actually happens"
+  reveal="Visitors behind a validating resolver see nothing at all — SERVFAIL, an error page, and a name that appears not to exist. Visitors behind a non-validating resolver see the site working perfectly. That split is the cruel part: the outage is invisible from wherever the operator happens to be testing, and 'it works for me' is genuinely true. Signature validity periods are short by design, so an unnoticed re-signing failure becomes an outage in days rather than years."
+  options={[
+    {
+      id: 'servfail',
+      label: 'SERVFAIL for validating resolvers, and a working site for everyone else',
+      correct: true,
+      why: 'A validator refuses to serve data it cannot prove, so the failure is total for those users and invisible to the rest. Partial, audience-dependent outages are the characteristic DNSSEC failure mode.',
+    },
+    {
+      id: 'warning',
+      label: 'The site loads with a security warning in the browser',
+      why: 'There is no such warning — DNSSEC validation happens in the resolver, long before the browser is involved, and the browser never learns why an address failed to resolve.',
+    },
+    {
+      id: 'unsigned',
+      label: 'Resolvers fall back to treating the zone as unsigned',
+      why: 'That would make DNSSEC useless: an attacker could strip signatures to trigger the fallback. Once a parent’s DS record says a zone is signed, an unprovable answer is a failure, not a downgrade.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'DNSSEC authenticates DNS answers. It does not encrypt them, and it says nothing about whether the site is trustworthy.',
+    'Each zone signs its own records; the parent publishes a DS hash of the child’s key, so trust is chained down the same tree the delegations follow.',
+    'The root key is configured, never looked up — one link has to be established out of band or the chain is circular.',
+    'A validator that cannot prove an answer returns SERVFAIL rather than passing along unverified data.',
+    'That makes DNSSEC failures partial and audience-dependent: a total outage for validating users, invisible to everyone else.',
+  ]}
+/>

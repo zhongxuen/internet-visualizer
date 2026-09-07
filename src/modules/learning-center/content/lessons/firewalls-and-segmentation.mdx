@@ -1,0 +1,109 @@
+{/* Track 7, lesson 4, and the last lesson of the curriculum. Ends on placement rather */}
+{/* than on rules, because that is the transferable idea, and closes by pointing at */}
+{/* Network Diagnostics -- the module where the reader can go and look for themselves. */}
+
+# Firewalls and segmentation
+
+A <Term>firewall</Term> is a policy applied at a boundary. Almost everything interesting
+about one is the choice of boundary, not the choice of rules — a perfect ruleset in the
+wrong place protects nothing, and a crude one in the right place protects a great deal.
+
+<EmbeddedSim module="network-map" scenario="small-office" />
+
+## Why the boundary is where it is
+
+That office has one switch and three <Term id="vlan">VLANs</Term> on it — staff, guests,
+and servers. Traffic within a VLAN never leaves layer 2 and no firewall can see it.
+Traffic between VLANs must go through a layer-3 device, and that forced detour is the
+entire point: it creates a place to stand.
+
+Segmentation is what turns one compromised laptop into a contained problem instead of a
+company-wide one. The guest network is the clearest case — it needs the Internet and it
+needs nothing else on the premises, and putting it in its own VLAN says so structurally
+rather than hopefully.
+
+<Quiz
+  id="where-firewall"
+  question="A firewall sits between the office and the Internet. A laptop on the staff VLAN is compromised. What can it reach?"
+  options={[
+    {
+      id: 'same-vlan',
+      label: 'Everything else on its own VLAN, without the firewall ever seeing it',
+      correct: true,
+      why: 'A firewall inspects what crosses it. Traffic between two machines on the same segment never crosses anything, which is why perimeter-only designs fail the moment something inside is compromised.',
+    },
+    {
+      id: 'nothing',
+      label: 'Nothing — the firewall blocks lateral movement',
+      why: 'It blocks what passes through it, and lateral movement inside one segment does not. Stopping that needs segmentation or host-level policy, not a perimeter rule.',
+    },
+    {
+      id: 'internet',
+      label: 'Only the Internet, since that is what the firewall governs',
+      why: 'The Internet is the one direction that *is* governed and filtered. The local segment is the unfiltered one, which is the reverse of what the question implies.',
+    },
+  ]}
+/>
+
+## Stateful, and the two ways to say no
+
+A stateful firewall remembers connections it allowed outward so it can let the replies
+back in. That is what makes "allow outbound, deny inbound" a workable default instead of
+a description of a network nobody can use — and it is the same table idea as
+
+<Term>NAT</Term>, doing a different job.
+
+When it does say no, it has two ways to do it, and they are distinguishable from outside:
+
+|                 | Reject                    | Drop                     |
+| --------------- | ------------------------- | ------------------------ |
+| Sends           | A TCP reset or ICMP error | Nothing at all           |
+| Client sees     | An instant failure        | A timeout, after retries |
+| Tells a scanner | “Something is here”       | Nothing                  |
+
+That is the same distinction you met in track 2 as _fast failure versus slow failure_,
+now from the other side of the boundary.
+
+<Quiz
+  id="predict-drop-cost"
+  kind="predict"
+  question="Dropping tells an attacker nothing. Why would anyone reject instead?"
+  revealLabel="What actually happens"
+  reveal="Because dropping punishes your own users too. A legitimate client that hits a dropped port waits out a full retry schedule — often fifteen seconds or more — before reporting a failure, where a reject tells it in one round trip. Inside a network, where you know who is connecting and want fast, comprehensible failures, reject is usually right. At the Internet-facing perimeter, where most of the traffic is unsolicited scanning, drop is usually right. The honest summary is that this is a trade between diagnosability and telling strangers nothing, and the correct answer differs at every boundary."
+  options={[
+    {
+      id: 'diagnosable',
+      label:
+        'Because a drop makes legitimate clients wait out a timeout instead of failing immediately',
+      correct: true,
+      why: 'Silence is only unhelpful to an attacker; it is equally unhelpful to your own users and your own monitoring. That is why internal boundaries commonly reject and the perimeter commonly drops.',
+    },
+    {
+      id: 'standard',
+      label: 'Because the RFCs require a reset to be sent',
+      why: 'Nothing requires a firewall to answer. A host with no listener sends a reset; a firewall that discards the packet is free to say nothing at all.',
+    },
+    {
+      id: 'performance',
+      label: 'Because sending a reset is cheaper than tracking the dropped packet',
+      why: 'Both are cheap and neither requires tracking anything for a rejected packet. The real difference is what the other side learns and how long it waits.',
+    },
+  ]}
+/>
+
+## Going and looking
+
+You now have a model of the whole path: names, addresses, routes, transports, TLS, HTTP,
+APIs and the machines in between. The Network Diagnostics module is where you can point
+the same four tools every operator uses at it — simulated by default, with a live mode
+behind an explicit opt-in, and a badge that always tells you which one you are in.
+
+<KeyTakeaways
+  items={[
+    'A firewall is a policy at a boundary, and choosing the boundary matters far more than choosing the rules.',
+    'Traffic inside one segment never crosses the firewall, so a perimeter-only design does nothing against lateral movement.',
+    'Segmentation forces traffic through a layer-3 device, which is what creates somewhere for policy to be applied at all.',
+    'Stateful inspection remembers outbound connections so replies can return — the same table idea as NAT, doing a different job.',
+    'Rejecting fails fast and reveals that something is there; dropping reveals nothing and makes legitimate clients wait out a timeout.',
+  ]}
+/>

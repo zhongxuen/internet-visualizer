@@ -4,13 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Phases 01–12 are complete: the scaffolding, the design system and app shell, the
-simulation core, the visualization layer, and nine finished modules — **Network Map**
+Phases 01–13 are complete: the scaffolding, the design system and app shell, the
+simulation core, the visualization layer, and all ten modules — **Network Map**
 (phase 05), **Packet Journey** (phase 06), **DNS Explorer** (phase 07), **HTTP Explorer**
 (phase 08), **HTTPS Explorer** (phase 09), **API Visualizer** (phase 10A), **WebSocket
-Viewer** (phase 10B), **Internet Simulator** (phase 11), and **Network Diagnostics**
-(phase 12), the only nine entries in `src/modules/registry.ts` with `status: 'ready'`.
-The Learning Center (phase 13) is still `'planned'`.
+Viewer** (phase 10B), **Internet Simulator** (phase 11), **Network Diagnostics**
+(phase 12), and the **Learning Center** (phase 13). Every entry in
+`src/modules/registry.ts` now has `status: 'ready'`.
+
+The Learning Center is the one module that teaches from the other nine rather than
+simulating anything itself, and it is at `/learn` rather than `/learning-center` because
+its routes are a small site: an index, a glossary, and thirty-three lessons across seven
+tracks. Read `src/modules/learning-center/README.md` before touching it. Three
+invariants matter most:
+
+- **A lesson embeds a module's own run, never a copy of it.** `EmbeddedSim` resolves
+  `module`/`scenario` through `src/modules/scenarios.ts` — the manifest that exists
+  because the boundary rule below forbids one module importing another — so a lesson
+  cannot drift out of sync with what it teaches. No animation code may be added to the
+  Learning Center.
+- **Coverage is asserted, not assumed.** `SPEC_LEARNING_TOPICS` in the registry is the
+  committed copy of the spec's learning-topic list (the spec file is git-ignored), and
+  `content/coverage.test.ts` asserts every one of those topics is taught by at least one
+  lesson. `content/authoring.test.ts` asserts the shape of each lesson, including the
+  spec's ~150-word prose budget between visual elements.
+- **Progress is `localStorage` only and never reaches a server render.** No account, no
+  backend, no PII.
 
 **Network Diagnostics is the only module with `usesRealNetwork: true`, and no other
 module may ever set it.** `tests/registry.test.ts` asserts that; tighten that test, never

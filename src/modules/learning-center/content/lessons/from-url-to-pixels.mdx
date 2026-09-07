@@ -1,0 +1,110 @@
+{/* Track 2, lesson 1, and the spine of the whole curriculum: the one lesson that shows */}
+{/* all five stages composed. Every other track goes deeper into one of them, so this */}
+{/* deliberately stays at altitude and names what the reader will come back for. */}
+
+# From a URL to pixels
+
+Press Enter and nothing visible happens for a while. That while is not one operation, it
+is five, and the request for the page is only the fourth of them.
+
+A URL is three parts and the browser uses each in a different stage:
+
+```text
+https://www.example.com/index.html
+-----   ---------------  ----------
+scheme  host             path
+
+scheme -> which protocol, and therefore which port and whether TLS is involved
+host   -> the name to resolve into an address
+path   -> the only part the server is actually asked about
+```
+
+The host has to become a number before anything can be sent anywhere. The scheme decides
+whether a <Term>TLS</Term> handshake sits between the connection and the request. Only
+then does the path get mentioned at all.
+
+<EmbeddedSim module="internet-simulator" scenario="first-visit-https" />
+
+## Five stages, in order, each waiting on the last
+
+| Stage  | What it produces        | Roughly what it costs        |
+| ------ | ----------------------- | ---------------------------- |
+| DNS    | An address for the name | One round trip, often cached |
+| TCP    | An open connection      | One round trip               |
+| TLS    | Keys, and an identity   | One round trip on TLS 1.3    |
+| HTTP   | The document            | One round trip plus the body |
+| Render | Pixels                  | Whatever the page asks for   |
+
+The stages are strictly sequential and each one waits on the whole of the previous. That
+is why distance hurts so much: you do not pay the round trip once, you pay it three or
+four times before a single byte of HTML arrives — and the page then asks for a
+stylesheet, which starts the last two stages over again.
+
+<Quiz
+  id="stage-order"
+  question="On a cold first visit to an HTTPS site, which happens first: the TLS handshake, or the DNS lookup?"
+  options={[
+    {
+      id: 'dns',
+      label: 'DNS — you cannot open a connection to a name',
+      correct: true,
+      why: 'TLS runs inside a TCP connection, and a TCP connection is opened to an address. The name has to become a number before anything else can begin, which is why a slow resolver delays absolutely everything.',
+    },
+    {
+      id: 'tls',
+      label: 'TLS — the browser secures the channel before looking anything up',
+      why: 'There is no channel yet to secure. TLS is a layer on top of an established TCP connection; it has no way to run before one exists.',
+    },
+    {
+      id: 'parallel',
+      label: 'They run in parallel to save time',
+      why: 'They genuinely cannot: the input to the connection is the output of the lookup. Browsers do parallelise across *different* hosts — that is what preconnect hints are for — but never these two for one host.',
+    },
+  ]}
+/>
+
+## The render stage is not the end of the network
+
+Getting the HTML does not finish anything. The browser parses it, discovers a stylesheet,
+a font, some script and an image, and each of those is another request — some of which
+block the first paint until they arrive.
+
+That is the shape of a modern page load: not one transfer, but a dependency tree of
+dozens of small ones, each of which waits for its parent to be parsed before it can even
+be requested.
+
+<Quiz
+  id="predict-render-blocking"
+  kind="predict"
+  question="The HTML arrives in 200 ms and references one stylesheet. When does the user see text?"
+  revealLabel="What actually happens"
+  reveal="Not at 200 ms. A stylesheet in the head is render-blocking: the browser has the text but refuses to paint it, because painting unstyled content and then restyling it would produce a visible flash. So the user waits for the HTML, then for the stylesheet to be discovered, requested, and delivered — and the first paint lands after the second round trip, not the first. Everything in the simulation above between 'document received' and 'first paint' is this."
+  options={[
+    {
+      id: 'after-css',
+      label: 'After the stylesheet arrives too — it blocks rendering',
+      correct: true,
+      why: 'The browser will not paint content it may be about to restyle. The stylesheet is not discovered until the HTML is parsed, so its cost is added after the document, not alongside it.',
+    },
+    {
+      id: 'immediately',
+      label: 'At 200 ms — the text is already there',
+      why: 'The bytes are there, but painting them would mean showing unstyled text and then rearranging it. Browsers deliberately wait rather than flash, and that decision is what makes stylesheet delivery a first-paint problem.',
+    },
+    {
+      id: 'never',
+      label: 'Only once every resource on the page has loaded',
+      why: 'That would be far worse than what browsers actually do. Images, fonts and scripts marked async do not block the first paint — the specific blocking category is small, and stylesheets are the main member of it.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'A page load is five sequential stages — DNS, TCP, TLS, HTTP, render — and the request is only the fourth.',
+    'Each stage consumes the output of the last, so none of the first four can be overlapped for a single host.',
+    'The URL is not one thing: the scheme decides the protocol, the host is resolved, and only the path is ever sent to the server.',
+    'Most of a cold page load is round trips rather than bytes, which is why distance dominates and bandwidth often does not.',
+    'The document arriving is not the end. Every resource it references restarts the last two stages.',
+  ]}
+/>

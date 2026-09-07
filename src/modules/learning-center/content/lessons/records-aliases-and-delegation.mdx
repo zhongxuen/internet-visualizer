@@ -1,0 +1,111 @@
+{/* Track 3, lesson 2. The reader can walk the tree; this is what is stored in it. The */}
+{/* through-line is that a CNAME is a delegation of *answering*, which is why it is the */}
+{/* mechanism a CDN is handed a name with -- setting up track 7. */}
+
+# Records, aliases, and delegation
+
+A DNS answer is not "an address". It is a set of records at a name, each with a type, and
+the type you asked for decides what comes back. The same name can hold several.
+
+| Type  | Answers the question                     | Typical value         |
+| ----- | ---------------------------------------- | --------------------- |
+| A     | Where is this name, in IPv4?             | `93.184.216.34`       |
+| AAAA  | Where is this name, in IPv6?             | `2606:2800:220:1:...` |
+| NS    | Who is authoritative for this zone?      | `ns1.example.com`     |
+| MX    | Where does mail for this go?             | `10 mail.example.com` |
+| TXT   | Arbitrary text, usually proof of control | `v=spf1 ...`          |
+| CNAME | This name is really that name            | `www.example.com`     |
+
+The last one is different in kind from the others. Every type above it is data. A
+
+<Term>CNAME</Term> is an instruction: stop asking about this name and start again at that
+one.
+
+<EmbeddedSim module="dns-explorer" scenario="cname-chain" />
+
+## Why a CNAME cannot share a name
+
+Because a CNAME replaces the name entirely, it must be the only record there. There is no
+coherent way to say "this name is really that name, and also here is its mail server" —
+the two statements contradict each other.
+
+That has a practical consequence people meet constantly: a zone apex like `example.com`
+must carry NS and SOA records by definition, so it can never be a CNAME. Only
+`www.example.com` can. Providers work around it with non-standard record types that
+behave like a CNAME and resolve to addresses at the server, but the underlying rule has
+not changed.
+
+<Quiz
+  id="apex-cname"
+  question="Why can www.example.com be a CNAME while example.com cannot?"
+  options={[
+    {
+      id: 'apex',
+      label:
+        'The apex must hold NS and SOA records, and a CNAME may not share a name with anything',
+      correct: true,
+      why: 'A CNAME says the name is really some other name, which is incompatible with also holding data of its own. The apex is required to hold NS and SOA, so the two requirements collide.',
+    },
+    {
+      id: 'length',
+      label: 'A CNAME target has to be longer than the name it is at',
+      why: 'There is no such rule. A CNAME may point anywhere, including at a shorter name — chains routinely run from a subdomain to an apex.',
+    },
+    {
+      id: 'registrar',
+      label: 'Registrars forbid it for billing reasons',
+      why: 'It is a protocol constraint from RFC 1034, not a policy one. Any registrar that appears to allow it is synthesising the answer at the server rather than storing a real CNAME.',
+    },
+  ]}
+/>
+
+## Following an alias out of the zone
+
+A CNAME whose target is in the same zone is answered in one exchange — the server
+follows the chain itself, because it can. A CNAME pointing into somebody _else's_ zone
+cannot be: the walk restarts at the root and climbs down a second time, into a zone the
+original operator does not control.
+
+That is not a limitation. It is the point. Pointing your name at a
+
+<Term>CDN</Term> hands over *who decides the answer*, which is what lets the CDN return a
+different address for a visitor in Lagos than for one in Frankfurt.
+
+<EmbeddedSim module="dns-explorer" scenario="cdn-lookup" />
+
+<Quiz
+  id="predict-cdn-ttl"
+  kind="predict"
+  question="The CDN answers with a 30-second TTL, where the original zone used a day. Why so short?"
+  revealLabel="What actually happens"
+  reveal="Because the answer is a steering decision, not a fact. The CDN is choosing which edge should serve this visitor, and it wants to be able to change its mind quickly — to drain an edge for maintenance, route around a failure, or rebalance load. A day-long TTL would mean a failed edge kept receiving traffic for a day. The cost is query volume: a 30-second TTL means the world asks about that name roughly 2 880 times a day per resolver rather than once, and the CDN pays for the DNS capacity to answer."
+  options={[
+    {
+      id: 'steering',
+      label:
+        'The answer is a routing decision the CDN wants to be able to revise quickly',
+      correct: true,
+      why: 'A short TTL buys agility and is paid for in query volume. That trade only makes sense when the answer is a live decision rather than a stable fact, which is exactly the difference between a CDN record and an apex A record.',
+    },
+    {
+      id: 'freshness',
+      label: 'To make sure visitors get the newest version of the content',
+      why: 'Content freshness is decided by HTTP caching headers, not by DNS. The DNS TTL controls how long a *name-to-address* mapping is reused and says nothing about the bytes served afterwards.',
+    },
+    {
+      id: 'security',
+      label: 'Short TTLs make cache poisoning harder',
+      why: 'They arguably make it slightly easier, by giving an attacker more opportunities to race a real answer. The defence against poisoning is DNSSEC and source-port randomisation, not a short lifetime.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'A name holds a set of typed records, and the type you ask for decides what comes back.',
+    'Every record type is data except CNAME, which is an instruction to resolve a different name instead.',
+    'A CNAME must be alone at its name, which is why a zone apex can never be one.',
+    'An alias pointing into another operator’s zone restarts the walk from the root — and that hand-off is how a name is given to a CDN.',
+    'A short TTL means the answer is a decision somebody wants to revise; a long one means it is a fact. The cost of the first is query volume.',
+  ]}
+/>

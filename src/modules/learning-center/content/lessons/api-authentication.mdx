@@ -1,0 +1,115 @@
+{/* Track 6, lesson 2. Builds directly on cookies-and-sessions: same problem, no */}
+{/* browser to help. The 401/403 distinction goes first because it is the cheapest */}
+{/* correction, then tokens, then OAuth as the answer to "and someone else's data?". */}
+
+# API authentication
+
+Two questions, constantly confused, and HTTP has a different status code for each:
+
+- **Authentication** — who is calling? A failure here is `401 Unauthorized`, and the
+  response owes the client a `WWW-Authenticate` field naming the scheme to use.
+- **Authorisation** — may this caller do this? A failure here is `403 Forbidden`, and
+  there is nothing the client can change about its credentials to fix it.
+
+`401` means _I do not know you_. `403` means _I know exactly who you are, and no_.
+
+<EmbeddedSim module="api-visualizer" scenario="auth-bearer" />
+
+## Keys, tokens, and where they must not go
+
+An API key is a long random string that identifies a caller and usually nothing else. A
+
+<Term id="bearer-token">bearer token</Term> is the same idea with structure: it says who
+you are, what you may do, and when it stops being true.
+
+"Bearer" is the whole security model — possession is sufficient. That has two immediate
+consequences:
+
+```text
+Authorization: Bearer eyJhbGciOi...     good: a header, over TLS, not logged by default
+GET /v1/orders?api_key=sk_live_9f3...   bad:  now in access logs, browser history,
+                                              Referer headers, and every screenshot
+```
+
+A JWT is worth understanding concretely: the payload is base64url, which is an encoding
+and not encryption. Anyone holding the token can read every claim in it. The signature
+makes it tamper-**evident**, not confidential — and a verifier must decide which
+algorithms it accepts before it reads the token, or it will be told.
+
+<Quiz
+  id="jwt-readable"
+  question="You put a user's email and role in a JWT payload. Who can read them?"
+  options={[
+    {
+      id: 'anyone',
+      label: 'Anyone holding the token — the payload is encoded, not encrypted',
+      correct: true,
+      why: 'base64url is trivially reversible and every JWT debugger does it in a browser. The signature stops the payload being altered without detection; it does nothing to hide it.',
+    },
+    {
+      id: 'server',
+      label: 'Only the server, since it holds the signing key',
+      why: 'The key verifies the signature. It is not used to encrypt the payload, so it is not needed to read one.',
+    },
+    {
+      id: 'nobody',
+      label: 'Nobody — the signature encrypts the contents',
+      why: 'A signature and an encryption are different operations. Signing proves the contents were not changed and leaves them perfectly readable.',
+    },
+  ]}
+/>
+
+## Acting on somebody else's behalf
+
+The harder problem is an application that needs to use _your_ account somewhere else.
+Handing it your password gives it everything, forever, with no way to take it back.
+
+<Term>OAuth</Term> is the answer, and the shape of it is worth holding in your head:
+
+<EmbeddedSim module="api-visualizer" scenario="oauth-authcode-pkce" />
+
+You type your password into the authorization server and nowhere else. It hands the
+application a short-lived code _through the browser_; the application exchanges that code
+for a token over a direct back-channel, so the token itself never travels through the
+browser at all.
+
+PKCE closes the remaining hole. The client commits to a secret before the user even
+authenticates, and must produce it at the exchange — so a stolen code is worthless to
+whoever stole it.
+
+<Quiz
+  id="predict-stolen-code"
+  kind="predict"
+  question="An attacker intercepts the authorization code from the redirect URL. What can they do with it?"
+  revealLabel="What actually happens"
+  reveal="With PKCE, nothing. The code is only half of what the token exchange requires: the other half is the code_verifier, a random secret the legitimate client generated before the flow began and never sent anywhere. The authorization server hashed it into the code_challenge at the start and checks it at the end, so a code presented without the matching verifier is refused. Without PKCE the code alone was enough, which is why it exists — public clients like mobile apps and single-page apps cannot keep a client secret, so the secret has to be created fresh per flow instead."
+  options={[
+    {
+      id: 'nothing',
+      label:
+        'Nothing — the exchange also requires a verifier that never left the real client',
+      correct: true,
+      why: 'PKCE binds the code to the client that started the flow. The attacker holds one of two required inputs, and the missing one was never transmitted.',
+    },
+    {
+      id: 'token',
+      label: 'Exchange it for an access token',
+      why: 'That was exactly the attack before PKCE, and it is why PKCE became mandatory for public clients. The code travelling through the browser has always been the exposed part of the flow.',
+    },
+    {
+      id: 'password',
+      label: 'Recover the user’s password from it',
+      why: 'The password never enters this flow — it goes to the authorization server directly and appears nowhere in the code. Not exposing it is the main thing OAuth is for.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    '401 means the caller is unknown and owes a WWW-Authenticate field; 403 means the caller is known and refused.',
+    'Bearer means possession is sufficient, so a credential in a query string is a credential in logs, history and Referer headers.',
+    'A JWT payload is encoded, not encrypted — signing makes it tamper-evident, and readable by anyone holding it.',
+    'OAuth exists so an application never sees your password: the code travels through the browser, the token never does.',
+    'PKCE binds the code to the client that began the flow, which makes a stolen authorization code worthless.',
+  ]}
+/>

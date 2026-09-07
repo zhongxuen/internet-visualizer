@@ -1,0 +1,106 @@
+{/* Track 2, lesson 3. what-is-a-network introduced latency vs bandwidth as a table; */}
+{/* this is the lesson that makes the reader feel it, by running the identical page */}
+{/* over a worse link and pointing at which half of the bill actually grew. */}
+
+# Why pages feel slow
+
+Take the cold first visit from lesson 1 and change nothing about the page. Change only
+the link underneath it — 200 ms of <Term>latency</Term> instead of 20, and a fraction of
+the <Term>bandwidth</Term>.
+
+<EmbeddedSim module="internet-simulator" scenario="slow-network" />
+
+## Both halves went up. Only one of them mattered.
+
+The bandwidth drop made the bodies take longer to transfer. That is linear, predictable,
+and usually the smaller number. The latency increase multiplied every
+
+<Term>round trip</Term> in the load — and a cold HTTPS page load contains four before the
+HTML exists, plus one more for every resource discovered afterwards.
+
+```text
+Cost of one page load, roughly:
+
+  (number of round trips  x  latency)   +   (total bytes / bandwidth)
+   ^                                         ^
+   grows with distance and protocol           grows with page weight
+   design; unfixable by paying more           fixable by sending less
+```
+
+This is why a satellite link with more bandwidth than 3G still feels worse, and why
+essentially every protocol change of the last decade — TLS 1.3's single round trip,
+session resumption, QUIC folding the transport and TLS handshakes together — has been
+an attack on the left-hand term.
+
+<Quiz
+  id="which-term"
+  question="A page is slow for users on another continent. Your host offers to double your bandwidth. What happens?"
+  options={[
+    {
+      id: 'little',
+      label: 'Very little — the cost is dominated by round trips, not by transfer time',
+      correct: true,
+      why: 'Doubling bandwidth halves only the second term, and on a typical page that term is the smaller one. The round trips are set by the speed of light and by how many the protocol needs, and no amount of capacity touches either.',
+    },
+    {
+      id: 'halves',
+      label: 'The page loads roughly twice as fast',
+      why: 'That would follow if a page load were one big transfer. It is dozens of small dependent ones, most of which spend their time waiting rather than transferring.',
+    },
+    {
+      id: 'worse',
+      label: 'It gets slower, because more bandwidth means more congestion',
+      why: 'Extra capacity does not create congestion. The honest answer is simply that it changes very little here — the bottleneck is distance, and the fix is to move the content closer.',
+    },
+  ]}
+/>
+
+## The other multiplier: how many requests queue
+
+Latency sets the price of one round trip. The protocol decides how many of them you are
+forced to make in sequence — and that is the part you can actually change.
+
+<EmbeddedSim module="http-explorer" scenario="http2-multiplexing" />
+
+Under HTTP/1.1 a browser opens about six connections per host and everything else waits
+in line, so twenty-four resources become four rounds of queueing. HTTP/2 sends them all
+at once over one connection and that queue disappears. What does not disappear is
+
+<Term id="head-of-line-blocking">head-of-line blocking</Term> underneath: TCP still
+delivers in order, so one lost segment stalls every stream sharing the connection.
+
+<Quiz
+  id="predict-h2-loss"
+  kind="predict"
+  question="HTTP/2 multiplexes twenty-four downloads over one TCP connection. One segment is lost. Which downloads stall?"
+  revealLabel="What actually happens"
+  reveal="All of them. HTTP/2 removed the application-layer queue but inherited the transport-layer one: TCP delivers bytes strictly in order, and it cannot know that the bytes after the gap belong to a different stream. So a single loss freezes every stream at once — which is worse than HTTP/1.1, where a loss on one of six connections stalls only that one. This is the exact problem QUIC was designed to fix, by tracking loss per stream, and it is the reason HTTP/3 had to replace TCP rather than sit on it."
+  options={[
+    {
+      id: 'all',
+      label: 'All twenty-four — TCP will not deliver past the gap',
+      correct: true,
+      why: 'Ordering is a property of the connection, not of the streams inside it. TCP has no idea the multiplexing exists, so it holds everything behind the hole until the retransmission lands.',
+    },
+    {
+      id: 'one',
+      label: 'Only the stream the lost segment belonged to',
+      why: 'That is what HTTP/3 achieves, and only because QUIC does its own loss tracking per stream. Over TCP, the connection has no visibility into which stream any byte belongs to.',
+    },
+    {
+      id: 'none',
+      label: 'None — HTTP/2 retransmits at the stream level',
+      why: 'HTTP/2 has no retransmission of its own at all. It hands bytes to TCP and TCP handles loss, which is exactly why HTTP/2 could not fix this.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'A page load costs round trips times latency, plus bytes over bandwidth. On most pages the first term is the larger one.',
+    'Distance sets latency and nothing you buy changes it. That is why moving content closer is the only real fix.',
+    'Protocol design is the other lever: every handshake optimisation of the last decade removes round trips, not bytes.',
+    'HTTP/1.1 queues requests behind six connections; HTTP/2 removes that queue entirely.',
+    'HTTP/2 cannot remove TCP’s in-order delivery, so one lost segment stalls every multiplexed stream — the problem QUIC exists to solve.',
+  ]}
+/>

@@ -104,6 +104,15 @@ export interface SimulationViewProps {
    * returns to the whole diagram. Omit unless something is driving the camera.
    */
   focusNodeIds?: readonly string[];
+  /**
+   * Shorten the diagram and the side column, for a view embedded in something else.
+   *
+   * A slot cannot do this -- the height belongs to the layout, not to the content -- and
+   * a lesson that drops a simulation into the middle of its prose needs one that fits
+   * between two paragraphs rather than one that fills the screen. Nothing else changes:
+   * same canvas, same controls, same keyboard map, same log.
+   */
+  compact?: boolean;
   /** Accessible name for the diagram region. */
   label?: string;
   className?: string;
@@ -119,6 +128,7 @@ export function SimulationView({
   selection: selectionProp,
   onSelect,
   focusNodeIds,
+  compact = false,
   label,
   className,
 }: SimulationViewProps) {
@@ -157,7 +167,14 @@ export function SimulationView({
       <div className={cn('flex min-h-0 flex-col gap-3', className)}>
         {controlPanel}
 
-        <div className="grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div
+          className={cn(
+            'grid min-h-0 gap-3',
+            compact
+              ? 'lg:grid-cols-[minmax(0,1fr)_18rem]'
+              : 'lg:grid-cols-[minmax(0,1fr)_22rem]',
+          )}
+        >
           <SimulationCanvas
             topology={topology}
             nodeStates={visible.nodeStates}
@@ -166,11 +183,16 @@ export function SimulationView({
             selection={selection}
             onSelect={select}
             focusNodeIds={focusNodeIds}
-            className="h-[26rem] lg:h-[32rem]"
+            className={compact ? 'h-[19rem] lg:h-[22rem]' : 'h-[26rem] lg:h-[32rem]'}
             label={label}
           />
 
-          <div className="flex min-h-0 flex-col gap-3 lg:h-[32rem]">
+          <div
+            className={cn(
+              'flex min-h-0 flex-col gap-3',
+              compact ? 'lg:h-[22rem]' : 'lg:h-[32rem]',
+            )}
+          >
             <Panel title="Phases" scroll className="shrink-0 lg:max-h-[55%]">
               <PhaseStepper
                 phases={result.phases}

@@ -1,0 +1,105 @@
+{/* Track 7, lesson 1. Pays off three earlier threads at once: the round-trip argument */}
+{/* from track 2, the CNAME delegation from track 3, and RFC 9111 from track 4. The */}
+{/* framing is deliberately deflationary -- an edge is just a shared cache. */}
+
+# CDNs and the edge
+
+A <Term>CDN</Term> is not exotic. An edge server is an ordinary shared HTTP cache obeying
+exactly the RFC 9111 rules from track 4 — `max-age`, `s-maxage`, ETags, 304s, all of it.
+The only thing that makes it a CDN is _where_ it sits.
+
+<EmbeddedSim module="internet-simulator" scenario="cdn-hit" />
+
+## The saving is distance, not work
+
+The origin never heard about that request. Nothing was computed, nothing was queried,
+and the entire cost of the page was a handful of milliseconds to a machine in the same
+city.
+
+The `Age` field is the giveaway: it says how long the edge has been holding this
+response, which is information no origin would ever send about itself. A miss shows you
+what was avoided:
+
+<EmbeddedSim module="internet-simulator" scenario="cdn-miss-origin-fetch" />
+
+The client sees one request and one response either way. Behind it, the miss paid for a
+whole round trip to the origin plus the origin's own work — and the next visitor gets the
+fast version because this one paid for it.
+
+<Quiz
+  id="age-header"
+  question="A response arrives with Age: 240 and Cache-Control: max-age=600. What do you know?"
+  options={[
+    {
+      id: 'shared',
+      label:
+        'It came from a shared cache that has held it for four minutes, and it stays fresh for six more',
+      correct: true,
+      why: 'Age is only sent by a cache, and it counts from when the response was generated at the origin. Freshness is the remaining lifetime — max-age minus age — which is what the next cache along will also compute.',
+    },
+    {
+      id: 'origin',
+      label: 'The origin took 240 seconds to generate it',
+      why: 'Generation time is not reported in HTTP at all. Age measures time spent sitting in caches after the response was produced.',
+    },
+    {
+      id: 'stale',
+      label: 'It is stale, since it has been held for a while',
+      why: 'Staleness is a comparison, not a duration: freshness lasts while max-age exceeds age. At 240 against 600 this response has six minutes of freshness left.',
+    },
+  ]}
+/>
+
+## Getting you to the nearest edge
+
+Two mechanisms do the steering, and they work at different layers.
+
+The first is DNS. A <Term>CNAME</Term> points your name into the CDN's zone, which hands
+the CDN the right to decide the answer — the delegation from track 3, put to work. Short
+TTLs let it change its mind quickly.
+
+The second is <Term>anycast</Term>: one address advertised from many places at once, so
+routing itself delivers each packet to the nearest announcement. There is nothing to look
+up and no decision to make at the client.
+
+|         | DNS steering            | Anycast                  |
+| ------- | ----------------------- | ------------------------ |
+| Decides | Per lookup, by the CDN  | Per packet, by routing   |
+| Sees    | The resolver’s location | The client’s actual path |
+| Changes | On a TTL                | On a routing update      |
+
+<Quiz
+  id="predict-ecs"
+  kind="predict"
+  question="You use a public resolver on another continent. What does the CDN's DNS steering see?"
+  revealLabel="What actually happens"
+  reveal="The resolver's location, not yours — and that is a real problem, because the whole point was to find an edge near *you*. The CDN answers with an edge near the resolver, which may be thousands of kilometres away. The fix is EDNS Client Subnet: the resolver includes a truncated version of your address in the query so the CDN can steer on it, at the cost of leaking a piece of your address to every authoritative server it asks. That trade — accuracy against privacy — is why some public resolvers deliberately do not send it, and why anycast steering avoids the question entirely by working at the routing layer."
+  options={[
+    {
+      id: 'resolver',
+      label: 'The resolver’s location — which may be nowhere near you',
+      correct: true,
+      why: 'The authoritative server only ever sees the machine that asked, and that is the resolver. EDNS Client Subnet exists to pass a hint about the real client, and it costs privacy to do it.',
+    },
+    {
+      id: 'client',
+      label: 'Your address, since your machine originated the lookup',
+      why: 'Your machine asked the resolver; the resolver asked the CDN. Nothing about the original asker survives that unless a resolver deliberately adds it.',
+    },
+    {
+      id: 'both',
+      label: 'Both, because DNS queries carry the full chain of who asked',
+      why: 'There is no such chain in a DNS query. Each hop is an independent question from whoever is asking it.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'An edge is an ordinary shared HTTP cache. What makes it a CDN is where it sits, not what it does.',
+    'The saving is distance rather than work: on a hit, the origin never learns the request happened.',
+    'The Age field is a cache reporting how long it has held a response, and is the clearest sign one is involved.',
+    'DNS steering works by delegating the answer through a CNAME, and sees the resolver’s location rather than the client’s.',
+    'Anycast steers at the routing layer instead, so there is no lookup, no decision, and no client-location problem.',
+  ]}
+/>

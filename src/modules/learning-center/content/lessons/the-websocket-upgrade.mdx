@@ -1,0 +1,119 @@
+{/* Track 6, lesson 6. The mechanism lesson. Deliberately anchored in track 4: the */}
+{/* upgrade is an ordinary HTTP request with a specific set of fields, and the blank */}
+{/* line that framed a message there is the exact byte where HTTP ends here. */}
+
+# The upgrade, and the frames after it
+
+A <Term>WebSocket</Term> does not start as a WebSocket. It starts as an ordinary
+HTTP/1.1 GET on port 443, with a few fields that ask the server to stop speaking HTTP.
+
+```http
+GET /chat HTTP/1.1
+Host: example.com
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+
+HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+
+```
+
+That blank line after the `101` is the same framing device from track 4, doing its last
+job: it is the exact byte at which HTTP ends and frames begin.
+
+<EmbeddedSim module="websocket-viewer" scenario="handshake-and-chat" />
+
+## Why it looks like HTTP at all
+
+Because that is what deploys. A WebSocket connection traverses corporate proxies, load
+balancers and firewalls that have never heard of WebSockets, precisely because the first
+thing they see is a GET to port 443 with a Host field.
+
+`Sec-WebSocket-Accept` is the server hashing the client's key together with a fixed,
+published GUID. It is not a secret and proves nothing about identity — it is a proof of
+_comprehension_, showing that whatever answered actually understood the request rather
+than a cache replaying an old `101`.
+
+<Quiz
+  id="accept-purpose"
+  question="Sec-WebSocket-Accept is computed from a public constant. What is it for?"
+  options={[
+    {
+      id: 'comprehension',
+      label:
+        'To prove the responder understood the handshake, rather than a cache replaying an old response',
+      correct: true,
+      why: 'Only something that implements the protocol will compute the right value from this particular request’s key. It defends against confused intermediaries and cached responses, not against attackers — TLS is what does that.',
+    },
+    {
+      id: 'auth',
+      label: 'To authenticate the server to the client',
+      why: 'The GUID is published in the RFC, so anyone can compute the value. Authentication is TLS’s job, and this handshake is layered on top of it.',
+    },
+    {
+      id: 'encrypt',
+      label: 'To derive a key for encrypting the frames',
+      why: 'Frames are not encrypted by WebSocket at all. Confidentiality comes entirely from running over TLS, which is what `wss://` means.',
+    },
+  ]}
+/>
+
+## Frames, and the message that spans several
+
+After the `101` there is no request/response pairing at all — just two independent
+streams of <Term>frame</Term>s sharing one socket. A frame is a couple of bytes of
+header and then payload, which is why a chat message costs about eleven bytes total.
+
+A message is not a frame. A sender that does not yet know how long its message will be
+can start sending anyway: the first frame carries the type with FIN clear, every frame
+after it carries the continuation opcode, and the last one sets FIN.
+
+<EmbeddedSim module="websocket-viewer" scenario="fragmented-message" />
+
+The length field has three encodings — 0–125 inline, then 126 meaning "the real length is
+in the next two bytes" and 127 meaning "the next eight" — and the encoding must be
+minimal, because two legal spellings of one frame is how parsers come to disagree.
+
+<EmbeddedSim module="websocket-viewer" scenario="binary-frames" />
+
+<Quiz
+  id="predict-base64"
+  kind="predict"
+  question="A team sends binary data over a WebSocket by base64-encoding it into text frames. What does that cost?"
+  revealLabel="What actually happens"
+  reveal="About 33% more bytes before JSON quoting, plus the CPU to encode and decode on both ends, plus UTF-8 validation on every frame — for a capability the protocol already has. Binary frames exist for exactly this: the opcode says the payload is binary, so it is handed straight to a decoder with no validation and no expansion. Text frames are validated as UTF-8 and a failure closes the connection with 1007, which is the right behaviour for text and pure overhead for bytes that were never text."
+  options={[
+    {
+      id: 'overhead',
+      label:
+        'Roughly a third more bytes, plus encoding cost — for something binary frames already do',
+      correct: true,
+      why: 'base64 expands by 4/3 and JSON quoting adds more. The opcode already distinguishes binary from text, so the encoding buys nothing the protocol was not offering.',
+    },
+    {
+      id: 'nothing',
+      label: 'Nothing — WebSocket frames are binary underneath anyway',
+      why: 'The framing is binary, but a text frame commits the payload to being valid UTF-8, which is what forces the encoding in the first place. The opcode is a real choice with real consequences.',
+    },
+    {
+      id: 'safer',
+      label:
+        'A little bandwidth, in exchange for surviving intermediaries that mangle binary',
+      why: 'Under TLS no intermediary sees the frames at all, so there is nothing to mangle. This was a genuine concern for older cleartext protocols and is not one here.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'A WebSocket begins as an ordinary GET on port 443, which is exactly why it deploys through infrastructure that knows nothing about it.',
+    'The blank line ending the 101 response is the precise byte where HTTP stops and framing begins.',
+    'Sec-WebSocket-Accept proves comprehension, not identity — the GUID it hashes is published in the RFC.',
+    'After the upgrade there is no request/response pairing: two independent streams of frames share one socket.',
+    'A message may span several frames, and binary frames exist so bytes need not be base64-encoded into text ones.',
+  ]}
+/>

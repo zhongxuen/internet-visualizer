@@ -1,0 +1,112 @@
+{/* Track 6, lesson 7, and the operations lesson of the track. Everything here is a */}
+{/* failure the reader will actually meet in production. Ordered by how silent the */}
+{/* failure is: keepalive, then clean close, then the drop that reports nothing. */}
+
+# Keeping a WebSocket alive
+
+An open socket is not a working one. TCP will happily let a program write to a peer that
+vanished minutes ago, and nothing reports the problem until something forces the issue.
+
+Two things go wrong on a long-lived connection, and both are invisible:
+
+- The peer disappears — crashed, rebooted, driven into a tunnel — and your end still
+  believes the connection is fine.
+- A middlebox on the path decides the flow is idle and drops its state. A
+  <Term>NAT</Term> table or a <Term>load balancer</Term> commonly gives an idle connection
+  30 to 60 seconds.
+
+<EmbeddedSim module="websocket-viewer" scenario="ping-pong-keepalive" />
+
+## Eight bytes, twice a minute
+
+A ping frame costs eight bytes and buys both fixes at once: proof the peer is alive, and
+enough traffic that nothing on the path considers the flow idle. The interval must beat
+the shortest timeout anywhere on the path, which is why 25 seconds is a common choice.
+
+Two details that surprise people:
+
+- Answering a ping is an **obligation**, not a courtesy, and browsers do it automatically
+  without telling the page. The pong must echo the ping's payload back byte for byte,
+  which is what lets a sender match a pong to its ping and measure a round trip.
+- Browsers cannot _send_ pings. The WebSocket API has no method for it. The heartbeat is
+  therefore the server's job in any browser-facing deployment.
+
+<Quiz
+  id="who-pings"
+  question="You are writing a browser client for a WebSocket API. How do you implement the heartbeat?"
+  options={[
+    {
+      id: 'server',
+      label: 'You do not — the server sends pings, and the browser answers them for you',
+      correct: true,
+      why: 'The WebSocket API exposes no ping method at all, so a browser cannot originate one. Pongs are sent automatically by the browser without involving your code, which is why the beat has to come from the server.',
+    },
+    {
+      id: 'setinterval',
+      label: 'A setInterval that calls socket.ping() every 25 seconds',
+      why: 'There is no such method in the browser API — that is a Node.js server-side interface. Reaching for it is one of the most common mistakes in browser WebSocket code.',
+    },
+    {
+      id: 'message',
+      label: 'Send an application-level “ping” message and wait for a reply',
+      why: 'This does work and is a real fallback, but it is heavier than the eight-byte control frame and it needs a matching handler on the server. If the server sends real pings, none of it is necessary.',
+    },
+  ]}
+/>
+
+## Closing properly, and the code that is never sent
+
+A clean close is a handshake: one Close frame out, one echoed back, and only then does
+TCP come down. `wasClean` is true only when both crossed — which is the one reliable way
+to distinguish an intentional shutdown from a connection that simply died.
+
+<EmbeddedSim module="websocket-viewer" scenario="close-handshake" />
+
+Four close codes — 1004, 1005, 1006 and 1015 — can never appear in a frame at all. They
+are what a local API reports when there is no frame to read a code from. `1006` in
+particular means "no Close frame arrived", and it carries no reason because there was
+nothing to carry one.
+
+That is exactly what you get when the transport vanishes:
+
+<EmbeddedSim module="websocket-viewer" scenario="reconnect-backoff" />
+
+<Quiz
+  id="predict-thundering-herd"
+  kind="predict"
+  question="Ten thousand clients lose their connection when a server restarts. Each retries after exactly one second. What happens?"
+  revealLabel="What actually happens"
+  reveal="Ten thousand handshakes arrive in the same instant and knock the server over again, and the survivors retry together one second later, and so on. Clients disconnect in herds — that is the nature of a server restart — so a synchronised retry keeps a recovering server down. The exponent in exponential backoff protects the client from hammering; the *randomisation* protects the server, and it is the half people leave out. Full jitter draws each delay uniformly from zero to the growing cap, so the herd spreads itself out instead of arriving as a wall."
+  options={[
+    {
+      id: 'herd',
+      label: 'They arrive together and knock the server over again — repeatedly',
+      correct: true,
+      why: 'Simultaneous disconnection produces simultaneous reconnection unless something deliberately breaks the synchrony. Jitter is that something, and it is the part of exponential backoff most often omitted.',
+    },
+    {
+      id: 'fine',
+      label: 'They reconnect fine — a second is long enough for the server to be ready',
+      why: 'The problem is not whether the server is up; it is ten thousand TLS and WebSocket handshakes landing in the same millisecond. Waiting longer without spreading out just delays the same wall.',
+    },
+    {
+      id: 'backoff',
+      label: 'Exponential backoff handles it, since the delay grows after each failure',
+      why: 'The exponent alone keeps them synchronised at a growing interval — one second, then two, then four, all together. Growth without randomisation does not break up the herd.',
+    },
+  ]}
+/>
+
+A reconnection is a genuinely new connection: new handshake, new key, and no memory of
+the old one. Any messages sent during the gap are gone unless your application asks for
+them back — which is the one thing <Term>SSE</Term> gets for free.
+
+<KeyTakeaways
+  items={[
+    'An open socket is not a working one: writes to a vanished peer keep succeeding for minutes.',
+    'A ping costs eight bytes and buys both liveness proof and enough traffic to survive NAT and load-balancer idle timeouts.',
+    'Browsers answer pings automatically and cannot send them, so the heartbeat is the server’s job.',
+    'A clean close is a handshake in both directions; 1006 means no Close frame ever arrived and carries no reason.',
+    'Exponential backoff without jitter keeps a disconnected herd synchronised — the randomisation is what protects the server.',
+  ]}
+/>

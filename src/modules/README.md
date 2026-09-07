@@ -14,6 +14,15 @@ scenarios, and its module-specific views.
 - Rendering goes in `components/`, and is built out of `@/components` primitives.
 - `registry.ts` is the single manifest of modules. Adding a module = adding a folder
   plus one registry entry.
+- `scenarios.ts` is the single manifest of **embeddable runs** — which modules the
+  Learning Center may drop a simulation from, and how to turn one of their scenarios
+  into the `{ topology, result }` pair `SimulationView` draws. Both files are direct
+  children of this folder rather than folders inside it, which is what exempts them from
+  rule 1: a manifest has to name every module, and nothing else may.
+- A module that ships a scenario catalogue re-exports it from its `index.ts` and adds
+  one loader to `scenarios.ts`. Never a list of scenario **ids** — a loader names a
+  module and reads whatever that module currently offers, so a scenario cannot exist in
+  one place and be missing in the other.
 
 ## Conventional shape
 

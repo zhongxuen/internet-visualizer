@@ -45,6 +45,43 @@ export const MODULE_GROUPS: readonly ModuleGroupMeta[] = [
   },
 ];
 
+/**
+ * The fourteen "Learning Topics" the project spec names, verbatim and in its order.
+ *
+ * The spec itself (`md-files/internet-visualizer.md`) is git-ignored and local-only, so
+ * a test cannot read it. This array is the committed copy of that list, and it lives
+ * beside `ModuleMeta.topics` because these are the same strings: a module's `topics`
+ * and a lesson's `topics` are both drawn from here, which is what lets the Learning
+ * Center's coverage test say "every topic the spec asks for is taught somewhere".
+ *
+ * Two things it is deliberately not:
+ *
+ *  - It is **not** the union of every `topics` array below. Modules legitimately name
+ *    finer-grained subjects the spec never listed -- `Routing`, `Caching`,
+ *    `Certificates`, `Traceroute` -- and the curriculum is free to use those too.
+ *  - It is **not** a superset either: `Reverse Proxy` is in the spec and in no module's
+ *    `topics`, because the concept is taught by the Network Map's datacenter topology
+ *    rather than by a module of its own.
+ *
+ * Edit this only when the spec's list itself changes.
+ */
+export const SPEC_LEARNING_TOPICS: readonly string[] = [
+  'DNS',
+  'HTTP',
+  'HTTPS',
+  'TCP/IP',
+  'UDP',
+  'SSL/TLS',
+  'CDN',
+  'Load Balancers',
+  'Reverse Proxy',
+  'APIs',
+  'WebSockets',
+  'Cookies',
+  'Sessions',
+  'Authentication',
+];
+
 export interface ModuleMeta {
   id: string;
   title: string;
@@ -170,10 +207,21 @@ export const MODULES: ModuleMeta[] = [
     id: 'learning-center',
     group: 'learn',
     title: 'Learning Center',
-    route: '/learning-center',
+    // `/learn`, not `/learning-center`: this is the only module whose routes are a
+    // small site rather than one page -- an index, a glossary, and a lesson per track
+    // entry -- and every one of those URLs is read by a person and typed into a link
+    // in a lesson. It is also the one module that does not wear `ModuleChrome`: a
+    // lesson's `h1` is the lesson, so its routes live at `app/learn/` outside the
+    // `(modules)` group. Everything else about the entry is unchanged, and
+    // `getModuleByRoute` still resolves the whole subtree to this module.
+    route: '/learn',
     summary:
       'Guided lessons that reuse the same scenarios the modules run, so content never drifts.',
-    status: 'planned',
+    // Phase 13 shipped the framework (13.1), EmbeddedSim (13.2), and the seven tracks
+    // with thirty-three lessons between them (13.3). Every topic in
+    // SPEC_LEARNING_TOPICS is taught by at least one of them, asserted in
+    // `learning-center/content/coverage.test.ts`.
+    status: 'ready',
     topics: ['DNS', 'HTTP', 'HTTPS', 'TCP/IP', 'UDP', 'CDN', 'APIs', 'WebSockets'],
     usesRealNetwork: false,
   },

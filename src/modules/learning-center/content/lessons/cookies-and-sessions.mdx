@@ -1,0 +1,107 @@
+{/* Track 4, lesson 4. The statelessness of HTTP has been asserted since lesson 1 of */}
+{/* this track; this is where the reader sees what it costs and how it is worked */}
+{/* around. Attributes are framed as the security story because that is what they are. */}
+
+# Cookies and sessions
+
+HTTP is stateless. Each request is complete on its own and the server has no memory of
+the last one — which is what lets caches and proxies reason about a single request
+without tracking a conversation, and is also why the web needed a workaround for
+"remember who I am".
+
+The workaround is a <Term>cookie</Term>: a value the server asks the browser to store and
+send back on every later request to that site.
+
+```http
+HTTP/1.1 200 OK
+Set-Cookie: __Host-sid=8f2c...; Secure; HttpOnly; SameSite=Lax; Path=/
+
+GET /account HTTP/1.1
+Cookie: __Host-sid=8f2c...
+```
+
+<EmbeddedSim module="http-explorer" scenario="cookie-session" />
+
+## The cookie is a pointer, not the data
+
+That value is almost always a random identifier and nothing else. The real
+
+<Term>session</Term> — who you are, what you may do, when you logged in — lives on the
+server, where it can be revoked.
+
+That indirection is what makes logging out mean something. Put the user's identity into
+the cookie itself and you cannot take it back: the browser holds it, the server has no
+list of what it issued, and the only expiry is the one you signed into it.
+
+<Quiz
+  id="why-opaque-id"
+  question="Why does a session cookie usually hold a random id rather than the user's identity?"
+  options={[
+    {
+      id: 'revocable',
+      label: 'So the server can revoke it — the authority stays server-side',
+      correct: true,
+      why: 'An id is meaningless without the server’s record of it, so deleting that record ends the session instantly. Anything self-contained is valid until it expires, whatever the server later decides.',
+    },
+    {
+      id: 'size',
+      label: 'To keep the cookie small',
+      why: 'Size is a genuine benefit, since the cookie rides on every single request. But it is a side effect — the reason that would still hold if cookies were free is revocation.',
+    },
+    {
+      id: 'encryption',
+      label: 'Because cookies cannot hold encrypted data',
+      why: 'They can hold anything, and signed or encrypted cookies are a real design used deliberately. The trade being made there is revocability for statelessness, not a technical impossibility.',
+    },
+  ]}
+/>
+
+## The attributes are the whole security story
+
+| Attribute        | Withholds the cookie from                                   | Attack it addresses     |
+| ---------------- | ----------------------------------------------------------- | ----------------------- |
+| `Secure`         | Any cleartext HTTP request                                  | Network interception    |
+| `HttpOnly`       | `document.cookie`, i.e. all JavaScript                      | XSS reading the session |
+| `SameSite=Lax`   | Cross-site POSTs and subresources                           | CSRF                    |
+| `__Host-` prefix | Any weaker configuration than host-only, `Path=/`, `Secure` | Subdomain injection     |
+
+`SameSite` deserves care, because what it does is narrower than it sounds: the
+cross-site request is still **sent**, and the server still receives and executes it. What
+is withheld is only the cookie — so the request arrives unauthenticated and is rejected
+on that basis. That is exactly enough to stop CSRF and not one thing more.
+
+<Quiz
+  id="predict-samesite"
+  kind="predict"
+  question="A malicious page auto-submits a POST to your bank's transfer endpoint. Your session cookie is SameSite=Lax. What does the bank's server see?"
+  revealLabel="What actually happens"
+  reveal="A perfectly ordinary POST to /transfer, with a body, from a real browser — and no session cookie on it. The request was sent; the browser did not block it. What SameSite=Lax withheld was the credential, so the server sees an unauthenticated request and refuses it with 401 or a redirect to the login page. That distinction matters: SameSite is not a firewall and never stops the request reaching you. It removes the thing that would have made the request act as you."
+  options={[
+    {
+      id: 'no-cookie',
+      label: 'The request arrives normally, but with no session cookie attached',
+      correct: true,
+      why: 'The browser sends cross-site requests as usual and decides separately whether to attach cookies. Lax withholds them on cross-site POSTs, which is enough to make the request anonymous and therefore harmless.',
+    },
+    {
+      id: 'blocked',
+      label: 'Nothing — the browser refuses to send the request',
+      why: 'Browsers deliberately do not block cross-site requests; the whole web depends on being able to make them. Only the credential is withheld, and only for the request patterns SameSite names.',
+    },
+    {
+      id: 'sent',
+      label: 'The request arrives with the cookie, and the transfer succeeds',
+      why: 'That is precisely the CSRF attack, and it is what SameSite=Lax exists to prevent. It was the default behaviour of the web for two decades, which is why CSRF tokens had to be invented.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'HTTP is stateless by design; a session is state bolted on by asking the browser to repeat a value.',
+    'The cookie normally holds an opaque id, and the session itself lives server-side — which is what makes revocation possible.',
+    'Secure keeps a cookie off cleartext, HttpOnly keeps scripts away from it, SameSite decides whether other sites’ requests carry it.',
+    'A cross-site request is still sent and still executed. SameSite withholds only the credential, which is exactly enough to defeat CSRF.',
+    'The __Host- prefix forces Secure, host-only and Path=/, because the name is the only part of a cookie the server gets back.',
+  ]}
+/>

@@ -1,0 +1,113 @@
+{/* Track 5, lesson 2. Deliberately structured as three sims, one per failed check, */}
+{/* because the whole point is that the checks are independent and a reader who has */}
+{/* only seen "certificate error" cannot tell them apart. Echoes the DNSSEC chain. */}
+
+# Certificates, and where trust comes from
+
+A <Term>certificate</Term> is a public key plus a list of names it is valid for, signed
+by somebody else. It is not a secret and it is not encryption — it is a claim, and the
+whole question is why you would believe it.
+
+The client runs five checks, all of which must pass:
+
+1. The chain is well-formed: each certificate is signed by the next one up.
+2. The top of that chain is a <Term>certificate authority</Term> in the local trust store.
+3. The current time is inside the validity window.
+4. One of the certificate's subjectAltName entries matches the hostname.
+5. It has not been revoked, and the key usage permits this.
+
+Three of those fail interestingly, and they fail differently. Start with the second:
+
+<EmbeddedSim module="https-explorer" scenario="cert-untrusted-ca" />
+
+## Trust is a list, not a discovery
+
+That chain was internally perfect. Correct signatures, right hostname, current dates —
+and worthless, because the root at the top was not on the client's list.
+
+This is the crucial structural fact about the web PKI: trust is a fixed set of root
+certificates shipped with the operating system or browser, not something established
+during a handshake. A server sends its leaf and any intermediates and never its root,
+because the client is supposed to already have it.
+
+It is the same shape as the DNSSEC chain from track 3 — signatures down a chain, anchored
+at a root you were given out of band — with one important difference. DNSSEC has one
+root; the web PKI has hundreds, and any one of them can vouch for any name.
+
+<Quiz
+  id="why-not-send-root"
+  question="Why does a server never send its root certificate?"
+  options={[
+    {
+      id: 'useless',
+      label:
+        'It would prove nothing — the client must already have it, or it means nothing',
+      correct: true,
+      why: 'A root is self-signed, so anyone can produce one. Its value is entirely in being on the client’s list, and a copy arriving from the server it is meant to vouch for adds no information at all.',
+    },
+    {
+      id: 'size',
+      label: 'To save bytes in the handshake',
+      why: 'It does save a couple of kilobytes, which is a genuine minor benefit. But sending it would be useless even if bandwidth were free, and that is the actual reason.',
+    },
+    {
+      id: 'secret',
+      label: 'Root certificates are confidential',
+      why: 'They are public and widely published — they ship in every browser. The private key is the secret; the certificate is not.',
+    },
+  ]}
+/>
+
+## Right certificate, wrong name — and out of date
+
+The fourth check catches a genuine certificate presented for a site it was not issued
+for. Identity is matched against the subjectAltName list, and against nothing else: a
+certificate whose Common Name matches perfectly and whose SANs do not still fails, even
+though the CN is the field a certificate viewer shows first.
+
+<EmbeddedSim module="https-explorer" scenario="cert-hostname-mismatch" />
+
+The third check is the mundane one, and it is the most common failure in production:
+
+<EmbeddedSim module="https-explorer" scenario="cert-expired" />
+
+Expiry exists to bound the damage of a leaked key. Revocation is supposed to do that job
+directly, but revocation checking is unreliable in practice — so certificates are simply
+short-lived instead, and a certificate that merely expired is still reported as "good" by
+a revocation responder. Expired and revoked are different rows.
+
+<Quiz
+  id="predict-cn-vs-san"
+  kind="predict"
+  question="A certificate's Common Name reads www.example.com and its SAN list contains only example.org. You visit www.example.com. What happens?"
+  revealLabel="What actually happens"
+  reveal="The connection is refused for a hostname mismatch, even though the field a human reads first says the right thing. RFC 9525 is explicit: identity is matched against subjectAltName, and the Common Name is not consulted at all by modern clients. This is a deliberate deprecation — the CN was a free-text field with no structure, and treating it as an identity was a long-standing source of confusion. It also means a certificate can look correct in a viewer and fail every browser on Earth."
+  options={[
+    {
+      id: 'fail',
+      label: 'It fails — only the SAN list counts, and the CN is not consulted',
+      correct: true,
+      why: 'RFC 9525 removed the Common Name from identity matching entirely. That the CN is the field displayed most prominently makes this a particularly confusing failure to diagnose.',
+    },
+    {
+      id: 'pass',
+      label: 'It passes — the CN matches the hostname',
+      why: 'It would have, decades ago. Modern clients ignore the CN for identity, so a CN match with no corresponding SAN entry is worth nothing.',
+    },
+    {
+      id: 'warn',
+      label: 'It passes with a deprecation warning',
+      why: 'There is no partial outcome here. A hostname that does not match is a hard failure, and the handshake ends with a fatal alert before any application data.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'A certificate is a signed claim binding a public key to a list of names. It is public, and it is not encryption.',
+    'Five checks must all pass, and each one fails independently — the browser’s wording is your only clue as to which.',
+    'Trust is a fixed list of roots shipped with the client, so a perfectly-formed chain from an unknown CA is worth nothing.',
+    'Servers send leaf and intermediates but never the root, because a root the client does not already have proves nothing.',
+    'Identity is matched against subjectAltName only. The Common Name is displayed first and consulted never.',
+  ]}
+/>

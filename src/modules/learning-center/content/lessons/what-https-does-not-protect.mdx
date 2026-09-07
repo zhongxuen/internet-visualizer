@@ -1,0 +1,111 @@
+{/* Track 5, lesson 4, and the honesty lesson of the track. Everything before it built */}
+{/* up what TLS gives; this draws the line. The downgrade sim is here rather than in */}
+{/* lesson 3 because it is the clearest case of a defence that had to be designed in. */}
+
+# What HTTPS does not protect
+
+The padlock is a statement about two things: a name, and a key. It says the connection
+reached the server named in the certificate, and that nobody on the path can read or
+alter what flows. It says nothing whatsoever about who that server belongs to, or what
+they do with what you send.
+
+| The padlock means                     | The padlock does not mean                       |
+| ------------------------------------- | ----------------------------------------------- |
+| The name matched a certificate        | The site is honest                              |
+| The traffic is unreadable on the path | The server stores it safely                     |
+| Nobody altered it in transit          | Nobody at the far end will misuse it            |
+| A CA vouched for the key              | The CA checked anything but control of the name |
+
+Certificates are free and automated, which is exactly right for encryption everywhere and
+means a phishing domain has one too. The padlock has never been an endorsement.
+
+## What an observer still learns
+
+Encryption hides the body, and the envelope around it stays largely visible:
+
+- **The address.** Packets have to be routed, so the destination IP is always in the
+  clear — and for a single-tenant server that alone identifies the site.
+- **The hostname.** SNI is sent in the plaintext ClientHello so the server knows which
+  certificate to present. Encrypted Client Hello is the fix, and is still deploying.
+- **The DNS lookup**, unless you use <Term>DNS</Term> over HTTPS or TLS — plain DNS
+  announces the name to the whole path before the connection is even opened.
+- **Sizes and timings.** Which page of a site you loaded is frequently recoverable from
+  the pattern of response sizes alone.
+
+<Quiz
+  id="what-observer-sees"
+  question="You visit https://www.example.com/private/report over a public Wi-Fi. What can the network operator see?"
+  options={[
+    {
+      id: 'host',
+      label:
+        'The address, the hostname, and the sizes and timings — but not the path or the content',
+      correct: true,
+      why: 'The path is inside the encrypted request and never appears in the clear. The hostname does, via SNI and usually via the DNS lookup, and traffic shape frequently narrows down which page it was anyway.',
+    },
+    {
+      id: 'nothing',
+      label: 'Nothing — HTTPS hides the whole request',
+      why: 'It hides the request, not the fact that it was made or where to. Routing requires a visible destination, and certificate selection has historically required a visible hostname.',
+    },
+    {
+      id: 'everything',
+      label: 'Everything, since they control the network',
+      why: 'Controlling the network gives no ability to read TLS. It gives the metadata above, and the option to block — which is why interception requires installing a CA on the device, not merely owning the wire.',
+    },
+  ]}
+/>
+
+## Attacks the protocol does defend against
+
+Not all of this is bad news. Some attacks were anticipated and closed with a few bytes.
+A downgrade attack works by editing the ClientHello — the one message that is not yet
+signed by anything — to strip out the strongest version on offer.
+
+<EmbeddedSim module="https-explorer" scenario="downgrade-blocked" />
+
+The defence is eight bytes the server writes into its own random value, which the
+client reads and recognises. It costs no round trip, and it cannot be stripped, because
+the server random is covered by the signature over the transcript.
+
+The other half of the problem is the very first request, which is often plain `http://`
+before any redirect. HSTS is the answer: a header instructing the browser to refuse
+cleartext for this host in future, and preload lists ship that instruction with the
+browser so even the first visit is protected.
+
+<Quiz
+  id="predict-corporate-proxy"
+  kind="predict"
+  question="A corporate network reads all HTTPS traffic. How, if TLS is doing its job?"
+  revealLabel="What actually happens"
+  reveal="By adding their own CA to the trust store on every managed device. The proxy terminates your TLS connection, presents a certificate it minted itself for whatever site you asked for, and opens a second connection onward. Every check in track 5 passes — the chain is well-formed, the hostname matches, the dates are current — because the root doing the vouching is one the device was told to trust. TLS was not broken; the trust store was changed, which is the one attack the protocol cannot detect. It is also exactly why 'is the padlock there' and 'who signed it' are different questions."
+  options={[
+    {
+      id: 'trust-store',
+      label:
+        'By installing their own CA on the devices, so the interception validates cleanly',
+      correct: true,
+      why: 'Trust is a list, so whoever controls the list controls what validates. Every certificate check passes honestly — the client really was told to trust that root.',
+    },
+    {
+      id: 'crack',
+      label: 'By breaking the encryption with sufficient computing power',
+      why: 'Not remotely feasible against modern ciphers, and unnecessary when a far cheaper administrative path exists.',
+    },
+    {
+      id: 'keys',
+      label: 'By obtaining the private keys of the sites employees visit',
+      why: 'They have no way to get those, and forward secrecy would limit the damage anyway. What they can change is the device, and that is the lever they use.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'The padlock states that a name matched a certificate and the channel is protected. It is not an endorsement of the operator.',
+    'The destination address, the hostname via SNI, the DNS lookup and the traffic’s shape all stay visible.',
+    'Downgrade attacks are defeated by a sentinel in the server random, which cannot be stripped because it is covered by the signature.',
+    'HSTS and preloading close the cleartext first request, which is the gap a redirect alone leaves open.',
+    'Interception works by adding a CA to the device’s trust store — TLS is not broken, the trust list was changed.',
+  ]}
+/>

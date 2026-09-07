@@ -1,0 +1,114 @@
+{/* Track 6, lesson 4. The bridge from request/response to push. Everything here is a */}
+{/* consequence of one reversal, so the lesson keeps returning to it: you are the */}
+{/* server now, and a server has obligations a client does not. */}
+
+# Webhooks: when the API calls you
+
+Every request so far in this track went from your code to somebody's API. A
+
+<Term>webhook</Term> reverses the arrow: you register a URL, and the API POSTs to it when
+something happens.
+
+That single reversal changes every assumption you have been working under.
+
+| Polling                     | Webhook                                   |
+| --------------------------- | ----------------------------------------- |
+| You are the client          | You are the server                        |
+| You choose when to ask      | You are called whenever, including 3 a.m. |
+| A failure is yours to retry | A failure is theirs to retry — at you     |
+| You authenticate to them    | They must authenticate to you             |
+
+<EmbeddedSim module="api-visualizer" scenario="webhook-delivery" />
+
+## At-least-once is the only guarantee on offer
+
+Look at what happened in that run: a failure, a silence, a request for more time, and
+finally an acceptance. Each attempt was re-signed, and each carried the same event id.
+
+The silence is the interesting one. When the sender times out, it cannot distinguish
+"the receiver never got it" from "the receiver processed it and the reply was lost". So
+it retries — and the receiver may well execute the same event twice.
+
+There is no protocol fix for this. Exactly-once delivery is not available; exactly-once
+_processing_ is, and you build it by making your handler
+
+<Term>idempotent</Term>, keyed on the sender's event id and never on anything you compute
+yourself.
+
+<Quiz
+  id="which-to-retry"
+  question="Your webhook endpoint returns 400 Bad Request because the payload failed your schema check. Should the sender retry?"
+  options={[
+    {
+      id: 'no',
+      label:
+        'No — a 4xx says the request is the problem, and nothing will change by resending it',
+      correct: true,
+      why: 'This is the 4xx/5xx split from track 4 doing real work. Retrying an unchanged request that was already rejected as malformed just burns both sides’ capacity. 408 and 429 are the exceptions, and 410 means stop permanently.',
+    },
+    {
+      id: 'yes',
+      label: 'Yes — every failed delivery should be retried until it succeeds',
+      why: 'Retrying forever on a permanent failure is how a queue fills up with events that can never drain. The status code is exactly the signal that tells the sender which kind of failure this is.',
+    },
+    {
+      id: 'once',
+      label: 'Once, to rule out a transient fault',
+      why: 'A schema mismatch is not transient, and a single retry only doubles the cost. It is also a hint that a 400 may be the wrong answer if you actually want the event redelivered later.',
+    },
+  ]}
+/>
+
+## Signatures, and verifying before you parse
+
+Your endpoint is a public URL, so anyone can POST to it. The signature is what separates
+a real event from a forgery, and the details matter:
+
+```text
+signature = HMAC(secret, timestamp + "." + raw_body)
+```
+
+The timestamp is inside the signed material, so an old capture cannot be replayed with a
+fresh timestamp bolted on. Every retry is signed afresh while the event id stays constant
+— which is exactly what makes deduplication possible.
+
+Two implementation rules that are easy to get wrong: compare in constant time, or the
+comparison itself leaks the correct signature one byte at a time; and verify **before**
+parsing, since a parser is a much larger attack surface than an HMAC comparison.
+
+<Quiz
+  id="predict-slow-handler"
+  kind="predict"
+  question="Your webhook handler does thirty seconds of work before responding 200. What does the sender do?"
+  revealLabel="What actually happens"
+  reveal="It times out — most senders wait a few seconds at most — and retries, and your handler starts the same thirty seconds of work again. Do that a few times and you have several copies of the job running concurrently, all triggered by an event you did in fact receive successfully the first time. The fix is structural: acknowledge immediately with 200 or 202, put the work on a queue, and do it out of band. A webhook endpoint's only job is to verify, record, and say yes."
+  options={[
+    {
+      id: 'timeout-retry',
+      label:
+        'Times out and retries, so the same work starts again while the first copy is still running',
+      correct: true,
+      why: 'Senders enforce short timeouts because they are delivering to thousands of endpoints. A slow handler converts every delivery into several concurrent duplicates of itself.',
+    },
+    {
+      id: 'waits',
+      label: 'Waits — it has no reason to give up on a connection that is still open',
+      why: 'It has a very good reason: one slow receiver must not be allowed to consume a delivery worker indefinitely. Short, strict timeouts are the norm and are documented as such.',
+    },
+    {
+      id: 'fails',
+      label: 'Marks the endpoint as failing and stops sending events',
+      why: 'That does eventually happen after enough failures, and it is the second-order consequence. The immediate one is duplicate concurrent execution of work you already accepted.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'A webhook reverses the roles: your endpoint is the server, and it must be public, fast and always available.',
+    'A timeout is indistinguishable from a lost reply, so at-least-once is the only delivery guarantee available.',
+    'Exactly-once processing is yours to build, by keying an idempotent handler on the sender’s event id.',
+    'The signature covers timestamp and raw body together, which is what stops an old capture being replayed.',
+    'Verify in constant time before parsing, acknowledge immediately, and do the real work on a queue.',
+  ]}
+/>
