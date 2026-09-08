@@ -228,11 +228,20 @@ test('the zod JIT probe is the only eval report, and only on zod routes', async 
  */
 test('a simulated module cannot reach another origin, even if it tries', async ({
   page,
+  baseURL,
 }) => {
+  // From `baseURL`, not a hardcoded localhost: this spec is the one that is meant to be
+  // pointed at a deployment (see `playwright.config.ts`), and a same-origin check that
+  // only recognises 127.0.0.1 reports every legitimate request as a leak the moment it
+  // is.
+  const origin = new URL(baseURL ?? 'http://127.0.0.1:3100').origin;
+
   const offOrigin: string[] = [];
   page.on('request', (request) => {
-    if (!request.url().startsWith('http://127.0.0.1') && !request.url().startsWith('/'))
-      offOrigin.push(request.url());
+    const url = request.url();
+    if (!url.startsWith(origin) && !url.startsWith('data:') && !url.startsWith('blob:')) {
+      offOrigin.push(url);
+    }
   });
 
   await page.goto('/packet-journey');

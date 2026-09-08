@@ -12,6 +12,18 @@ npm run test:e2e:ui           # the Playwright UI runner
 Outside CI the server is reused if one is already listening on port 3100, so
 `npx next build && npx next start --port 3100` once makes every subsequent run fast.
 
+`security.spec.ts` can also be pointed at a deployment, which is the one thing here that
+a local build cannot answer -- whether a platform strips or rewrites a header on the way
+out:
+
+```bash
+PLAYWRIGHT_BASE_URL=https://internet-visualizer.vercel.app npx playwright test e2e/security.spec.ts
+```
+
+No server is started when that variable is set. It is also the middle step of the CSP
+rollout in `.env.example`: deploy a preview with `CSP_MODE=report-only`, run this
+against it, then enforce.
+
 ## What belongs here
 
 Only what a browser can answer and jsdom cannot. `tests/setup.ts` stubs
@@ -37,6 +49,7 @@ remembered.
 | `modules.spec.ts`      | does each simulating module play, step back, and open its inspector?  |
 | `a11y.spec.ts`         | is every route free of serious/critical axe violations, with a sane heading hierarchy? |
 | `a11y-manual.spec.ts`  | the section-2 checklist items axe cannot see: keyboard, live regions, the list view, 200% zoom |
+| `security.spec.ts`     | do the security headers arrive on every response, and does anything violate the CSP? |
 
 ## The two accessibility specs
 

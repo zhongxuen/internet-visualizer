@@ -23,7 +23,24 @@ import { defineConfig, devices } from '@playwright/test';
  */
 
 const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 3100);
-const BASE_URL = `http://127.0.0.1:${PORT}`;
+const LOCAL_URL = `http://127.0.0.1:${PORT}`;
+
+/**
+ * ## Running against a deployment instead of a local build
+ *
+ * `PLAYWRIGHT_BASE_URL=https://<host> npx playwright test e2e/security.spec.ts` points
+ * the suite at something already running and starts no server of its own. That is the
+ * middle step of the CSP rollout in `.env.example`: deploy a preview with
+ * `CSP_MODE=report-only`, run the security spec against it to prove the policy is clean
+ * while a violation still cannot break anything, then enforce.
+ *
+ * Only `security.spec.ts` is really portable this way. `smoke` and `a11y` will pass
+ * against a deployment too, but `modules.spec.ts` plays every scenario to completion
+ * over the public internet, which is slow enough to be a bad idea rather than a wrong
+ * one.
+ */
+const DEPLOYED_URL = process.env.PLAYWRIGHT_BASE_URL?.replace(/\/+$/, '');
+const BASE_URL = DEPLOYED_URL || LOCAL_URL;
 
 export default defineConfig({
   testDir: './e2e',
@@ -51,12 +68,17 @@ export default defineConfig({
 
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 
-  webServer: {
-    command: `npm run build && npx next start --port ${PORT}`,
-    url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 300_000,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  },
+  // Nothing to start when the target is somewhere else; `undefined` is how Playwright
+  // is told so, and it is the difference between testing a deployment and rebuilding
+  // the app in order to ignore it.
+  webServer: DEPLOYED_URL
+    ? undefined
+    : {
+        command: `npm run build && npx next start --port ${PORT}`,
+        url: LOCAL_URL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 300_000,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      },
 });
