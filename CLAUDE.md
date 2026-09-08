@@ -340,6 +340,17 @@ is doing more work than it looks like.
    pre-rendered lessons included -- to render dynamically. The file states the trade and
    what bounds it.
 
+   **There is one violation the product knowingly reports, and it is not a bug.** zod
+   works out whether it may JIT-compile a validator by evaluating `Function("")` in a
+   `try`/`catch`, so the four modules that validate typed input -- DNS Explorer, HTTP
+   Explorer, API Visualizer, the Internet Simulator -- each report one `script-src`
+   violation on load, and Live mode would too. The probe is caught, zod falls back to
+   interpreted parsing, and nothing breaks. It is named in `e2e/security.spec.ts`, which
+   asserts it appears exactly once and only on zod routes, so a second or different
+   report still fails. Do not silence it: `'unsafe-eval'` hands an injected script the
+   one thing it wants, and a side-effect-only module calling `z.config({ jitless: true })`
+   is exactly what `"sideEffects": ["*.css"]` permits the bundler to delete.
+
 2. **CSP has two modes and a rollout, not a switch to flip on a hunch.** `CSP_MODE=report-only`
    renames the header; `.env.example` writes down the three steps. The evidence that the
    policy is clean comes from `e2e/security.spec.ts`, which collects

@@ -78,6 +78,15 @@ export interface SecurityHeaderOptions {
  *
  * `style-src 'unsafe-inline'` is not negotiable at all: React Flow positions every node
  * with a `style` attribute, and `motion` animates by writing one.
+ *
+ * There is **no `'unsafe-eval'`**, and one consequence of that is visible rather than
+ * silent: zod decides whether it may compile a validator with `new Function` by
+ * evaluating `Function("")` in a `try`/`catch`, so every route that validates typed
+ * input reports one `script-src` violation on load. It is a probe, it is caught, and
+ * failing it is the answer we want -- zod runs interpreted instead. `e2e/security.spec.ts`
+ * names that one report, asserts it appears only on zod routes and only once, and fails
+ * on anything else; do not "fix" it by adding `'unsafe-eval'`, which would trade a log
+ * line for the one capability an injected script most wants.
  */
 export function contentSecurityPolicy(options: SecurityHeaderOptions = {}): string {
   const { development = false, reportUri } = options;

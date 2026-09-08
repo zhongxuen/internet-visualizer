@@ -87,7 +87,35 @@ for (const route of RESPONSES_UNDER_TEST) {
   });
 }
 
-/** Collect every CSP violation the page reports, from before the first script runs. */
+/**
+ * The one violation the product knowingly produces, and why it is allowed through.
+ *
+ * zod compiles a validator with `new Function` when it can, and finds out whether it
+ * can by evaluating `Function("")` inside a `try`/`catch`. Under this policy that
+ * throws, zod catches it and runs interpreted (`jitless`) instead -- which is the
+ * outcome a CSP-hardened environment wants and the reason the probe is written as a
+ * probe. Nothing is broken by it; the browser simply reports every violation it sees,
+ * handled or not.
+ *
+ * It is reported once per page, on the four module routes that validate typed input --
+ * DNS Explorer, HTTP Explorer, API Visualizer and the Internet Simulator -- and would
+ * also appear on Network Diagnostics if Live mode were used, since `guard.ts` validates
+ * a target the same way.
+ *
+ * It is *not* silenced, for three reasons: silencing it would mean either
+ * `'unsafe-eval'` (which would hand a real weapon to an injected script) or a
+ * side-effect-only module calling `z.config({ jitless: true })` (which
+ * `"sideEffects": ["*.css"]` in package.json permits the bundler to delete outright).
+ * The third is that threading `{ jitless: true }` through every `.parse()` call is a
+ * fix that silently stops working the first time someone adds a call and forgets. So it
+ * is named here instead, and everything that is not exactly this still fails.
+ */
+const ZOD_JIT_PROBE = 'script-src blocked eval';
+
+/**
+ * Collect every CSP violation the page reports, from before the first script runs, and
+ * drop the one above.
+ */
 async function watchCspViolations(page: Page): Promise<() => Promise<string[]>> {
   await page.addInitScript(() => {
     const violations: string[] = [];
@@ -97,14 +125,22 @@ async function watchCspViolations(page: Page): Promise<() => Promise<string[]>> 
     });
   });
 
-  return async () =>
-    page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
+  return async () => {
+    const all = await page.evaluate(
+      () => (window as unknown as { __csp?: string[] }).__csp ?? [],
+    );
+    return all.filter((entry) => entry !== ZOD_JIT_PROBE);
+  };
 }
 
 const COMPLIANCE_SAMPLE: readonly { name: string; path: string }[] = [
   { name: 'home', path: '/' },
   // The heaviest page in the product: React Flow, `motion`, and a playing animation.
   { name: 'module:packet-journey', path: '/packet-journey' },
+  // A zod route, so the one known violation stays inside the assertion rather than
+  // outside the sample. Leaving these out is how it went unnoticed the first time.
+  { name: 'module:internet-simulator', path: '/internet-simulator' },
+  { name: 'module:dns-explorer', path: '/dns-explorer' },
   // MDX with a real simulation embedded in it, which is a lazily-loaded chunk.
   { name: 'lesson', path: '/learn/internet-foundations/what-is-a-network' },
   { name: 'glossary', path: '/learn/glossary' },
@@ -142,4 +178,91 @@ test('a scenario runs to completion without a CSP violation', async ({ page }) =
   });
 
   expect(await violations()).toEqual([]);
+});
+
+/**
+ * The known violation is still the known violation.
+ *
+ * The filter above would hide a second `script-src blocked eval` from a different and
+ * less benign source just as happily as it hides zod's probe. This is the other half:
+ * on a zod route the report is expected exactly once, and on a route with no zod it is
+ * expected not at all. Either count changing is worth looking at -- if it disappears,
+ * zod stopped probing and the filter is now dead code that could mask something.
+ */
+test('the zod JIT probe is the only eval report, and only on zod routes', async ({
+  page,
+}) => {
+  const raw = async () =>
+    page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
+
+  await page.addInitScript(() => {
+    const violations: string[] = [];
+    (window as unknown as { __csp: string[] }).__csp = violations;
+    document.addEventListener('securitypolicyviolation', (event) => {
+      violations.push(`${event.violatedDirective} blocked ${event.blockedURI}`);
+    });
+  });
+
+  await page.goto('/internet-simulator');
+  await page.waitForLoadState('networkidle');
+  expect(await raw()).toEqual([ZOD_JIT_PROBE]);
+
+  // Network Map takes no typed input, so it has no zod and must report nothing at all.
+  await page.goto('/network-map');
+  await page.waitForLoadState('networkidle');
+  expect(await raw()).toEqual([]);
+});
+
+/**
+ * The claim the whole product rests on, checked in a browser rather than argued for.
+ *
+ * "Every module is a deterministic client-side simulation, except Network Diagnostics'
+ * Live mode" is a sentence in the footer, the README and the home page. `connect-src
+ * 'self'` is what makes it enforceable: a simulated module cannot reach another origin
+ * even if its code asked to, because the browser refuses before a socket is opened. So
+ * this test does what a compromised or careless module would do -- `fetch` and
+ * `WebSocket` to somewhere else -- and asserts both are refused.
+ *
+ * `example.com` is the IANA-reserved documentation domain, and no request to it leaves
+ * the machine: the point is that the attempt never becomes a connection.
+ */
+test('a simulated module cannot reach another origin, even if it tries', async ({
+  page,
+}) => {
+  const offOrigin: string[] = [];
+  page.on('request', (request) => {
+    if (!request.url().startsWith('http://127.0.0.1') && !request.url().startsWith('/'))
+      offOrigin.push(request.url());
+  });
+
+  await page.goto('/packet-journey');
+  await page.waitForLoadState('networkidle');
+
+  const fetched = await page.evaluate(async () => {
+    try {
+      await fetch('https://example.com/probe', { mode: 'no-cors' });
+      return 'allowed';
+    } catch {
+      return 'blocked';
+    }
+  });
+  const socket = await page.evaluate(
+    () =>
+      new Promise<string>((resolve) => {
+        try {
+          const ws = new WebSocket('wss://example.com/probe');
+          ws.onopen = () => resolve('allowed');
+          ws.onerror = () => resolve('blocked');
+          setTimeout(() => resolve('blocked'), 3000);
+        } catch {
+          resolve('blocked');
+        }
+      }),
+  );
+
+  expect(fetched).toBe('blocked');
+  expect(socket).toBe('blocked');
+
+  // And nothing the page did of its own accord left this origin either.
+  expect(offOrigin.filter((url) => !url.includes('example.com'))).toEqual([]);
 });
