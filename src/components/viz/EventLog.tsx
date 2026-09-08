@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, type RefObject } from 'react';
 
 import type { SimEvent } from '@/core/types/events';
 import type { PDU } from '@/core/types/pdu';
@@ -46,6 +46,117 @@ const TONES: Record<EventTone, { className: string; word: string }> = {
   warn: { className: 'text-state-warn', word: 'Warning' },
   error: { className: 'text-state-error', word: 'Error' },
 };
+
+interface EventLineProps {
+  event: SimEvent;
+  /** The playhead has reached this line. */
+  reached: boolean;
+  /** This is the line the playhead is on. */
+  current: boolean;
+  durationMs: number;
+  labels?: Readonly<Record<string, string>>;
+  pdus?: Readonly<Record<string, PDU>>;
+  onSeek: (time: number) => void;
+  /** Attached to the current line, for the scroll-into-view in `EventLog`. */
+  activeRef: RefObject<HTMLLIElement | null>;
+}
+
+/**
+ * One line, memoized -- which is the whole reason it is a component and not a loop body.
+ *
+ * The log lists the entire run, and a long scenario has several hundred entries; Packet
+ * Journey's page measured 822 of them. Crossing one event changes `reached` on exactly
+ * one line and `current` on two, so with the comparison here React re-renders three lines
+ * instead of eight hundred. `describeEvent` is inside the memo for the same reason: the
+ * text of a line never changes at all once the run is fixed.
+ */
+const EventLine = memo(function EventLine({
+  event,
+  reached,
+  current,
+  durationMs,
+  labels,
+  pdus,
+  onSeek,
+  activeRef,
+}: EventLineProps) {
+  const line = describeEvent(event, { labels, pdus });
+  const tone = TONES[line.tone];
+
+  return (
+    <li ref={current ? activeRef : undefined}>
+      <button
+        type="button"
+        onClick={() => onSeek(event.at)}
+        className={cn(
+          'focus-visible:outline-focus flex w-full items-baseline gap-2.5 rounded px-2 py-1 text-left text-xs focus-visible:outline-2 focus-visible:outline-offset-1',
+          'hover:bg-surface-overlay',
+          current && 'bg-surface-overlay',
+          // Not `opacity-45`: an alpha multiplier took this text to 2.25:1.
+          // `.state-dim` is the same recession as a colour. See globals.css.
+          !reached && 'state-dim',
+        )}
+      >
+        <span className="text-fg-muted w-14 shrink-0 text-right font-mono text-[0.6875rem] tabular-nums">
+          {formatTimecode(event.at, durationMs)}
+        </span>
+        <span className={cn('min-w-0 flex-1', tone.className)}>
+          <span className="sr-only">
+            {tone.word}
+            {reached ? '. ' : '. Not reached yet. '}
+          </span>
+          {line.text}
+        </span>
+      </button>
+    </li>
+  );
+});
+
+interface EventLinesProps {
+  events: readonly SimEvent[];
+  /** Index of the last event the playhead has reached; `-1` before the first. */
+  latestIndex: number;
+  durationMs: number;
+  labels?: Readonly<Record<string, string>>;
+  pdus?: Readonly<Record<string, PDU>>;
+  onSeek: (time: number) => void;
+  activeRef: RefObject<HTMLLIElement | null>;
+}
+
+/**
+ * The list, memoized on the playhead's *line* rather than its time.
+ *
+ * `virtualTime` moves sixty times a second and changes exactly one thing here: which line
+ * is current. Splitting on `latestIndex` keeps this out of the frame loop entirely; the
+ * per-line memo above then keeps the crossing itself cheap.
+ */
+const EventLines = memo(function EventLines({
+  events,
+  latestIndex,
+  durationMs,
+  labels,
+  pdus,
+  onSeek,
+  activeRef,
+}: EventLinesProps) {
+  return (
+    <>
+      {events.map((event, index) => (
+        <EventLine
+          key={`${event.kind}-${index}`}
+          event={event}
+          reached={index <= latestIndex}
+          current={index === latestIndex}
+          durationMs={durationMs}
+          labels={labels}
+          pdus={pdus}
+          onSeek={onSeek}
+          activeRef={activeRef}
+        />
+      ))}
+    </>
+  );
+});
 
 export function EventLog({
   events,
@@ -109,38 +220,15 @@ export function EventLog({
         ref={listRef}
         className="border-border max-h-56 overflow-y-auto border-t px-2 py-2"
       >
-        {events.map((event, index) => {
-          const line = describeEvent(event, { labels, pdus });
-          const tone = TONES[line.tone];
-          const reached = index <= latestIndex;
-          const current = index === latestIndex;
-
-          return (
-            <li key={`${event.kind}-${index}`} ref={current ? activeRef : undefined}>
-              <button
-                type="button"
-                onClick={() => onSeek(event.at)}
-                className={cn(
-                  'focus-visible:outline-focus flex w-full items-baseline gap-2.5 rounded px-2 py-1 text-left text-xs focus-visible:outline-2 focus-visible:outline-offset-1',
-                  'hover:bg-surface-overlay',
-                  current && 'bg-surface-overlay',
-                  !reached && 'opacity-45',
-                )}
-              >
-                <span className="text-fg-muted w-14 shrink-0 text-right font-mono text-[0.6875rem] tabular-nums">
-                  {formatTimecode(event.at, durationMs)}
-                </span>
-                <span className={cn('min-w-0 flex-1', tone.className)}>
-                  <span className="sr-only">
-                    {tone.word}
-                    {reached ? '. ' : '. Not reached yet. '}
-                  </span>
-                  {line.text}
-                </span>
-              </button>
-            </li>
-          );
-        })}
+        <EventLines
+          events={events}
+          latestIndex={latestIndex}
+          durationMs={durationMs}
+          labels={labels}
+          pdus={pdus}
+          onSeek={onSeek}
+          activeRef={activeRef}
+        />
       </ol>
     </details>
   );

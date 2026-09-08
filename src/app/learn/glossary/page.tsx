@@ -1,12 +1,13 @@
-import type { Metadata } from 'next';
-
+import { pageMetadata } from '@/lib/metadata';
 import { Glossary } from '@/modules/learning-center';
+import { glossaryHref } from '@/modules/learning-center/content/navigation';
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: 'Glossary',
   description:
     'Every term the lessons define, with the same wording they use, and links to the lessons and simulations that cover each one.',
-};
+  path: glossaryHref(),
+});
 
 /**
  * `/learn/glossary`.

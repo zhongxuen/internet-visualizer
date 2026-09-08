@@ -54,32 +54,51 @@ export interface SafetyBadgeProps {
   variant?: SafetyVariant;
   /** Hide the text and keep the icon. Only for dense rows that repeat the badge. */
   compact?: boolean;
+  /**
+   * Drop the tooltip and the tab stop, for a badge rendered *inside* something already
+   * focusable -- the nav's module links are the case this exists for.
+   *
+   * The default badge is a tooltip trigger with `tabIndex={0}`, which is the only way a
+   * keyboard user reads the `live` warning. Nested inside a link that is itself the
+   * thing being described, that same trigger is wrong twice over: interactive content
+   * inside an `<a>`, and -- since those links are `role="menuitem"` in a `role="menu"`
+   * -- a focusable stop in the tab order that is not a menu item, which is what stops
+   * Tab from leaving the menu.
+   *
+   * Nothing is lost by dropping it there. The badge sits inside the link's own label,
+   * so the word "Live network" is read out as part of the link rather than as a
+   * separate stop after it, and the hue and the icon are unchanged. The full sentence
+   * still belongs to the surface that can actually make the request, and phase 12 puts
+   * it there: the module's mode switch and its live console both carry the real badge.
+   */
+  interactive?: boolean;
   className?: string;
 }
 
 export function SafetyBadge({
   variant = 'simulated',
   compact = false,
+  interactive = true,
   className,
 }: SafetyBadgeProps) {
   const spec = VARIANTS[variant];
   const Icon = spec.icon;
 
-  return (
-    <Tooltip content={spec.tooltip}>
-      <Badge
-        // Focusable so the tooltip is reachable by keyboard, which is the only way
-        // the `live` warning gets read by someone not using a mouse.
-        tabIndex={0}
-        data-variant={variant}
-        aria-label={compact ? spec.label : undefined}
-        className={cn('cursor-default', spec.className, className)}
-        icon={<Icon aria-hidden="true" className="size-3.5" strokeWidth={2.25} />}
-      >
-        {compact ? null : spec.label}
-      </Badge>
-    </Tooltip>
+  const badge = (
+    <Badge
+      // Focusable so the tooltip is reachable by keyboard, which is the only way
+      // the `live` warning gets read by someone not using a mouse.
+      tabIndex={interactive ? 0 : undefined}
+      data-variant={variant}
+      aria-label={compact ? spec.label : undefined}
+      className={cn('cursor-default', spec.className, className)}
+      icon={<Icon aria-hidden="true" className="size-3.5" strokeWidth={2.25} />}
+    >
+      {compact ? null : spec.label}
+    </Badge>
   );
+
+  return interactive ? <Tooltip content={spec.tooltip}>{badge}</Tooltip> : badge;
 }
 
 /** The badge a module's chrome should show, given its registry entry. */

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { FRAGMENTED_PACKET, LOSSY_LINK, TCP_WEB_REQUEST } from './scenarios';
 import { buildLedger, currentRowIndex, focusAt, type HopRow } from './ledger';
 import { runJourneyDetailed } from './sim/journey';
+import { projectionKey } from '@/core/sim/project';
 
 /**
  * The ledger is what the hop table prints, so these are the accuracy tests for the table
@@ -257,5 +258,78 @@ describe('focusAt', () => {
     const focus = focusAt(lossy.result, drop.at);
     expect(focus?.status).toBe('dropped');
     expect(focus?.reason).toBe(drop.reason);
+  });
+});
+
+/**
+ * Which of the live panels may follow the projection cursor instead of the playhead.
+ *
+ * `usePlayheadCursor` returns a time with the same *set of events behind it*, so a panel
+ * that only asks "which events have happened" can use it and stop re-rendering sixty
+ * times a second. `LiveHopTable` qualifies. The other two do not, and it is not obvious
+ * from reading them -- so both directions are pinned here rather than assumed.
+ */
+describe('reading the run at the projection cursor', () => {
+  /** Tenth-of-a-percent steps across the run, so every frame between two events is hit. */
+  function sweep(durationMs: number): number[] {
+    return [
+      -10,
+      ...Array.from({ length: 1001 }, (_, i) => (i * durationMs) / 1000),
+      durationMs + 250,
+    ];
+  }
+
+  for (const scenario of [TCP_WEB_REQUEST, FRAGMENTED_PACKET, LOSSY_LINK]) {
+    it(`gives the same hop row as the playhead -- ${scenario.id}`, () => {
+      const run = runJourneyDetailed(scenario);
+      const rows = buildLedger(run.result, scenario.topology);
+
+      for (const t of sweep(run.result.durationMs)) {
+        expect(currentRowIndex(rows, projectionKey(run.result, t))).toBe(
+          currentRowIndex(rows, t),
+        );
+      }
+    });
+  }
+
+  /**
+   * An instant just after a packet has landed where the cursor still disagrees.
+   *
+   * A `transmit` ends at `at + durationMs`, which is not itself an event, so the cursor
+   * can still be back at the departure while the packet has actually arrived.
+   */
+  function divergentArrival(result: ReturnType<typeof runJourneyDetailed>['result']) {
+    for (const event of result.events) {
+      if (event.kind !== 'transmit' || event.durationMs <= 0) continue;
+      const t = event.at + event.durationMs + 0.001;
+      const atCursor = focusAt(result, projectionKey(result, t))?.status;
+      const atPlayhead = focusAt(result, t)?.status;
+      if (atCursor !== atPlayhead) return { t, atCursor, atPlayhead };
+    }
+    return null;
+  }
+
+  it('does not settle the packet focus, because an arrival is not an event', () => {
+    const run = runJourneyDetailed(TCP_WEB_REQUEST);
+    const divergent = divergentArrival(run.result);
+
+    // The packet has landed, but nothing was emitted when it did, so the cursor is still
+    // back at the departure and would report the packet as still on the wire.
+    expect(divergent).not.toBeNull();
+    expect(divergent?.atPlayhead).toBe('arrived');
+    expect(divergent?.atCursor).toBe('in-flight');
+  });
+
+  it('does not settle the NAT bindings either -- a translation is not an event', () => {
+    const run = runJourneyDetailed(FRAGMENTED_PACKET);
+    const bindings = run.natTable?.bindings ?? [];
+    expect(bindings.length).toBeGreaterThan(0);
+
+    // At least one binding is created strictly between two events, so a cursor-driven
+    // NAT table would show it late.
+    const late = bindings.some(
+      (binding) => projectionKey(run.result, binding.createdAt) < binding.createdAt,
+    );
+    expect(late).toBe(true);
   });
 });

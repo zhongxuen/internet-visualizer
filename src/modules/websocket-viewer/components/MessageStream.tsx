@@ -161,10 +161,13 @@ export function MessageStream({
                     active
                       ? 'border-accent/60 bg-accent/10'
                       : 'border-border bg-surface hover:border-border-strong',
-                    !reached && 'opacity-55',
+                    // `.state-dim`, not an alpha multiplier (globals.css), and not on
+                    // the selected row, which draws an accent tint underneath.
+                    !reached && !active && 'state-dim',
                   )}
                 >
                   <span className="text-fg-muted font-mono text-[0.625rem] tabular-nums">
+                    {reached ? null : <span className="sr-only">Not sent yet. </span>}
                     {formatTimecode(record.sentAt, durationMs)}
                   </span>
 

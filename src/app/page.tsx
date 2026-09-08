@@ -3,7 +3,9 @@ import { ArrowRight } from 'lucide-react';
 
 import { ModuleGrid, SafetyBadge } from '@/components/shell';
 import { buttonClasses } from '@/components/ui';
-import { getModule, MODULES } from '@/modules/registry';
+import { focusRing } from '@/components/ui/styles';
+import { cn } from '@/lib/cn';
+import { MODULES, getModule } from '@/modules/registry';
 
 /** The flagship experience the hero points at: type a URL, watch everything happen. */
 const FLAGSHIP_ID = 'internet-simulator';
@@ -17,6 +19,12 @@ const FLAGSHIP_ID = 'internet-simulator';
  */
 export default function Home() {
   const flagship = getModule(FLAGSHIP_ID);
+  /*
+   * Found rather than named. `tests/registry.test.ts` asserts there is exactly one, and
+   * looking it up here means the sentence below cannot end up pointing at the wrong
+   * module or surviving a rename.
+   */
+  const live = MODULES.find((module) => module.usesRealNetwork);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
@@ -49,12 +57,27 @@ export default function Home() {
 
         {/*
           Stated once, up front, rather than left for the user to infer: the safety
-          posture of the whole product. Each card repeats it for its own module.
+          posture of the whole product. Each card repeats it for its own module, and the
+          one card that wears the other badge is named here rather than left to be
+          discovered -- "everything is simulated" with an unmentioned exception is worse
+          than no claim at all.
         */}
-        <div className="mt-8 flex items-center gap-3">
+        <div className="mt-8 flex flex-wrap items-center gap-3">
           <SafetyBadge variant="simulated" />
           <p className="text-fg-muted text-sm">
-            Everything runs in your browser. No packets leave this machine.
+            Everything below runs in your browser. Only{' '}
+            {live ? (
+              <Link
+                href={live.route}
+                className={cn(
+                  'text-fg-secondary hover:text-fg underline underline-offset-2',
+                  focusRing,
+                )}
+              >
+                {live.title}
+              </Link>
+            ) : null}{' '}
+            can reach a real network, and only after you ask it to.
           </p>
         </div>
       </section>

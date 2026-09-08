@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { CircleAlert, Loader } from 'lucide-react';
+import { CircleAlert, Loader, RotateCcw, WifiOff } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { SafetyBadge } from '@/components/shell';
-import { EmptyState } from '@/components/ui';
+import { Button, EmptyState } from '@/components/ui';
 import { focusRing } from '@/components/ui/styles';
 import { SimulationView, type VisualizedRun } from '@/components/viz';
 import { cn } from '@/lib/cn';
@@ -78,7 +78,9 @@ export interface EmbeddedSimProps {
  */
 type Settled =
   | { readonly status: 'ready'; readonly scenario: EmbeddableScenario }
-  | { readonly status: 'missing'; readonly available: readonly string[] | null };
+  | { readonly status: 'missing'; readonly available: readonly string[] | null }
+  /** The module publishes a catalogue and the chunk carrying it did not arrive. */
+  | { readonly status: 'failed' };
 
 /**
  * What the last completed load produced, and what it was a load *of*.
@@ -87,6 +89,11 @@ type Settled =
  * props changed is showing a stale answer until the new one arrives, and comparing keys
  * during render says so without a second render to say it. (It is also the only shape
  * `react-hooks/set-state-in-effect` accepts, and it is right to.)
+ *
+ * The attempt counter is part of the key so that pressing "try again" after a failed
+ * load reads as a change of props: the answer on hand is for the previous attempt, the
+ * spinner comes back, and the effect runs again against a cache the loader has already
+ * evicted.
  */
 type Resolution = Settled & { readonly key: string };
 
@@ -103,7 +110,8 @@ export function EmbeddedSim({
   autoplay = false,
   className,
 }: EmbeddedSimProps) {
-  const key = `${moduleId}/${scenarioId}`;
+  const [attempt, setAttempt] = useState(0);
+  const key = `${moduleId}/${scenarioId}#${attempt}`;
   const [loaded, setLoaded] = useState<Resolution | null>(null);
 
   const meta = getModule(moduleId);
@@ -111,25 +119,34 @@ export function EmbeddedSim({
   useEffect(() => {
     let cancelled = false;
 
-    void loadEmbeddableScenarios(moduleId).then((scenarios) => {
-      if (cancelled) return;
+    void loadEmbeddableScenarios(moduleId).then(
+      (scenarios) => {
+        if (cancelled) return;
 
-      if (!scenarios) {
-        setLoaded({ key, status: 'missing', available: null });
-        return;
-      }
+        if (!scenarios) {
+          setLoaded({ key, status: 'missing', available: null });
+          return;
+        }
 
-      const found = scenarios.find((entry) => entry.id === scenarioId);
-      setLoaded(
-        found
-          ? { key, status: 'ready', scenario: found }
-          : {
-              key,
-              status: 'missing',
-              available: scenarios.map((entry) => entry.id),
-            },
-      );
-    });
+        const found = scenarios.find((entry) => entry.id === scenarioId);
+        setLoaded(
+          found
+            ? { key, status: 'ready', scenario: found }
+            : {
+                key,
+                status: 'missing',
+                available: scenarios.map((entry) => entry.id),
+              },
+        );
+      },
+      // A rejection handler rather than a `.catch`, and never absent: without one the
+      // embed would spin for the rest of the page's life and the failure would surface
+      // only as an unhandled rejection in the console. See the note on
+      // `loadEmbeddableScenarios` for why this is distinct from `missing`.
+      () => {
+        if (!cancelled) setLoaded({ key, status: 'failed' });
+      },
+    );
 
     return () => {
       cancelled = true;
@@ -169,6 +186,17 @@ export function EmbeddedSim({
 
     return present.length ? present : undefined;
   }, [focus, run, moduleId, scenarioId]);
+
+  if (resolution?.status === 'failed') {
+    return (
+      <FailedSim
+        moduleTitle={meta?.title ?? moduleId}
+        route={meta?.route}
+        onRetry={() => setAttempt((n) => n + 1)}
+        className={className}
+      />
+    );
+  }
 
   if (resolution?.status === 'missing') {
     return (
@@ -290,6 +318,63 @@ export function EmbeddedSim({
         ) : null}
       </figcaption>
     </figure>
+  );
+}
+
+/**
+ * What a lesson shows when a simulation that *does* exist could not be fetched.
+ *
+ * Kept apart from {@link MissingSim} because the two are opposite advice. A missing
+ * scenario is a fact about the curriculum: the reader can do nothing about it and the
+ * message is really addressed to whoever writes the lesson. A failed load is a dropped
+ * chunk on the way to the reader's browser, which is transient, which means the useful
+ * thing to put on screen is a button.
+ *
+ * The rest of the lesson is unaffected -- the prose is compiled into the page and the
+ * other embeds have their own chunks -- so this deliberately does not escalate to the
+ * route's error boundary. One diagram is missing; the lesson still reads.
+ */
+function FailedSim({
+  moduleTitle,
+  route,
+  onRetry,
+  className,
+}: {
+  moduleTitle: string;
+  route?: string;
+  onRetry: () => void;
+  className?: string;
+}) {
+  return (
+    <EmptyState
+      className={cn('my-8', className)}
+      icon={<WifiOff className="size-5" />}
+      title={`The ${moduleTitle} simulation did not load`}
+      description={
+        <>
+          A simulation is fetched separately from the lesson text, and this one did not
+          arrive. Nothing is wrong with the lesson, and nothing was sent anywhere.
+        </>
+      }
+      action={
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Button size="sm" onClick={onRetry} icon={<RotateCcw className="size-4" />}>
+            Try again
+          </Button>
+          {route ? (
+            <Link
+              href={route}
+              className={cn(
+                'text-fg-muted hover:text-fg rounded-md text-xs transition-colors',
+                focusRing,
+              )}
+            >
+              Open {moduleTitle} instead
+            </Link>
+          ) : null}
+        </div>
+      }
+    />
   );
 }
 

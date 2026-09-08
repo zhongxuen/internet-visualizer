@@ -1,7 +1,7 @@
 'use client';
 
 import { MousePointerClick } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 
 import { Badge, EmptyState, Panel } from '@/components/ui';
 import { focusRing } from '@/components/ui/styles';
@@ -363,7 +363,13 @@ const KIND_LABEL: Record<CanvasSelection['type'], string> = {
   pdu: 'Packet',
 };
 
-export function Inspector({
+/*
+ * Memoized because the view around it re-renders on every animation frame while the
+ * playhead moves, and every prop reaching it is identity-stable between events -- see
+ * `useVisibleState`, which is what makes that true. Without this, a frame that changes
+ * nothing here still costs a full render of it.
+ */
+export const Inspector = memo(function Inspector({
   topology,
   selection,
   pdus,
@@ -435,4 +441,4 @@ export function Inspector({
       )}
     </Panel>
   );
-}
+});

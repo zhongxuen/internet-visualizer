@@ -233,7 +233,9 @@ export function CachePanel({ cache, virtualTime, className }: CachePanelProps) {
                   key={entry.key}
                   className={cn(
                     'border-border/40 border-t align-top',
-                    dead && 'text-fg-muted line-through opacity-60',
+                    // Struck through, and dimmed by colour rather than by alpha --
+                    // `opacity-60` on `--text-muted` measures 3.8:1. See globals.css.
+                    dead && 'state-dim line-through',
                   )}
                 >
                   <td className="px-2 py-1.5 font-mono break-all">

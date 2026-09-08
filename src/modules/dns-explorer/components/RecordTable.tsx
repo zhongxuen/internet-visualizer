@@ -127,9 +127,10 @@ function Section({
   return (
     <div className="flex flex-col">
       <div className="bg-surface/60 border-border/60 flex items-baseline justify-between gap-2 border-t px-2 py-1.5">
-        <h4 className="text-fg-secondary text-[0.6875rem] font-medium tracking-wider uppercase">
+        {/* `h3`, not `h4`: the nearest heading above this is the panel's `h2`. */}
+        <h3 className="text-fg-secondary text-[0.6875rem] font-medium tracking-wider uppercase">
           {spec.title}
-        </h4>
+        </h3>
         <span className="text-fg-muted font-mono text-[0.625rem]">{records.length}</span>
       </div>
 
@@ -240,9 +241,9 @@ export function RecordTable({
         </dl>
 
         <div className="bg-surface/60 border-border/60 border-t px-2 py-1.5">
-          <h4 className="text-fg-secondary text-[0.6875rem] font-medium tracking-wider uppercase">
+          <h3 className="text-fg-secondary text-[0.6875rem] font-medium tracking-wider uppercase">
             Question
-          </h4>
+          </h3>
         </div>
         <p className="text-fg px-2 py-1.5 font-mono text-xs break-all">
           {displayName(message.question.name)}{' '}

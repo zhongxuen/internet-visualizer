@@ -21,19 +21,53 @@ describe('snapToEndpoints', () => {
   it('sends each packet to the end of the wire it is nearer', () => {
     expect(
       snapToEndpoints([
-        { pduId: 'a', linkId: 'l', from: 'x', to: 'y', progress: 0.2 },
-        { pduId: 'b', linkId: 'l', from: 'x', to: 'y', progress: 0.8 },
+        {
+          pduId: 'a',
+          linkId: 'l',
+          from: 'x',
+          to: 'y',
+          progress: 0.2,
+          startMs: 0,
+          durationMs: 10,
+        },
+        {
+          pduId: 'b',
+          linkId: 'l',
+          from: 'x',
+          to: 'y',
+          progress: 0.8,
+          startMs: 0,
+          durationMs: 10,
+        },
       ]).map((packet) => packet.progress),
     ).toEqual([0, 1]);
   });
 
   it('leaves a packet that is already at an end exactly where it is', () => {
-    const packet = { pduId: 'a', linkId: 'l', from: 'x', to: 'y', progress: 1 };
+    const packet = {
+      pduId: 'a',
+      linkId: 'l',
+      from: 'x',
+      to: 'y',
+      progress: 1,
+      startMs: 0,
+      durationMs: 10,
+    };
     expect(snapToEndpoints([packet])[0]).toBe(packet);
   });
 
   it('keeps the packet -- reduced motion removes movement, not content', () => {
-    const packets = [{ pduId: 'a', linkId: 'l', from: 'x', to: 'y', progress: 0.5 }];
+    const packets = [
+      {
+        pduId: 'a',
+        linkId: 'l',
+        from: 'x',
+        to: 'y',
+        progress: 0.5,
+        startMs: 0,
+        durationMs: 10,
+      },
+    ];
     expect(snapToEndpoints(packets)).toHaveLength(1);
     expect(snapToEndpoints(packets)[0]).toMatchObject({ pduId: 'a', linkId: 'l' });
   });

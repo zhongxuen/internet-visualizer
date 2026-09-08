@@ -49,7 +49,27 @@ export function Panel({
         {aside ? <div className="flex shrink-0 items-center gap-2">{aside}</div> : null}
       </header>
 
-      <div className={cn('min-h-0 flex-1', !flush && 'p-4', scroll && 'overflow-y-auto')}>
+      <div
+        /*
+         * A scroll container that holds only text is a region a mouse can reach and a
+         * keyboard cannot: there is nothing inside to tab to, so the overflow is simply
+         * unreadable without a pointer. `tabIndex={0}` makes the box itself a stop, which
+         * is what `Space`/`PageDown`/arrow scrolling needs, and axe's
+         * `scrollable-region-focusable` is exactly this rule. It is applied whenever the
+         * panel scrolls rather than only when the content happens to be inert -- a panel
+         * whose children stop being focusable must not silently lose its tab stop.
+         *
+         * `group` is on the header's sibling rather than here so the outline is drawn on
+         * the box that actually scrolls.
+         */
+        tabIndex={scroll ? 0 : undefined}
+        className={cn(
+          'min-h-0 flex-1',
+          !flush && 'p-4',
+          scroll &&
+            'focus-visible:outline-focus overflow-y-auto focus-visible:outline-2 focus-visible:-outline-offset-2',
+        )}
+      >
         {children}
       </div>
 

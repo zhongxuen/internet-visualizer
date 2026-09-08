@@ -1,0 +1,112 @@
+# The six checks from docs/implementation/14-quality-and-deployment.md, section 5.
+#
+# Every step is a hard gate. There is no `continue-on-error` anywhere in this file and
+# there must never be one: the boundary lint rule in step 2 is the mechanical half of
+# the architecture in CLAUDE.md, and a lint job that is allowed to be red is a lint job
+# that is red. The same goes for the coverage thresholds in step 5, which live in
+# `vitest.config.mts` rather than here, so this workflow does not have to parse a number
+# out of a report to know whether the run passed.
+#
+# One job rather than six. All six steps need the same `npm ci` and four of them need the
+# same production build, and on a two-core runner the fan-out costs more in repeated
+# installs than it saves in wall clock.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch makes the first run's answer worthless. Cancel it.
+# `main` is exempt: a run on `main` is what a deploy is judged against, so it finishes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# Nothing here writes to the repository, comments on a PR, or reads a secret.
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 22 because that is what the project is developed against, and because
+      # `next build` on Next 16 requires it. The npm cache is keyed on package-lock.json.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # ---- Step 1 -----------------------------------------------------------------
+      # `ci`, not `install`: it installs exactly the lockfile and fails if the lockfile
+      # and package.json disagree, which is a check in its own right.
+      - name: Install dependencies
+        run: npm ci
+
+      # ---- Step 2 -----------------------------------------------------------------
+      # Includes the three architecture boundary rules in eslint.config.mjs. This is the
+      # step that stops the codebase sliding back into entangled visualization and
+      # networking logic, so it runs before anything slower has a chance to time out.
+      - name: Lint
+        run: npm run lint
+
+      # Not one of the six, and not optional either: Next 16 generates the global route
+      # types (`LayoutProps`, `PageProps`) into `.next/types` during a build, and `tsc`
+      # cannot resolve them before one has run. See CLAUDE.md, "Commands".
+      #
+      # It is also the build the Playwright step needs. `playwright.config.ts` runs
+      # `npm run build` itself in its `webServer` command, and that second build reuses
+      # the `.next/cache` this one leaves behind rather than starting from cold.
+      - name: Build
+        run: npm run build
+
+      # ---- Step 3 -----------------------------------------------------------------
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # ---- Step 4 -----------------------------------------------------------------
+      - name: Check formatting
+        run: npm run format:check
+
+      # ---- Step 5 -----------------------------------------------------------------
+      # `test:coverage` is `vitest run --coverage`, which is the doc's `npm test --
+      # --coverage` under its committed name. The thresholds -- src/core at 90%,
+      # src/core/net/guard.ts at 95%, and every module's sim/ folder in its own right --
+      # are enforced by vitest itself and fail the run.
+      - name: Unit tests with coverage thresholds
+        run: npm run test:coverage
+
+      # ---- Step 6 -----------------------------------------------------------------
+      # Chromium only, matching the single project in playwright.config.ts. `--with-deps`
+      # installs the system libraries a headless Chromium needs on a bare runner.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npx playwright test
+
+      # Diagnostics for a failed run, and nothing on a green one. `if: failure()` rather
+      # than `always()` so a passing build does not spend a minute uploading a report
+      # nobody opens.
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload coverage report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7

@@ -188,7 +188,7 @@ function FieldTable({ record }: { record: FrameRecord }) {
           <tr key={field.id} className="border-border/60 border-t align-top">
             <td className="text-fg-muted py-2 pr-3 font-mono text-[0.6875rem] whitespace-nowrap tabular-nums">
               {field.bitOffset}
-              <span className="text-fg-muted/70"> +{field.bits}</span>
+              <span className="text-fg-dim"> +{field.bits}</span>
             </td>
             <td className="py-2 pr-3">
               <span className="text-fg font-medium">{field.name}</span>
@@ -229,7 +229,7 @@ function LengthEncodings({ record }: { record: FrameRecord }) {
               'rounded-lg border px-3 py-2',
               active
                 ? 'border-accent/60 bg-accent/10'
-                : 'border-border bg-surface opacity-70',
+                : 'border-border bg-surface state-dim',
             )}
           >
             <div className="flex items-baseline justify-between gap-2">
@@ -297,12 +297,21 @@ function Masking({ record }: { record: FrameRecord }) {
               {record.frame.payload.length > preview.length ? ' …' : ''}
             </dd>
           </div>
-          <p className="text-fg-muted mt-1 leading-relaxed">
-            <code>transformed[i] = original[i] XOR key[i mod 4]</code> — its own inverse,
-            which is why one routine serves both ends. It is not encryption: the key is in
-            the clear, four bytes ahead of the data it masks.
-          </p>
         </dl>
+      ) : null}
+
+      {key !== undefined && masked !== undefined ? (
+        /*
+         * Outside the `<dl>`, not inside it. A description list may only contain
+         * `dt`/`dd` (optionally wrapped in a `div`), and a stray `<p>` there breaks the
+         * mapping a screen reader builds from the list -- axe's `definition-list` rule.
+         * The sentence is a note about the whole table, not a value in it.
+         */
+        <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+          <code>transformed[i] = original[i] XOR key[i mod 4]</code> — its own inverse,
+          which is why one routine serves both ends. It is not encryption: the key is in
+          the clear, four bytes ahead of the data it masks.
+        </p>
       ) : null}
     </div>
   );

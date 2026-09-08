@@ -7,6 +7,7 @@ import type { InFlightPacket } from '@/core/sim/project';
 import type { PDU } from '@/core/types/pdu';
 import type { Topology } from '@/core/types/topology';
 
+import { FrameClockContext, type FrameClock } from './frameClock';
 import { PacketSprite } from './PacketSprite';
 import { SimulationCanvas } from './SimulationCanvas';
 
@@ -214,6 +215,8 @@ const IN_FLIGHT: InFlightPacket[] = [
     from: 'client',
     to: 'resolver',
     progress: 0.5,
+    startMs: 0,
+    durationMs: 10,
   },
 ];
 
@@ -264,5 +267,142 @@ describe('packets on the canvas', () => {
     // and a click that carried on bubbling used to select the PDU and then the link
     // underneath it -- leaving the inspector showing the wire. One click, one selection.
     expect(onSelect.mock.calls).toEqual([[{ type: 'pdu', id: 'query' }]]);
+  });
+});
+
+/**
+ * A clock a test can wind by hand, standing in for the playback store.
+ *
+ * `set` is the whole of what the rAF loop does to a sprite in the real product: move one
+ * number and tell the listeners.
+ */
+function testClock(start = 0) {
+  const listeners = new Set<(t: number) => void>();
+  let time = start;
+  const clock: FrameClock = {
+    now: () => time,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+  return {
+    clock,
+    set(next: number) {
+      time = next;
+      for (const listener of listeners) listener(next);
+    },
+    get listenerCount() {
+      return listeners.size;
+    },
+  };
+}
+
+describe('a packet following the playhead', () => {
+  /** Renders one sprite on a 100px-wide flat wire, travelling from 0 ms to 20 ms. */
+  function renderTravelling(clock: FrameClock, renders?: () => void) {
+    function Counted() {
+      renders?.();
+      return (
+        <PacketSprite
+          pdu={QUERY}
+          progress={0}
+          startMs={0}
+          durationMs={20}
+          path={FLAT}
+          from={FROM}
+          to={TO}
+        />
+      );
+    }
+    return render(
+      <FrameClockContext value={clock}>
+        <Counted />
+      </FrameClockContext>,
+    );
+  }
+
+  it('moves when the clock moves, with no re-render at all', () => {
+    const driver = testClock(0);
+    let renders = 0;
+    renderTravelling(driver.clock, () => {
+      renders++;
+    });
+
+    const sprite = screen.getByRole('button');
+    const after = renders;
+
+    // A quarter of the way in time is 15.625px along this cubic, not 25px -- the wire
+    // is a curve and the sprite rides it, which is the whole reason `placeAlongPath`
+    // exists. Halfway and the far end are the two points where curve and chord agree.
+    driver.set(5);
+    expect(transformOf(sprite)).toContain('translate(15.625px, 0px)');
+
+    driver.set(10);
+    expect(transformOf(sprite)).toContain('translate(50px, 0px)');
+
+    driver.set(20);
+    expect(transformOf(sprite)).toContain('translate(100px, 0px)');
+
+    // The point of the whole mechanism: three frames, zero renders.
+    expect(renders).toBe(after);
+  });
+
+  it('takes its first position from the clock, not from a stale progress prop', () => {
+    // The sprite is told `progress: 0` but the run is already half way across the wire,
+    // which is what happens when a packet is rendered on a frame the clock has moved on
+    // from. It must not paint at the start and then jump.
+    const driver = testClock(10);
+    renderTravelling(driver.clock);
+
+    expect(transformOf(screen.getByRole('button'))).toContain('translate(50px, 0px)');
+  });
+
+  it('stops listening when the packet leaves the wire', () => {
+    const driver = testClock(0);
+    const { unmount } = renderTravelling(driver.clock);
+
+    expect(driver.listenerCount).toBe(1);
+    unmount();
+    expect(driver.listenerCount).toBe(0);
+  });
+
+  it('still snaps to an endpoint under reduced motion', () => {
+    const driver = testClock(0);
+    render(
+      <MotionProvider defaultPreference="reduced">
+        <FrameClockContext value={driver.clock}>
+          <PacketSprite
+            pdu={QUERY}
+            progress={0}
+            startMs={0}
+            durationMs={20}
+            path={FLAT}
+            from={FROM}
+            to={TO}
+          />
+        </FrameClockContext>
+      </MotionProvider>,
+    );
+
+    const sprite = screen.getByRole('button');
+
+    driver.set(8);
+    expect(transformOf(sprite)).toContain('translate(0px, 0px)');
+    driver.set(12);
+    expect(transformOf(sprite)).toContain('translate(100px, 0px)');
+  });
+
+  it('ignores the clock when it has no window to place itself in', () => {
+    const driver = testClock(0);
+    render(
+      <FrameClockContext value={driver.clock}>
+        <PacketSprite pdu={QUERY} progress={0.25} path={FLAT} from={FROM} to={TO} />
+      </FrameClockContext>,
+    );
+
+    const sprite = screen.getByRole('button');
+    driver.set(999);
+    expect(transformOf(sprite)).toContain('translate(15.625px, 0px)');
   });
 });

@@ -2,6 +2,10 @@
   "name": "internet-visualizer",
   "version": "0.1.0",
   "private": true,
+  "//sideEffects": "Nothing in src/ runs anything on import, so an unused export can be dropped along with the module behind it. Without this the barrel in src/components/viz/index.ts holds React Flow (~80 KB gzipped) in the first load of every module and lesson route, because a re-export of SimulationCanvas has to be assumed to do something. Stylesheets are the exception and stay: they exist for their side effect.",
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +16,11 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "perf:bundles": "node perf/bundles.mjs",
+    "perf:vitals": "node perf/vitals.mjs",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",
@@ -32,7 +40,9 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@mdx-js/rollup": "^3.1.1",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -42,6 +52,7 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.1",
     "@vitest/coverage-v8": "^4.1.11",
+    "axe-core": "^4.13.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
     "eslint-plugin-boundaries": "^7.2.0",

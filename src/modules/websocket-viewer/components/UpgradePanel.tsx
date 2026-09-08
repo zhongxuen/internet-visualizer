@@ -141,7 +141,7 @@ function Checks({ handshake }: { handshake: HandshakeRecord }) {
             key={check.id}
             className={cn(
               'border-border/60 border-t align-top',
-              check.passed && 'opacity-70',
+              check.passed && 'state-dim',
             )}
           >
             <td className="py-2 pr-3 whitespace-nowrap">

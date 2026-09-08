@@ -179,6 +179,14 @@ export function isEmbeddableModule(moduleId: string): boolean {
  * `undefined` rather than a throw, and `undefined` rather than an empty array: "this
  * module cannot be embedded" and "this module has no scenarios" are different things to
  * tell an author, and the caller is a component that has to render something either way.
+ *
+ * A *failed* load is a third thing again, and it rejects rather than resolving to
+ * `undefined` -- a chunk that did not download is a transient fault with a retry, not a
+ * fact about the curriculum, and flattening it into "this module has no scenarios"
+ * would put a permanent authoring error in front of a reader with a flaky connection.
+ * The cache is evicted on the way past for the same reason: a rejected promise left in
+ * the map is a failure remembered forever, so one dropped chunk would disable every
+ * embed of that module for the life of the page.
  */
 export async function loadEmbeddableScenarios(
   moduleId: string,
@@ -188,7 +196,10 @@ export async function loadEmbeddableScenarios(
 
   let pending = catalogues.get(moduleId);
   if (!pending) {
-    pending = load();
+    pending = load().catch((error: unknown) => {
+      catalogues.delete(moduleId);
+      throw error;
+    });
     catalogues.set(moduleId, pending);
   }
 

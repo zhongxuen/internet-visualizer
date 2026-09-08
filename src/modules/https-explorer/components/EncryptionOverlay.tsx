@@ -83,9 +83,11 @@ function ObservedRow({
     <li
       className={cn(
         'border-border bg-surface rounded-lg border px-2.5 py-1.5',
-        !sent && 'opacity-45',
+        // `.state-dim`, not an alpha multiplier -- see globals.css.
+        !sent && 'state-dim',
       )}
     >
+      {sent ? null : <span className="sr-only">Not sent yet. </span>}
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 font-mono text-[0.5625rem]">
         <span className={observed.from === 'client' ? 'text-accent' : 'text-state-ok'}>
           {observed.from === 'client' ? 'client → server' : 'server → client'}
@@ -134,9 +136,11 @@ function PlainRow({
     <li
       className={cn(
         'border-border bg-surface rounded-lg border px-2.5 py-1.5',
-        !sent && 'opacity-45',
+        // `.state-dim`, not an alpha multiplier -- see globals.css.
+        !sent && 'state-dim',
       )}
     >
+      {sent ? null : <span className="sr-only">Not sent yet. </span>}
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 font-mono text-[0.5625rem]">
         <span className={from === 'client' ? 'text-accent' : 'text-state-ok'}>
           {from === 'client' ? 'client → server' : 'server → client'}

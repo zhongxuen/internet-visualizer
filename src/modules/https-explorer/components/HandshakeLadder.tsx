@@ -172,7 +172,9 @@ function Rung({
     view === 'participant' || message.fields.some((field) => field.visibleToObserver);
 
   return (
-    <div className={cn('flex flex-col', !sent && 'opacity-45')}>
+    // `.state-dim`, not an alpha multiplier -- see globals.css.
+    <div className={cn('flex flex-col', !sent && 'state-dim')}>
+      {sent ? null : <span className="sr-only">Not sent yet. </span>}
       <div
         className={cn(
           'grid items-center gap-2',
@@ -259,11 +261,14 @@ function MessageButton({
       aria-expanded={expanded}
       onClick={() => onSelect(expanded ? null : message)}
       title={message.summary}
+      // Tinted by `style.tone`, so it opts out of an ancestor's `.state-dim` -- see
+      // globals.css. Unreadability is stated by the bracket glyphs and the `sr-only`
+      // line below, not by dimming, which used to be an `opacity-70` here.
+      data-no-dim=""
       className={cn(
         'w-full rounded-lg border px-2.5 py-1.5 text-left transition-colors',
         focusRing,
         expanded ? 'border-border-strong bg-surface-overlay' : style.tone,
-        !readable && 'opacity-70',
       )}
     >
       <span className="flex flex-wrap items-baseline justify-between gap-1.5">
@@ -279,6 +284,9 @@ function MessageButton({
       {message.optional ? (
         <span className="text-fg-muted mt-0.5 block text-[0.5625rem]">optional</span>
       ) : null}
+      {readable ? null : (
+        <span className="sr-only">Opaque to an observer on the path. </span>
+      )}
     </button>
   );
 }

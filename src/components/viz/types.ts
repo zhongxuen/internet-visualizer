@@ -36,8 +36,18 @@ export type TopologyFlowNode = Node<TopologyNodeData, NodeKind>;
  */
 export interface EdgePacket {
   pdu: PDU;
-  /** How far across, `0` at departure to `1` at arrival. */
+  /**
+   * How far across, `0` at departure to `1` at arrival.
+   *
+   * The position at the frame the packet appeared. While it is on the wire the sprite
+   * takes over and follows the playhead itself from the window below, so this is a
+   * starting point rather than a per-frame value -- see `PacketSprite`.
+   */
   progress: number;
+  /** Virtual millisecond the packet left, from the `transmit` event. */
+  startMs: number;
+  /** How long the hop takes, in virtual milliseconds. */
+  durationMs: number;
   /** The packet left the link's `to` node, so it walks the drawn path backwards. */
   reversed: boolean;
   selected: boolean;

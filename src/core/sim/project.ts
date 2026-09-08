@@ -35,6 +35,17 @@ export interface InFlightPacket {
   to: string;
   /** How far across, `0` at the moment of departure to `1` at arrival. */
   progress: number;
+  /**
+   * Virtual millisecond the packet left `from` -- the `transmit` event's `at`.
+   *
+   * Carried alongside `progress` rather than instead of it so that a renderer can
+   * recompute the position itself at any time without another projection. That is what
+   * lets the packet sprites follow the playhead without a React render per frame
+   * (`PacketSprite`); a still frame still just reads `progress`.
+   */
+  startMs: number;
+  /** How long the hop takes, in virtual milliseconds. `0` for an instantaneous hop. */
+  durationMs: number;
 }
 
 /**
@@ -85,6 +96,70 @@ export interface VisualState {
 }
 
 /**
+ * The packet a `transmit` event puts on the wire at `now`, or `null` if it is not on it.
+ *
+ * The single definition of the half-open `[at, at + durationMs)` rule, so `projectAt`
+ * and `inFlightAt` below cannot drift apart: at the arrival instant the packet is at the
+ * far node, not on the wire, and so does not overlap the next hop's departure.
+ */
+function packetOnWire(
+  event: Extract<SimEvent, { kind: 'transmit' }>,
+  now: number,
+): InFlightPacket | null {
+  const elapsed = now - event.at;
+  if (elapsed < 0) return null;
+
+  const base = {
+    pduId: event.pduId,
+    linkId: event.linkId,
+    from: event.from,
+    to: event.to,
+    startMs: event.at,
+    durationMs: event.durationMs,
+  };
+
+  if (event.durationMs > 0) {
+    if (elapsed >= event.durationMs) return null;
+    return { ...base, progress: elapsed / event.durationMs };
+  }
+
+  // A zero-duration hop crosses the link instantaneously; it is only ever on the wire at
+  // the one instant it is sent, and it is already all the way across.
+  return elapsed === 0 ? { ...base, progress: 1 } : null;
+}
+
+/** `t` as `projectAt` reads it: clamped at 0 below, and never `NaN`. */
+function normalizeTime(t: number): number {
+  return Number.isFinite(t) ? Math.max(0, t) : 0;
+}
+
+/**
+ * Just the packets on a wire at `t`.
+ *
+ * The one part of a `VisualState` that changes on **every** frame rather than only when
+ * the playhead crosses an event: `nodeStates`, the log, the annotations and the current
+ * phase are all fixed by `projectionCursor` below, but a packet's `progress` is a
+ * continuous function of `t`. Playback recomputes this each frame and the rest only when
+ * the cursor moves -- see `useVisibleState`.
+ *
+ * Equivalent to `projectAt(result, t).inFlight`, and asserted to be in the tests.
+ */
+export function inFlightAt(result: SimResult, t: number): InFlightPacket[] {
+  const now = normalizeTime(t);
+  const inFlight: InFlightPacket[] = [];
+
+  for (const event of result.events) {
+    // Sorted by `at`, so the first event past `now` ends the search.
+    if (event.at > now) break;
+    if (event.kind !== 'transmit') continue;
+    const packet = packetOnWire(event, now);
+    if (packet) inFlight.push(packet);
+  }
+
+  return inFlight;
+}
+
+/**
  * Index of the phase containing `time`, or `-1` before the first phase starts.
  *
  * Phases are half-open `[startMs, endMs)`, so a `time` landing exactly on a boundary
@@ -109,7 +184,7 @@ function phaseIndexAt(phases: readonly PhaseSummary[], time: number): number {
  * and the last phase remains current.
  */
 export function projectAt(result: SimResult, t: number): VisualState {
-  const now = Number.isFinite(t) ? Math.max(0, t) : 0;
+  const now = normalizeTime(t);
 
   // Seed the key set from the whole run, not from the events so far, so that the shape of
   // `nodeStates` does not depend on `t`.
@@ -138,29 +213,8 @@ export function projectAt(result: SimResult, t: number): VisualState {
         break;
 
       case 'transmit': {
-        const elapsed = now - event.at;
-        // Half-open `[at, at + durationMs)`: at the arrival instant the packet is at the
-        // far node, not on the wire, so it does not overlap the next hop's departure.
-        if (event.durationMs > 0) {
-          if (elapsed >= event.durationMs) break;
-          inFlight.push({
-            pduId: event.pduId,
-            linkId: event.linkId,
-            from: event.from,
-            to: event.to,
-            progress: elapsed / event.durationMs,
-          });
-        } else if (elapsed === 0) {
-          // A zero-duration hop crosses the link instantaneously; it is only ever on the
-          // wire at the one instant it is sent, and it is already all the way across.
-          inFlight.push({
-            pduId: event.pduId,
-            linkId: event.linkId,
-            from: event.from,
-            to: event.to,
-            progress: 1,
-          });
-        }
+        const packet = packetOnWire(event, now);
+        if (packet) inFlight.push(packet);
         break;
       }
 
@@ -187,4 +241,83 @@ export function projectAt(result: SimResult, t: number): VisualState {
   // phase deep-equals one built without the key at all.
   if (currentPhase) state.currentPhase = currentPhase;
   return state;
+}
+
+/**
+ * The two indices that decide everything in a `VisualState` except packet positions.
+ *
+ * Playback moves `t` sixty times a second, but almost nothing on screen changes that
+ * often: the node highlights, the log, the pinned annotations and the current phase only
+ * change when the playhead crosses an event or a phase boundary, which happens a few
+ * dozen times in a whole run. This is the cheap test for that.
+ *
+ * **The contract:** two times with an equal cursor produce deep-equal `nodeStates`,
+ * `log`, `activeAnnotations` and `currentPhase`. They do *not* produce equal `inFlight`
+ * -- a packet's `progress` moves continuously between events, which is why `inFlightAt`
+ * is separate. `useVisibleState` relies on exactly this split to reuse the previous
+ * frame's objects, and `__tests__/project.test.ts` asserts it.
+ *
+ * Both searches are binary rather than linear because this runs every frame while the
+ * projection it guards no longer does.
+ */
+export interface ProjectionCursor {
+  /** How many of `result.events` have `at <= t`; the length of `VisualState.log`. */
+  eventCount: number;
+  /** Index of the phase containing `t`, or `-1` before the first phase begins. */
+  phaseIndex: number;
+}
+
+/**
+ * Number of leading items of `sorted` whose time is `<= now`.
+ *
+ * `sorted` must be non-decreasing in `timeOf`, which both `SimResult.events` (by
+ * contract) and `SimResult.phases` (derived from them) are.
+ */
+function countAtOrBefore<T>(
+  sorted: readonly T[],
+  now: number,
+  timeOf: (item: T) => number,
+): number {
+  let low = 0;
+  let high = sorted.length;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (timeOf(sorted[mid]!) <= now) low = mid + 1;
+    else high = mid;
+  }
+  return low;
+}
+
+/** See `ProjectionCursor`. Pure, and cheap enough to call on every animation frame. */
+export function projectionCursor(result: SimResult, t: number): ProjectionCursor {
+  const now = normalizeTime(t);
+  return {
+    eventCount: countAtOrBefore(result.events, now, (event) => event.at),
+    phaseIndex: countAtOrBefore(result.phases, now, (phase) => phase.startMs) - 1,
+  };
+}
+
+/**
+ * A time that projects to the same discrete state as `t`, and the same for every `t`
+ * that shares its cursor.
+ *
+ * The cursor is two numbers, which makes it awkward as a cache key. This is the same
+ * fact as one number: the later of the last event reached and the start of the phase in
+ * force -- the instant the current cursor came into being. Every `t` from there until
+ * the next event or phase boundary maps to it, so
+ *
+ * ```ts
+ * useMemo(() => projectAt(result, projectionKey(result, t)), [result, projectionKey(result, t)])
+ * ```
+ *
+ * recomputes the projection only when something discrete actually changed, with no
+ * mutable cache to get wrong. `projectAt(result, projectionKey(result, t))` agrees with
+ * `projectAt(result, t)` on everything except `inFlight`; that is the same guarantee
+ * `ProjectionCursor` documents, and the tests assert it directly.
+ */
+export function projectionKey(result: SimResult, t: number): number {
+  const { eventCount, phaseIndex } = projectionCursor(result, t);
+  const lastEvent = eventCount > 0 ? result.events[eventCount - 1]!.at : 0;
+  const phaseStart = phaseIndex >= 0 ? result.phases[phaseIndex]!.startMs : 0;
+  return Math.max(lastEvent, phaseStart);
 }

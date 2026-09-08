@@ -1,9 +1,22 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { loadEmbeddableScenario, type EmbeddableScenario } from '@/modules/scenarios';
+import {
+  loadEmbeddableScenario,
+  loadEmbeddableScenarios,
+  type EmbeddableScenario,
+} from '@/modules/scenarios';
 
 import { EmbeddedSim } from './EmbeddedSim';
+
+/**
+ * Spied, not replaced: every export keeps its real implementation, and one test below
+ * overrides a single call so the "the chunk did not arrive" branch can be reached at
+ * all. A hand-written stub catalogue would defeat the point of the other tests, which
+ * is that the embed shows the *module's* run and not a copy of it.
+ */
+vi.mock('@/modules/scenarios', { spy: true });
 
 /**
  * The embed has two jobs and this suite is those two jobs.
@@ -191,6 +204,40 @@ describe('EmbeddedSim', () => {
           'cold-cache, warm-cache, cname-chain, cdn-lookup, nxdomain, dnssec-validated',
         ),
       ).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * A dropped chunk is not an authoring mistake, so it does not get the authoring
+   * message. The reader gets a button, the rest of the lesson is untouched, and
+   * nothing escalates to the route's error boundary over one missing diagram.
+   */
+  describe('when the simulation cannot be fetched', () => {
+    it('offers a retry that works, rather than spinning forever', async () => {
+      const user = userEvent.setup();
+      vi.mocked(loadEmbeddableScenarios).mockRejectedValueOnce(
+        new Error('Loading chunk failed'),
+      );
+
+      render(<EmbeddedSim module={MODULE} scenario={SCENARIO} />);
+
+      expect(await screen.findByText(/did not load/i)).toBeInTheDocument();
+      expect(screen.queryByRole('figure')).not.toBeInTheDocument();
+
+      // Only the one call was made to fail, so the second attempt is the real loader.
+      await user.click(screen.getByRole('button', { name: /try again/i }));
+
+      expect(await screen.findByRole('figure')).toBeInTheDocument();
+      expect(screen.getByText(cold.title)).toBeInTheDocument();
+    });
+
+    it('does not mistake a failed fetch for a scenario that does not exist', async () => {
+      vi.mocked(loadEmbeddableScenarios).mockRejectedValueOnce(new Error('offline'));
+
+      render(<EmbeddedSim module={MODULE} scenario={SCENARIO} />);
+
+      await screen.findByText(/did not load/i);
+      expect(screen.queryByText(/cannot play/i)).not.toBeInTheDocument();
     });
   });
 });

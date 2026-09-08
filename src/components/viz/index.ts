@@ -10,7 +10,13 @@ export { SimulationCanvas, type SimulationCanvasProps } from './SimulationCanvas
 export { SimulationView, type SimulationViewProps } from './SimulationView';
 export { EventLog, type EventLogProps } from './EventLog';
 export { KeyboardLegend, type KeyboardLegendProps } from './KeyboardLegend';
+export {
+  PhaseAnnouncer,
+  phaseAnnouncement,
+  type PhaseAnnouncerProps,
+} from './PhaseAnnouncer';
 export { PhaseStepper, type PhaseStepperProps } from './PhaseStepper';
+export { TopologyList, type TopologyListProps } from './TopologyList';
 export { PlaybackControls, type PlaybackControlsProps } from './PlaybackControls';
 export { Timeline, type TimelineProps } from './Timeline';
 export {
@@ -20,7 +26,9 @@ export {
   usePlaybackContext,
   usePlaybackKeys,
   usePlaybackState,
+  usePlayheadCursor,
   useSimulation,
+  useSteadyPackets,
   useVisibleState,
   snapToEndpoints,
   type PlaybackActions,

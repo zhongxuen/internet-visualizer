@@ -189,7 +189,9 @@ function NavMenu({ group, modules, pathname }: NavMenuProps) {
                           real network says so before you click it, not after.
                         */}
                         {module.usesRealNetwork ? (
-                          <SafetyBadge variant="live" compact />
+                          // `interactive={false}`: this one is inside the link, so it
+                          // must not be a tab stop of its own -- see SafetyBadge.
+                          <SafetyBadge variant="live" compact interactive={false} />
                         ) : null}
                         <Badge tone={STATUS_TONE[module.status]}>
                           {STATUS_LABEL[module.status]}

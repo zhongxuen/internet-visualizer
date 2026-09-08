@@ -109,7 +109,7 @@ function ComponentRow({
           active
             ? 'border-accent/60 bg-accent/10'
             : 'border-border bg-surface hover:border-border-strong',
-          moved && !active && 'opacity-75',
+          moved && !active && 'state-dim',
         )}
       >
         <span className="flex flex-wrap items-baseline justify-between gap-2">

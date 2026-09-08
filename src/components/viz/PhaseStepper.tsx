@@ -1,5 +1,7 @@
 'use client';
 
+import { memo } from 'react';
+
 import { Check, CircleDot, Circle } from 'lucide-react';
 
 import type { PhaseSummary } from '@/core/sim/result';
@@ -37,7 +39,13 @@ function statusOf(index: number, currentIndex: number) {
   return { icon: Circle, word: 'Not reached yet' } as const;
 }
 
-export function PhaseStepper({
+/*
+ * Memoized because the view around it re-renders on every animation frame while the
+ * playhead moves, and every prop reaching it is identity-stable between events -- see
+ * `useVisibleState`, which is what makes that true. Without this, a frame that changes
+ * nothing here still costs a full render of it.
+ */
+export const PhaseStepper = memo(function PhaseStepper({
   phases,
   currentIndex,
   onSeek,
@@ -109,4 +117,4 @@ export function PhaseStepper({
       })}
     </ol>
   );
-}
+});

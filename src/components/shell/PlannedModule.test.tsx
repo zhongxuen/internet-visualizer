@@ -25,11 +25,22 @@ describe('PlannedModule', () => {
 describe('moduleMetadata', () => {
   it('quotes the registry so the tab title cannot drift from the heading', () => {
     const meta = getModule('https-explorer')!;
+    const metadata = moduleMetadata('https-explorer');
 
-    expect(moduleMetadata('https-explorer')).toEqual({
-      title: meta.title,
-      description: meta.summary,
-    });
+    expect(metadata.title).toBe(meta.title);
+    expect(metadata.description).toBe(meta.summary);
+    // The same two strings again, in the shape a link unfurler reads. Written out
+    // rather than inherited: `og:title` has no page around it to add the product name.
+    expect(metadata.openGraph?.description).toBe(meta.summary);
+    expect(metadata.openGraph?.title).toContain(meta.title);
+  });
+
+  it('canonicalises to the route the registry gives the module', () => {
+    const meta = getModule('https-explorer')!;
+
+    // Root-relative, so `metadataBase` decides the host and a preview deployment
+    // points at production rather than at itself.
+    expect(moduleMetadata('https-explorer').alternates?.canonical).toBe(meta.route);
   });
 
   it('returns nothing for an unregistered id', () => {

@@ -35,7 +35,7 @@ describe('RecordTable', () => {
     render(<RecordTable message={referral} title="Reply" />);
 
     const headings = screen
-      .getAllByRole('heading', { level: 4 })
+      .getAllByRole('heading', { level: 3 })
       .map((heading) => heading.textContent);
 
     expect(headings).toEqual(['Question', 'Answer', 'Authority', 'Additional']);

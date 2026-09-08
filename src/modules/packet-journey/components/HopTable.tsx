@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle } from 'lucide-react';
-import { Fragment, useEffect, useRef } from 'react';
+import { Fragment, memo, useCallback, useEffect, useRef, type RefObject } from 'react';
 
 import { useReducedMotionSafe } from '@/components/motion';
 import { Panel } from '@/components/ui';
@@ -68,6 +68,155 @@ const CHANGE_TONE: Record<HopChangeKind, string> = {
 
 const HEADINGS = ['Hop', 'Time', 'From → to', 'TTL', 'MAC', 'IP', 'Bytes', 'Changed'];
 
+/**
+ * One hop, memoized -- the same trick the event log uses, for the same reason.
+ *
+ * The ledger lists every hop of the run, and a full journey is a hundred-odd rows of
+ * eight columns each. Moving the playhead across a hop changes `isCurrent` on two of them
+ * and `isFuture` on one; without the comparison here that would re-render all of them,
+ * and Packet Journey is the page where that showed up as measurable jank.
+ *
+ * `label` is taken rather than `labels` so the memo compares one stable function instead
+ * of a record, and the row never has to know where a name came from.
+ */
+const HopRowView = memo(function HopRowView({
+  row,
+  isCurrent,
+  isFuture,
+  newPacket,
+  time,
+  description,
+  label,
+  onSeek,
+  currentRef,
+}: {
+  row: HopRow;
+  isCurrent: boolean;
+  isFuture: boolean;
+  /** This row starts a different packet, so it gets a heading above it. */
+  newPacket: boolean;
+  time: string;
+  description: string;
+  label: (id: string) => string;
+  onSeek: (time: number) => void;
+  currentRef: RefObject<HTMLTableRowElement | null>;
+}) {
+  return (
+    <Fragment>
+      {newPacket ? (
+        <tr className="bg-surface/60">
+          <th
+            scope="colgroup"
+            colSpan={HEADINGS.length}
+            className="border-border/60 text-fg-secondary border-t px-2 pt-2.5 pb-1 text-left font-mono text-[0.6875rem] font-normal"
+          >
+            {row.summary}
+          </th>
+        </tr>
+      ) : null}
+
+      <tr
+        ref={isCurrent ? currentRef : null}
+        aria-current={isCurrent ? 'true' : undefined}
+        onClick={() => onSeek(row.at)}
+        className={cn(
+          'border-border/40 cursor-pointer border-t align-top transition-colors',
+          'hover:bg-surface-overlay/60',
+          isCurrent && 'bg-accent/10',
+          // `.state-dim`, not an alpha multiplier -- see globals.css.
+          isFuture && 'state-dim',
+          row.kind === 'drop' && 'bg-state-error/5',
+        )}
+      >
+        <td className="px-2 py-1.5">
+          <button
+            type="button"
+            aria-label={`Seek to ${description}${isFuture ? '. Not reached yet' : ''}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onSeek(row.at);
+            }}
+            className={cn(
+              'text-fg-muted hover:text-fg rounded px-1 font-mono text-[0.6875rem]',
+              focusRing,
+              isCurrent && 'text-accent',
+            )}
+          >
+            {row.hop}
+          </button>
+        </td>
+
+        <td className="text-fg-muted px-2 py-1.5 font-mono whitespace-nowrap">{time}</td>
+
+        <td className="px-2 py-1.5">
+          <span className="text-fg-secondary whitespace-nowrap">
+            {row.kind === 'drop' ? (
+              <span className="text-state-error inline-flex items-center gap-1">
+                <AlertTriangle aria-hidden="true" className="size-3" />
+                Dropped at {label(row.from)}
+              </span>
+            ) : (
+              <>
+                {label(row.from)} → {label(row.to)}
+              </>
+            )}
+          </span>
+          {row.via.length > 0 ? (
+            <span className="text-fg-muted block text-[0.625rem]">
+              via {row.via.map(label).join(', ')} — unchanged
+            </span>
+          ) : null}
+          {row.reason ? (
+            <span className="text-state-error block text-[0.625rem] leading-snug">
+              {row.reason}
+            </span>
+          ) : null}
+        </td>
+
+        <td className="text-fg px-2 py-1.5 font-mono">{row.addressing.ttl}</td>
+
+        <td className="text-fg-secondary px-2 py-1.5 font-mono text-[0.6875rem] whitespace-nowrap">
+          {row.addressing.sourceMac}
+          <span className="text-fg-muted"> → </span>
+          {row.addressing.destinationMac}
+        </td>
+
+        <td className="text-fg-secondary px-2 py-1.5 font-mono text-[0.6875rem] whitespace-nowrap">
+          {row.addressing.source}
+          <span className="text-fg-muted"> → </span>
+          {row.addressing.destination}
+        </td>
+
+        <td className="text-fg-muted px-2 py-1.5 font-mono whitespace-nowrap">
+          {row.sizeBytes}
+        </td>
+
+        <td className="px-2 py-1.5">
+          {row.changes.length === 0 ? (
+            <span className="text-fg-muted text-[0.625rem]">
+              {row.hop === 1 && row.kind === 'crossing' ? 'first hop' : '—'}
+            </span>
+          ) : (
+            <ul className="flex flex-col gap-0.5">
+              {row.changes.map((change) => (
+                <li
+                  key={change.text}
+                  className={cn(
+                    'font-mono text-[0.625rem] leading-snug whitespace-nowrap',
+                    CHANGE_TONE[change.kind],
+                  )}
+                >
+                  {change.text}
+                </li>
+              ))}
+            </ul>
+          )}
+        </td>
+      </tr>
+    </Fragment>
+  );
+});
+
 export function HopTable({
   rows,
   virtualTime,
@@ -91,7 +240,9 @@ export function HopTable({
     });
   }, [currentId, reduced]);
 
-  const label = (id: string) => labels[id] ?? id;
+  // Stable, because every row memoizes on it: a fresh closure here would re-render the
+  // whole ledger on every render of this component.
+  const label = useCallback((id: string) => labels[id] ?? id, [labels]);
 
   if (rows.length === 0) {
     return (
@@ -135,131 +286,23 @@ export function HopTable({
 
           <tbody>
             {rows.map((row, index) => {
-              const isCurrent = index === current;
-              const isFuture = index > current;
               const previous = rows[index - 1];
-              const newPacket = !previous || previous.pduId !== row.pduId;
-              const time = formatTimecode(row.at, durationMs);
-              const description = `${row.summary}, hop ${row.hop}: ${label(row.from)} to ${label(
-                row.to,
-              )} at ${time}`;
 
               return (
-                <Fragment key={row.id}>
-                  {newPacket ? (
-                    <tr className="bg-surface/60">
-                      <th
-                        scope="colgroup"
-                        colSpan={HEADINGS.length}
-                        className="border-border/60 text-fg-secondary border-t px-2 pt-2.5 pb-1 text-left font-mono text-[0.6875rem] font-normal"
-                      >
-                        {row.summary}
-                      </th>
-                    </tr>
-                  ) : null}
-
-                  <tr
-                    ref={isCurrent ? currentRef : null}
-                    aria-current={isCurrent ? 'true' : undefined}
-                    onClick={() => onSeek(row.at)}
-                    className={cn(
-                      'border-border/40 cursor-pointer border-t align-top transition-colors',
-                      'hover:bg-surface-overlay/60',
-                      isCurrent && 'bg-accent/10',
-                      isFuture && 'opacity-45',
-                      row.kind === 'drop' && 'bg-state-error/5',
-                    )}
-                  >
-                    <td className="px-2 py-1.5">
-                      <button
-                        type="button"
-                        aria-label={`Seek to ${description}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onSeek(row.at);
-                        }}
-                        className={cn(
-                          'text-fg-muted hover:text-fg rounded px-1 font-mono text-[0.6875rem]',
-                          focusRing,
-                          isCurrent && 'text-accent',
-                        )}
-                      >
-                        {row.hop}
-                      </button>
-                    </td>
-
-                    <td className="text-fg-muted px-2 py-1.5 font-mono whitespace-nowrap">
-                      {time}
-                    </td>
-
-                    <td className="px-2 py-1.5">
-                      <span className="text-fg-secondary whitespace-nowrap">
-                        {row.kind === 'drop' ? (
-                          <span className="text-state-error inline-flex items-center gap-1">
-                            <AlertTriangle aria-hidden="true" className="size-3" />
-                            Dropped at {label(row.from)}
-                          </span>
-                        ) : (
-                          <>
-                            {label(row.from)} → {label(row.to)}
-                          </>
-                        )}
-                      </span>
-                      {row.via.length > 0 ? (
-                        <span className="text-fg-muted block text-[0.625rem]">
-                          via {row.via.map(label).join(', ')} — unchanged
-                        </span>
-                      ) : null}
-                      {row.reason ? (
-                        <span className="text-state-error block text-[0.625rem] leading-snug">
-                          {row.reason}
-                        </span>
-                      ) : null}
-                    </td>
-
-                    <td className="text-fg px-2 py-1.5 font-mono">
-                      {row.addressing.ttl}
-                    </td>
-
-                    <td className="text-fg-secondary px-2 py-1.5 font-mono text-[0.6875rem] whitespace-nowrap">
-                      {row.addressing.sourceMac}
-                      <span className="text-fg-muted"> → </span>
-                      {row.addressing.destinationMac}
-                    </td>
-
-                    <td className="text-fg-secondary px-2 py-1.5 font-mono text-[0.6875rem] whitespace-nowrap">
-                      {row.addressing.source}
-                      <span className="text-fg-muted"> → </span>
-                      {row.addressing.destination}
-                    </td>
-
-                    <td className="text-fg-muted px-2 py-1.5 font-mono whitespace-nowrap">
-                      {row.sizeBytes}
-                    </td>
-
-                    <td className="px-2 py-1.5">
-                      {row.changes.length === 0 ? (
-                        <span className="text-fg-muted text-[0.625rem]">
-                          {row.hop === 1 && row.kind === 'crossing' ? 'first hop' : '—'}
-                        </span>
-                      ) : (
-                        <ul className="flex flex-col gap-0.5">
-                          {row.changes.map((change) => (
-                            <li
-                              key={change.text}
-                              className={cn(
-                                'font-mono text-[0.625rem] leading-snug whitespace-nowrap',
-                                CHANGE_TONE[change.kind],
-                              )}
-                            >
-                              {change.text}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </td>
-                  </tr>
-                </Fragment>
+                <HopRowView
+                  key={row.id}
+                  row={row}
+                  isCurrent={index === current}
+                  isFuture={index > current}
+                  newPacket={!previous || previous.pduId !== row.pduId}
+                  time={formatTimecode(row.at, durationMs)}
+                  description={`${row.summary}, hop ${row.hop}: ${label(row.from)} to ${label(
+                    row.to,
+                  )} at ${formatTimecode(row.at, durationMs)}`}
+                  label={label}
+                  onSeek={onSeek}
+                  currentRef={currentRef}
+                />
               );
             })}
           </tbody>

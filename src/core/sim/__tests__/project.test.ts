@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { PDU } from '../../types/pdu';
 import type { SimEvent } from '../../types/events';
-import { projectAt } from '../project';
+import { inFlightAt, projectAt, projectionCursor, projectionKey } from '../project';
 import { summarizePhases, type SimResult } from '../result';
 
 /**
@@ -174,7 +174,15 @@ describe('projectAt at t = 0', () => {
 
   it('shows the first packet at the very start of its link', () => {
     expect(state.inFlight).toEqual([
-      { pduId: 'query', linkId: 'link-lan', from: 'client', to: 'resolver', progress: 0 },
+      {
+        pduId: 'query',
+        linkId: 'link-lan',
+        from: 'client',
+        to: 'resolver',
+        progress: 0,
+        startMs: 0,
+        durationMs: 20,
+      },
     ]);
   });
 
@@ -215,6 +223,8 @@ describe('projectAt mid-transmit', () => {
         from: 'resolver',
         to: 'client',
         progress: 0.5,
+        startMs: 30,
+        durationMs: 20,
       },
     ]);
   });
@@ -244,7 +254,15 @@ describe('projectAt mid-transmit', () => {
 
     expect(projectAt(instant, 9).inFlight).toEqual([]);
     expect(projectAt(instant, 10).inFlight).toEqual([
-      { pduId: 'p', linkId: 'l', from: 'a', to: 'b', progress: 1 },
+      {
+        pduId: 'p',
+        linkId: 'l',
+        from: 'a',
+        to: 'b',
+        progress: 1,
+        startMs: 10,
+        durationMs: 0,
+      },
     ]);
     expect(projectAt(instant, 10.001).inFlight).toEqual([]);
   });
@@ -283,7 +301,15 @@ describe('projectAt at phase boundaries', () => {
     const state = projectAt(RESULT, 60);
     expect(state.nodeStates.resolver).toBe('idle');
     expect(state.inFlight).toEqual([
-      { pduId: 'syn', linkId: 'link-wan', from: 'client', to: 'server', progress: 0 },
+      {
+        pduId: 'syn',
+        linkId: 'link-wan',
+        from: 'client',
+        to: 'server',
+        progress: 0,
+        startMs: 60,
+        durationMs: 40,
+      },
     ]);
   });
 
@@ -375,5 +401,106 @@ describe('projectAt is a pure function of t', () => {
     const before = structuredClone(RESULT);
     for (const t of times) projectAt(RESULT, t);
     expect(RESULT).toEqual(before);
+  });
+});
+
+/**
+ * The two guarantees the playback loop's per-frame cache is built on.
+ *
+ * `useVisibleState` calls `projectAt` only when the cursor moves and `inFlightAt` on
+ * every frame. That is only sound if these hold, so they are asserted here rather than
+ * left as a comment in the hook.
+ */
+describe('the per-frame split', () => {
+  /** Every tenth of a millisecond across the run, plus the boundaries themselves. */
+  const sweep = [
+    -5,
+    ...Array.from({ length: 1301 }, (_, i) => i / 10),
+    RESULT.durationMs,
+    RESULT.durationMs + 500,
+    Number.NaN,
+  ];
+
+  it('inFlightAt is exactly the inFlight projectAt would have produced', () => {
+    for (const t of sweep) {
+      expect(inFlightAt(RESULT, t)).toEqual(projectAt(RESULT, t).inFlight);
+    }
+  });
+
+  it('an unchanged cursor means unchanged node states, log, notes and phase', () => {
+    const seen = new Map<string, ReturnType<typeof projectAt>>();
+
+    for (const t of sweep) {
+      const cursor = projectionCursor(RESULT, t);
+      const key = `${cursor.eventCount}/${cursor.phaseIndex}`;
+      const state = projectAt(RESULT, t);
+      const first = seen.get(key);
+
+      if (!first) {
+        seen.set(key, state);
+        continue;
+      }
+
+      // Everything the cache reuses. `inFlight` is deliberately not compared -- it is
+      // the one member that moves between events, which is why it is recomputed.
+      expect(state.nodeStates).toEqual(first.nodeStates);
+      expect(state.log).toEqual(first.log);
+      expect(state.activeAnnotations).toEqual(first.activeAnnotations);
+      expect(state.currentPhase).toEqual(first.currentPhase);
+    }
+
+    // A guard against the assertion above passing vacuously.
+    expect(seen.size).toBeGreaterThan(5);
+  });
+
+  it('counts the events that have happened, and names the phase in force', () => {
+    // Clamped at 0 below, exactly as `projectAt` clamps it.
+    expect(projectionCursor(RESULT, -1)).toEqual(projectionCursor(RESULT, 0));
+    expect(projectionCursor(RESULT, Number.NaN)).toEqual(projectionCursor(RESULT, 0));
+    expect(projectionCursor(RESULT, 0).phaseIndex).toBe(0);
+    expect(projectionCursor(RESULT, 60).phaseIndex).toBe(1);
+    // Past the end the last phase stays current and every event has been counted.
+    expect(projectionCursor(RESULT, 10_000)).toEqual({
+      eventCount: RESULT.events.length,
+      phaseIndex: RESULT.phases.length - 1,
+    });
+  });
+
+  it('projects the same discrete state at the key as at the time itself', () => {
+    for (const t of sweep) {
+      const atKey = projectAt(RESULT, projectionKey(RESULT, t));
+      const atTime = projectAt(RESULT, t);
+
+      expect(atKey.nodeStates).toEqual(atTime.nodeStates);
+      expect(atKey.log).toEqual(atTime.log);
+      expect(atKey.activeAnnotations).toEqual(atTime.activeAnnotations);
+      expect(atKey.currentPhase).toEqual(atTime.currentPhase);
+    }
+  });
+
+  it('gives one key per cursor, and one cursor per key', () => {
+    const keysByCursor = new Map<string, Set<number>>();
+
+    for (const t of sweep) {
+      const cursor = projectionCursor(RESULT, t);
+      const id = `${cursor.eventCount}/${cursor.phaseIndex}`;
+      const keys = keysByCursor.get(id) ?? new Set<number>();
+      keys.add(projectionKey(RESULT, t));
+      keysByCursor.set(id, keys);
+    }
+
+    // One key per cursor is what makes the key usable as a memo dependency; distinct
+    // keys across cursors is what stops two different frames sharing a cache entry.
+    for (const keys of keysByCursor.values()) expect(keys.size).toBe(1);
+    const all = [...keysByCursor.values()].map((keys) => [...keys][0]);
+    expect(new Set(all).size).toBe(all.length);
+  });
+
+  it('agrees with the projection on how many events have been reached', () => {
+    for (const t of sweep) {
+      expect(projectionCursor(RESULT, t).eventCount).toBe(
+        projectAt(RESULT, t).log.length,
+      );
+    }
   });
 });

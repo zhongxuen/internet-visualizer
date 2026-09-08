@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { pageMetadata } from '@/lib/metadata';
 import {
   allLessonParams,
   getLesson,
   getTrack,
   LessonLayout,
+  lessonHref,
   LESSON_COMPONENTS,
   loadLessonContent,
 } from '@/modules/learning-center';
@@ -38,10 +40,19 @@ export const dynamicParams = false;
 export async function generateMetadata({
   params,
 }: PageProps<'/learn/[track]/[lesson]'>): Promise<Metadata> {
-  const { lesson: slug } = await params;
+  const { track: trackId, lesson: slug } = await params;
   const lesson = getLesson(slug);
 
-  return lesson ? { title: lesson.title, description: lesson.summary } : {};
+  // Both segments, because both are in the URL being canonicalised. A lesson reached
+  // through the wrong track 404s in the page below, so a canonical built from the
+  // lesson alone would describe an address this route does not serve.
+  return lesson
+    ? pageMetadata({
+        title: lesson.title,
+        description: lesson.summary,
+        path: lessonHref(trackId, slug),
+      })
+    : {};
 }
 
 export default async function LessonPage({

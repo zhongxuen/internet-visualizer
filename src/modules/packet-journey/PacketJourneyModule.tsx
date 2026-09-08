@@ -7,6 +7,7 @@ import {
   SimulationView,
   usePlaybackContext,
   usePlaybackState,
+  usePlayheadCursor,
   type VisualizedRun,
 } from '@/components/viz';
 
@@ -14,7 +15,7 @@ import { EncapsulationPanel } from './components/EncapsulationPanel';
 import { HopTable } from './components/HopTable';
 import { JourneyControls } from './components/JourneyControls';
 import { NatTable } from './components/NatTable';
-import { buildLedger, focusAt, type HopRow } from './ledger';
+import { buildLedger, focusAt, type HopRow, type PacketFocus } from './ledger';
 import { AUTHORED_OPTIONS, journeyOverrides, type JourneyOptions } from './options';
 import {
   DEFAULT_JOURNEY_ID,
@@ -62,10 +63,28 @@ import { runJourneyDetailed, type JourneyRunResult } from './sim/journey';
  * times a second.
  */
 
-/** The live panels each read the playhead themselves; this is what they read it from. */
-function useVirtualTime(): number {
-  const store = usePlaybackContext();
-  return usePlaybackState(store, (state) => state.virtualTime);
+/*
+  The three panels below follow the playhead, and all three ask it the same kind of
+  question: which hop has started, which bindings exist, what has been done to the packet
+  so far. Every one of those is settled by which events have happened, so they read
+  `usePlayheadCursor` rather than `virtualTime` -- the same number for every frame between
+  two events, which is the difference between rendering these tables a few dozen times in
+  a run and rendering them sixty times a second. Nothing here is continuous; the one
+  continuous thing on screen is a packet, and it positions itself (`PacketSprite`).
+
+  Before phase 14's performance pass these subscribed to `virtualTime` directly, and this
+  route measured 1.6 fps of playback under a 4x CPU throttle.
+*/
+
+/**
+ * Everything about a focus that can change, as one string.
+ *
+ * The packet itself is carried by identity: a rewrite is a `pdu-transform` event, so `at`
+ * moves whenever the layers do.
+ */
+function focusKey(focus: PacketFocus | undefined): string {
+  if (!focus) return '';
+  return [focus.pdu.id, focus.status, focus.at, focus.nodeId, focus.linkId].join('|');
 }
 
 function LiveEncapsulation({
@@ -75,8 +94,28 @@ function LiveEncapsulation({
   result: JourneyRunResult['result'];
   labels: Readonly<Record<string, string>>;
 }) {
-  const virtualTime = useVirtualTime();
-  const focus = useMemo(() => focusAt(result, virtualTime), [result, virtualTime]);
+  const store = usePlaybackContext();
+
+  /*
+    This one cannot use `usePlayheadCursor`, and the reason is worth stating: a packet
+    stops being in flight when it lands, at `at + durationMs`, and that instant is not an
+    event. The cursor would hold the panel on "in flight" until the *next* event fired.
+    `ledger.test.ts` asserts exactly this divergence, so the shortcut cannot be taken here
+    by accident later.
+
+    So the selector runs the derivation every frame and returns its identity; React only
+    re-renders when that string changes, which is a few dozen times in a run. `focusAt` is
+    one pass over the events -- far cheaper than the render it is avoiding.
+  */
+  const key = usePlaybackState(store, (state) =>
+    focusKey(focusAt(result, state.virtualTime)),
+  );
+  const focus = useMemo(
+    () => focusAt(result, store.getState().virtualTime),
+    // `key` is the dependency that matters; the playhead is read fresh when it changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [result, key, store],
+  );
 
   return (
     <EncapsulationPanel focus={focus} labels={labels} className="lg:max-h-[34rem]" />
@@ -84,22 +123,24 @@ function LiveEncapsulation({
 }
 
 function LiveHopTable({
+  result,
   rows,
   durationMs,
   labels,
 }: {
+  result: JourneyRunResult['result'];
   rows: readonly HopRow[];
   durationMs: number;
   labels: Readonly<Record<string, string>>;
 }) {
   const store = usePlaybackContext();
-  const virtualTime = usePlaybackState(store, (state) => state.virtualTime);
+  const cursor = usePlayheadCursor(result);
   const { seek } = store.getState();
 
   return (
     <HopTable
       rows={rows}
-      virtualTime={virtualTime}
+      virtualTime={cursor}
       durationMs={durationMs}
       onSeek={seek}
       labels={labels}
@@ -114,14 +155,19 @@ function LiveNatTable({
   run: JourneyRunResult;
   routerLabel: string;
 }) {
-  const virtualTime = useVirtualTime();
+  // Also not the cursor: a binding's `createdAt` and `lastUsedAt` are moments in the
+  // translation, not entries in the event list, so they fall between events. The table is
+  // a handful of rows, which is why this one is left reading the playhead directly rather
+  // than given an identity of its own. `ledger.test.ts` pins the divergence.
+  const store = usePlaybackContext();
+  const cursor = usePlaybackState(store, (state) => state.virtualTime);
   if (!run.natTable) return null;
 
   return (
     <NatTable
       table={run.natTable}
       routerLabel={routerLabel}
-      virtualTime={virtualTime}
+      virtualTime={cursor}
       durationMs={run.result.durationMs}
     />
   );
@@ -173,6 +219,7 @@ export function PacketJourneyModule() {
 
           <div className="flex min-w-0 flex-col gap-3">
             <LiveHopTable
+              result={run.result}
               rows={rows}
               durationMs={run.result.durationMs}
               labels={labels}

@@ -157,10 +157,15 @@ function ExchangeLedger({
                   active
                     ? 'border-accent/60 bg-accent/10'
                     : 'border-border bg-surface hover:border-border-strong',
-                  !arrived && 'opacity-55',
+                  // `.state-dim`, never an opacity: see globals.css. Skipped while the
+                  // row is selected, because the dim token is only guaranteed against
+                  // a plain surface and the selected row draws an accent tint.
+                  !arrived && !active && 'state-dim',
                 )}
               >
                 <div className="flex flex-wrap items-baseline gap-2">
+                  {/* Dimness is not a label: say it. */}
+                  {arrived ? null : <span className="sr-only">Not sent yet. </span>}
                   <code className="text-fg-secondary font-mono text-[0.6875rem]">
                     {exchange.request.method}
                   </code>

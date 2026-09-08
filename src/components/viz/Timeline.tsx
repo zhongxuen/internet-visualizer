@@ -1,8 +1,11 @@
 'use client';
 
+import { useLayoutEffect, useRef } from 'react';
+
 import type { PhaseSummary } from '@/core/sim/result';
 import { cn } from '@/lib/cn';
 
+import { useFrameClock } from './frameClock';
 import { formatTimecode, percentOf } from './time';
 
 /**
@@ -19,6 +22,29 @@ import { formatTimecode, percentOf } from './time';
  * slider, where they would swallow drags aimed at the thumb.
  *
  * Everything here is virtual time. The numbers do not change when the speed control does.
+ *
+ * ## Why the playhead is written by hand
+ *
+ * This is the one control that genuinely moves on every frame, and the obvious way to
+ * write it is the expensive one. `width: 42%` on the fill invalidates layout; setting the
+ * slider's `value` and its `aria-valuetext`, and rewriting the elapsed timecode, do the
+ * same to the layout and the accessibility tree. Sixty times a second that is a
+ * document-wide cost rather than a timeline-sized one, which is the shape phase 14's
+ * measurements kept finding.
+ *
+ * So when a `FrameClock` is in context, React renders this once and the effect below
+ * writes the moving parts itself: `transform: scaleX()` for the fill, which the compositor
+ * handles without a reflow, and the slider left uncontrolled so React never touches its
+ * value. The two accessible strings -- `aria-valuetext` and the printed timecode -- are
+ * updated only when the *displayed* time actually changes, which is what they describe.
+ *
+ * Honest about what this bought: on its own it moved `/packet-journey` from 1.8 to 2.2
+ * fps under a 4x CPU throttle, so it is not what is wrong with that page (see CLAUDE.md,
+ * "Performance"). It is here because a per-frame write that does not touch layout is the
+ * correct shape regardless, and because it removes one candidate from that hunt.
+ *
+ * Without a clock (a timeline rendered on its own, a test) nothing changes: it is the
+ * controlled component it always was.
  */
 
 export interface TimelineProps {
@@ -60,6 +86,36 @@ export function Timeline({
   const elapsed = percentOf(virtualTime, durationMs);
   const empty = durationMs <= 0;
 
+  const clock = useFrameClock();
+  const fillRef = useRef<HTMLDivElement | null>(null);
+  const sliderRef = useRef<HTMLInputElement | null>(null);
+  const elapsedRef = useRef<HTMLSpanElement | null>(null);
+  const total = formatTimecode(durationMs, durationMs);
+
+  useLayoutEffect(() => {
+    if (!clock) return;
+
+    let printed: string | null = null;
+
+    const apply = (time: number) => {
+      const fraction = durationMs > 0 ? Math.min(1, Math.max(0, time / durationMs)) : 0;
+      if (fillRef.current) fillRef.current.style.transform = `scaleX(${fraction})`;
+      if (sliderRef.current) sliderRef.current.value = String(time);
+
+      // The playhead moves continuously; the timecode it is printed as does not. Writing
+      // the text and the accessible value only when that string changes keeps both exact
+      // while costing a DOM write a few times a second instead of sixty.
+      const text = formatTimecode(time, durationMs);
+      if (text === printed) return;
+      printed = text;
+      if (elapsedRef.current) elapsedRef.current.textContent = text;
+      sliderRef.current?.setAttribute('aria-valuetext', `${text} of ${total}`);
+    };
+
+    apply(clock.now());
+    return clock.subscribe(apply);
+  }, [clock, durationMs, total]);
+
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <div className="relative h-5" aria-hidden={phases.length === 0}>
@@ -96,18 +152,30 @@ export function Timeline({
           aria-hidden="true"
           className="bg-surface-overlay border-border absolute inset-x-0 h-1.5 rounded-full border"
         />
+        {/*
+          Full width, scaled down: `transform` is a compositor property, so the playhead
+          advancing does not dirty the page's layout. See the note at the top of the file.
+        */}
         <div
+          ref={fillRef}
           aria-hidden="true"
-          style={{ width: `${elapsed}%` }}
-          className="bg-accent absolute left-0 h-1.5 rounded-full"
+          style={{
+            transform: `scaleX(${Math.min(1, Math.max(0, elapsed / 100))})`,
+            transformOrigin: 'left center',
+          }}
+          className="bg-accent absolute inset-x-0 h-1.5 rounded-full"
         />
 
         <input
+          ref={sliderRef}
           type="range"
           min={0}
           max={empty ? 1 : durationMs}
           step={stepFor(durationMs)}
-          value={virtualTime}
+          // Uncontrolled while a clock is driving it, so React never writes `value` and
+          // the effect above is the only thing that moves the thumb. Controlled without
+          // one, exactly as before.
+          {...(clock ? { defaultValue: virtualTime } : { value: virtualTime })}
           disabled={empty}
           onChange={(event) => onSeek(Number(event.target.value))}
           aria-label="Playback position"
@@ -122,8 +190,8 @@ export function Timeline({
       </div>
 
       <div className="text-fg-muted flex justify-between font-mono text-[0.6875rem]">
-        <span>{formatTimecode(virtualTime, durationMs)}</span>
-        <span>{formatTimecode(durationMs, durationMs)}</span>
+        <span ref={elapsedRef}>{formatTimecode(virtualTime, durationMs)}</span>
+        <span>{total}</span>
       </div>
     </div>
   );

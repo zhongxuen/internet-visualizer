@@ -12,7 +12,8 @@
 body {
   background: var(--bg-base);
   color: var(--text-primary);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Fallbacks live in the token itself; see the note in ../styles/tokens.css. */
+  font-family: var(--font-sans);
 }
 
 ::selection {
@@ -75,6 +76,40 @@ body {
   main:is(:focus, :focus-visible) {
     outline: none;
   }
+}
+
+/*
+ * `.state-dim` — the one way to draw something the run has not reached yet.
+ *
+ * Every module has a list whose later entries are still in the future: the event log,
+ * the DNS ladder, the hop table, the handshake ladder, the traceroute rows. They all
+ * used to say that with `opacity-45`, and an alpha multiplier is exactly the thing that
+ * silently breaks contrast -- it blends the text toward the surface, so `text-fg-muted`
+ * at 45% measures 2.25:1 rather than the token's 6.42:1. That was the single largest
+ * group of serious violations in the phase-14 axe pass, on twenty-seven routes.
+ *
+ * So the recession is a *colour*, not a transparency: `--text-dim` is the dimmest value
+ * that still clears 4.5:1 on all three surfaces (5.55 / 5.18 / 4.70), and it is applied
+ * to the whole subtree so a tone colour inside a not-yet-reached row recedes with it.
+ * The distinction is one of lightness, which is why it survives the grayscale pass --
+ * and every component that uses it also states the same fact in words for a screen
+ * reader, because dimness alone is not a label.
+ *
+ * Unlayered on purpose: Tailwind emits `text-fg-muted` and friends into
+ * `@layer utilities`, and an unlayered rule beats every layer regardless of
+ * specificity. That is what lets one class override the colours its children set on
+ * themselves without `!important`.
+ *
+ * `[data-no-dim]` opts a subtree out, and `Badge` carries it. Anything that draws its own
+ * tinted background has to: `--text-dim` is only measured against the three plain
+ * surfaces, and on a 15% tone tint it comes out around 3.5:1. A badge is also already a
+ * labelled pill that says what it means in words, so it has nothing to gain from
+ * receding. For the same reason a component must not put `.state-dim` on a row that is
+ * *also* drawing a selection tint; the callers guard that with `!selected`.
+ */
+.state-dim,
+.state-dim *:not([data-no-dim], [data-no-dim] *) {
+  color: var(--text-dim);
 }
 
 /*

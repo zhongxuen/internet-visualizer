@@ -25,6 +25,7 @@ import {
   networkProfile,
   SIM_CLOCK,
   STAGE_IDS,
+  type SimulatorScenario,
   type StageContext,
 } from './stage';
 import { dnsStage } from './stages/dns-stage';
@@ -334,6 +335,93 @@ describe('every PDU an event names exists in the result', () => {
           ).toBeDefined();
         }
       }
+    }
+  });
+});
+
+/**
+ * The arms the shipped scenarios do not take.
+ *
+ * Every authored scenario negotiates TLS 1.3 and HTTP/2 over `https`, because that is
+ * what the product is teaching people the modern web looks like. But the stages are
+ * written for more than that -- `tls-stage` has a whole 1.2 handshake in it, `http-stage`
+ * has a text wire format and an uncompressed header path, and both have a "there is no
+ * TLS at all" case for a plain `http://` URL -- and code nothing runs is code nobody
+ * knows is broken.
+ *
+ * These are scenario *variants*, deliberately not new entries in `scenarios/`. A scenario
+ * in this product exists to teach something to a person; adding one to move a coverage
+ * number would be the wrong reason for one to exist, and the module's picker would grow a
+ * row that says nothing.
+ */
+describe('older and plainer protocol choices still compose', () => {
+  /** The same page, negotiated the way most of the web was a decade ago. */
+  const TLS_12_HTTP_11: SimulatorScenario = {
+    ...FIRST_VISIT_HTTPS,
+    id: 'variant-tls12-http11',
+    tls: { ...FIRST_VISIT_HTTPS.tls!, version: '1.2', alpn: 'http/1.1' },
+  };
+
+  /** No scheme upgrade, no handshake: cleartext, as a first request to a bare host was. */
+  const CLEARTEXT: SimulatorScenario = {
+    ...FIRST_VISIT_HTTPS,
+    id: 'variant-cleartext',
+    url: FIRST_VISIT_HTTPS.url.replace('https://', 'http://'),
+    tls: undefined,
+  };
+
+  it('runs a TLS 1.2 handshake when the scenario asks for one', () => {
+    const tls = runPageLoad(TLS_12_HTTP_11).state.tls;
+
+    expect(tls?.version).toBe('TLS 1.2');
+    expect(tls?.handshake12).toBeDefined();
+    expect(tls?.handshake13).toBeUndefined();
+    expect(tls?.messages.length).toBeGreaterThan(0);
+    /*
+     * The cost 1.3 removed. 1.2 needs two round trips before a request byte may be sent;
+     * 1.3 needs one, and a resumed 1.3 at 0-RTT needs none. That progression is the whole
+     * argument of the HTTPS Explorer, and this is it as a number.
+     */
+    expect(tls?.roundTrips).toBe(2);
+    expect(runPageLoad(FIRST_VISIT_HTTPS).state.tls?.roundTrips).toBeLessThan(2);
+  });
+
+  /**
+   * ALPN is what decides the HTTP version, so `http/1.1` there has to reach the HTTP
+   * stage -- text on the wire, and no header compression to shrink it.
+   */
+  it('carries the ALPN choice down into a text-framed HTTP/1.1 request', () => {
+    const http = runPageLoad(TLS_12_HTTP_11).state.http;
+
+    expect(http?.version).toBe('HTTP/1.1');
+    // HTTP/2 has no text wire format, so this field is present only on the 1.1 arm.
+    expect(http?.wire).toContain('GET / HTTP/1.1');
+    // CRLF line endings, as RFC 9112 s2.1 requires of the text format.
+    expect(http?.wire).toContain('\r\n');
+    // Nothing indexes the headers, so what is written is what is sent.
+    expect(http?.headerBytesOnWire).toBe(http?.headerBytesRaw);
+
+    const h2 = runPageLoad(FIRST_VISIT_HTTPS).state.http;
+    expect(h2?.wire).toBeUndefined();
+    expect(h2!.headerBytesOnWire).toBeLessThan(h2!.headerBytesRaw);
+  });
+
+  /** No scheme to secure means no stage to run -- and it says so rather than failing. */
+  it('skips TLS entirely for a cleartext URL', () => {
+    const run = runPageLoad(CLEARTEXT);
+    const tls = stageOf(run, 'tls')!;
+
+    expect(tls.status).not.toBe('ran');
+    expect(tls.durationMs).toBe(0);
+    expect(run.state.tls).toBeUndefined();
+    expect(run.failure).toBeUndefined();
+    // Without ALPN there is nothing to negotiate, so the request falls back to HTTP/1.1.
+    expect(run.state.http?.version).toBe('HTTP/1.1');
+  });
+
+  it('is deterministic on both variants', () => {
+    for (const scenario of [TLS_12_HTTP_11, CLEARTEXT]) {
+      expect(runPageLoad(scenario)).toStrictEqual(runPageLoad(scenario));
     }
   });
 });

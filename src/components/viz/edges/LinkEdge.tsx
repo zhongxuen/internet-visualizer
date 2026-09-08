@@ -141,6 +141,8 @@ export function LinkEdge({
             key={`${packet.pdu.id}-${index}`}
             pdu={packet.pdu}
             progress={packet.progress}
+            startMs={packet.startMs}
+            durationMs={packet.durationMs}
             reversed={packet.reversed}
             selected={packet.selected}
             path={path}

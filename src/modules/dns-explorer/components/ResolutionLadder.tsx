@@ -151,7 +151,7 @@ export function ResolutionLadder({
                 <span className="text-fg-muted truncate font-mono text-[0.625rem]">
                   {column.name}
                 </span>
-                <span className="text-fg-muted/70 truncate font-mono text-[0.5625rem]">
+                <span className="text-fg-dim truncate font-mono text-[0.5625rem]">
                   {column.address}
                 </span>
               </li>
@@ -193,7 +193,7 @@ export function ResolutionLadder({
                   >
                     <button
                       type="button"
-                      aria-label={`Seek to ${description}`}
+                      aria-label={`Seek to ${description}${isFuture ? '. Not reached yet' : ''}`}
                       aria-pressed={isSelected}
                       onClick={() => {
                         onSeek(rung.at);
@@ -205,7 +205,9 @@ export function ResolutionLadder({
                         focusRing,
                         isCurrent && 'bg-accent/10',
                         isSelected && 'border-accent/50 bg-accent/12',
-                        isFuture && 'opacity-45',
+                        // `.state-dim` rather than an alpha: see globals.css. Not while
+                        // selected, where the row already carries an accent tint.
+                        isFuture && !isSelected && 'state-dim',
                       )}
                     >
                       <span

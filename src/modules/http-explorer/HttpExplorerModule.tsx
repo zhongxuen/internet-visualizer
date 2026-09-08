@@ -262,7 +262,7 @@ function ExchangeLedger({
                 ? 'border-accent/60 bg-accent/12 text-fg'
                 : arrived
                   ? 'border-border bg-surface text-fg-secondary hover:border-border-strong'
-                  : 'border-border/50 bg-surface text-fg-muted opacity-60',
+                  : 'border-border/50 bg-surface state-dim',
             )}
           >
             {exchange.kind !== 'request' ? (

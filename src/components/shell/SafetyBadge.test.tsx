@@ -42,6 +42,26 @@ describe('SafetyBadge', () => {
     expect(screen.queryByText('Live network')).not.toBeInTheDocument();
   });
 
+  /**
+   * The nav renders one of these *inside* a `role="menuitem"` link. A tooltip trigger
+   * there is interactive content inside an `<a>`, and a tab stop inside a menu that is
+   * not a menu item -- which is what kept Tab from ever leaving the panel.
+   */
+  it('drops the tooltip and the tab stop when it is not interactive', async () => {
+    const user = userEvent.setup();
+    render(<SafetyBadge variant="live" compact interactive={false} />);
+
+    const badge = screen.getByLabelText('Live network');
+    expect(badge).not.toHaveAttribute('tabindex');
+    // Same three signals as ever: hue, icon, and the word, none of them lost.
+    expect(badge).toHaveClass('text-state-warn');
+    expect(badge.querySelector('svg')).toBeInTheDocument();
+
+    await user.tab();
+    expect(badge).not.toHaveFocus();
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  });
+
   it('maps the registry flag to a variant', () => {
     expect(safetyVariantFor(false)).toBe('simulated');
     expect(safetyVariantFor(true)).toBe('live');

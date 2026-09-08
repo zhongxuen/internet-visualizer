@@ -70,7 +70,7 @@ function Attribute({
           ? tone === 'ok'
             ? 'border-state-ok/40 bg-state-ok/10 text-state-ok'
             : 'border-accent/40 bg-accent/10 text-accent'
-          : 'border-border text-fg-muted line-through opacity-60',
+          : 'border-border state-dim line-through',
       )}
     >
       {label}

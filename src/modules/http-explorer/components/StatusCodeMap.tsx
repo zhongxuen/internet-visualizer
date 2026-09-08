@@ -139,7 +139,7 @@ export function StatusCodeMap({ active, onSelect, className }: StatusCodeMapProp
                       <span className="font-mono text-xs tabular-nums">
                         {status.code}
                       </span>
-                      <span className="max-w-[5.5rem] truncate text-[0.5625rem] opacity-70">
+                      <span className="max-w-[5.5rem] truncate text-[0.5625rem]">
                         {status.reason}
                       </span>
                       {status.heuristicallyCacheable ? (

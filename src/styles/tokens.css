@@ -4,6 +4,12 @@
  * Rules (docs/implementation/02-design-system-and-shell.md, step 1):
  *
  *   1. No raw hex outside this file. Components reach for a token, never a value.
+ *      One exception exists and is the only one allowed: `src/lib/ogPalette.ts`, for
+ *      the Open Graph card. `next/og` lays that image out with Satori, which has no
+ *      custom properties and no cascade -- `var(--accent)` reaching it is an
+ *      unparseable string, not a colour. Every value it copies is asserted equal to the
+ *      declaration below by `tests/og-palette.test.ts`, so changing a token here still
+ *      fails the build if the card is not changed with it.
  *   2. Never encode meaning in colour alone. Every colour below that carries meaning
  *      (layers, states) has a matching label/icon requirement in the component that
  *      uses it — layer chips always render their `L2`..`L7` short label, state chips
@@ -12,6 +18,12 @@
  *      against every surface the token can sit on. Measured ratios are noted per
  *      token as `base / raised / overlay` and are asserted by
  *      `tests/tokens-contrast.test.ts`, which parses this file.
+ *   4. A token's ratio is only true at full alpha. `text-fg-muted/70` or an
+ *      `opacity-45` ancestor blends the token toward the surface and takes it below
+ *      4.5:1 -- which is how every colour-contrast failure in the phase-14 axe pass
+ *      got there. Text that needs to look receded uses `--text-dim` (or the
+ *      `.state-dim` class in globals.css, which is the same colour applied to a whole
+ *      subtree); it never uses an alpha multiplier.
  *
  * Layer colours are deliberately spread around the hue wheel and are never reused for
  * state, so "transport" looks identical in every module for the life of the product.
@@ -30,6 +42,7 @@
   --text-primary: #e8eff8; /* 17.21 / 16.07 / 14.57 */
   --text-secondary: #b6c4d6; /* 11.25 / 10.51 / 9.52 */
   --text-muted: #8a99ae; /* 6.88 / 6.42 / 5.82 */
+  --text-dim: #7b889d; /* 5.55 / 5.18 / 4.70 — the dimmest text the product may draw */
 
   /* --- Accent ------------------------------------------------------------- */
   --accent: #4cc2f1; /* 9.77 / 9.12 / 8.27 */
@@ -72,6 +85,29 @@
 }
 
 /*
+ * `prefers-contrast: more` -- the cheap version, and deliberately only that.
+ *
+ * Everything above already clears WCAG AA on every surface, so this is not a repair; it
+ * is the "I want more separation" preference honoured with the values the palette
+ * already has. The three receding text tokens collapse upward one step and the
+ * structural border becomes the emphasis border, which is enough to make panel edges,
+ * table rules and secondary text noticeably firmer without introducing a second palette
+ * that would then need its own contrast table and its own test.
+ *
+ * Nothing that carries *meaning* moves: the layer hues and the state colours are fixed
+ * for the life of the product, and a user asking for more contrast is not asking for
+ * "transport" to change colour.
+ */
+@media (prefers-contrast: more) {
+  :root {
+    --text-muted: #b6c4d6;
+    --text-dim: #8a99ae;
+    --border: #7a879e;
+    --border-strong: #a3aec2;
+  }
+}
+
+/*
  * Tailwind wiring. `inline` means utilities emit `var(--bg-raised)` directly instead
  * of copying the value, so a token change is picked up everywhere with no rebuild of
  * intermediate variables.
@@ -80,6 +116,22 @@
  * would collide with the `text-base` font-size utility) and `fg` for text colours.
  */
 @theme inline {
+  /*
+   * The two typefaces. `app/layout.tsx` loads them with `next/font/google`, which
+   * self-hosts the files and publishes each one as `--font-geist-sans` /
+   * `--font-geist-mono` on <html>; these two lines are what connects that to the
+   * `font-sans` and `font-mono` utilities and to `body` in globals.css. Without them
+   * Tailwind's stock stacks win, and the two woff2 files are fetched on every route and
+   * never drawn -- which is exactly what was happening before phase 14's perf pass.
+   *
+   * The fallbacks stay in the token rather than at each use site, so there is one
+   * answer to "what do we fall back to" instead of one per stylesheet. `next/font`
+   * additionally synthesises a metric-matched local fallback for each family, so the
+   * swap from fallback to real face does not move any text.
+   */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
   --color-surface: var(--bg-base);
   --color-surface-raised: var(--bg-raised);
   --color-surface-overlay: var(--bg-overlay);
@@ -90,6 +142,7 @@
   --color-fg: var(--text-primary);
   --color-fg-secondary: var(--text-secondary);
   --color-fg-muted: var(--text-muted);
+  --color-fg-dim: var(--text-dim);
 
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);

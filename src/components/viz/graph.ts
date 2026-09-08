@@ -137,6 +137,8 @@ export function packetsByLink(
     const entry: EdgePacket = {
       pdu,
       progress: packet.progress,
+      startMs: packet.startMs,
+      durationMs: packet.durationMs,
       reversed: packet.from === link.to && packet.to === link.from,
       selected: packet.pduId === selectedPduId,
     };

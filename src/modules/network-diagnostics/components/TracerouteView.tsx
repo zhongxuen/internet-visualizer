@@ -72,7 +72,9 @@ function HopRow({
       className={cn(
         'border-border/60 border-t transition-colors',
         selected && 'bg-accent/10',
-        !reached && 'opacity-45',
+        // `.state-dim`, not an alpha multiplier (globals.css), and not on the selected
+        // row, whose accent tint the dim token is not measured against.
+        !reached && !selected && 'state-dim',
       )}
     >
       <th scope="row" className="py-1.5 pr-3 text-left align-top">
@@ -84,7 +86,7 @@ function HopRow({
             focusRing,
             selected && 'text-accent',
           )}
-          aria-label={`Hop ${hop.ttl}${responder ? `, ${responder}` : ', no reply'}. Show its TTL walk.`}
+          aria-label={`Hop ${hop.ttl}${responder ? `, ${responder}` : ', no reply'}.${reached ? '' : ' Not reached yet.'} Show its TTL walk.`}
         >
           {hop.ttl}
         </button>

@@ -170,7 +170,7 @@ function BackoffLadder({
                 key={attempt.attempt}
                 className={cn(
                   'border-border/60 border-t align-middle',
-                  !used && 'opacity-50',
+                  !used && 'state-dim',
                 )}
               >
                 <td className="text-fg py-2 pr-3 font-mono text-[0.6875rem] tabular-nums">

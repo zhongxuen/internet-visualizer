@@ -24,4 +24,9 @@ export {
   type SimulationSource,
   type VisualizedRun,
 } from './useSimulation';
-export { snapToEndpoints, useVisibleState } from './useVisibleState';
+export {
+  snapToEndpoints,
+  usePlayheadCursor,
+  useSteadyPackets,
+  useVisibleState,
+} from './useVisibleState';

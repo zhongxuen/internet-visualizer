@@ -129,3 +129,30 @@ Object.defineProperty(window, 'DOMMatrixReadOnly', {
   writable: true,
   value: DOMMatrixReadOnlyStub,
 });
+
+/**
+ * The canvas, loaded eagerly here.
+ *
+ * In the product `SimulationCanvas` comes through `next/dynamic` (`viz/LazyCanvas.tsx`),
+ * which keeps React Flow's ~80 KB off the first load of every module and lesson route.
+ * That is a *bundling* decision, and jsdom has no bundle: all it inherits is the extra
+ * tick before the component exists, which under Vitest's parallel workers turns every
+ * query for the diagram into a race -- the same test passing alone and timing out in a
+ * full run.
+ *
+ * So the split is swapped out here for the real component. The tests then exercise
+ * exactly what ships, minus an asynchrony that only exists to make a network request
+ * cheaper. The dynamic path itself is covered where it is real: Playwright, against a
+ * production build, in `e2e/`.
+ *
+ * `SimulationCanvasSlot` is the name `SimulationView` renders, and it is the name this
+ * has to provide: the whole module is replaced, so an export the module has and this
+ * object does not is a mocker error at the point of use rather than a missing component.
+ * Substituting the canvas here also substitutes the error boundary the real slot wraps
+ * it in, which is the right trade -- the failure that boundary exists for is a chunk
+ * that never arrives, and there are no chunks in jsdom.
+ */
+vi.mock('@/components/viz/LazyCanvas', async () => {
+  const { SimulationCanvas } = await import('@/components/viz/SimulationCanvas');
+  return { SimulationCanvasSlot: SimulationCanvas };
+});

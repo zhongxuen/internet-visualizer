@@ -70,7 +70,13 @@ export function TopologyLegend({
           aria-hidden="true"
           className="size-3.5 transition-transform group-open:rotate-90"
         />
-        Legend
+        {/*
+          A heading, not just bold text: the two sections inside are `h3`, and without an
+          `h2` here the page would step h1 -> h3. A heading inside `<summary>` is valid
+          and is what lets a screen reader jump to the legend the same way it jumps to the
+          inspector.
+        */}
+        <h2 className="text-xs font-medium tracking-widest uppercase">Legend</h2>
         <span className="text-fg-muted tracking-normal normal-case">
           {kinds.length} kinds of machine, {media.length}{' '}
           {media.length === 1 ? 'medium' : 'media'}

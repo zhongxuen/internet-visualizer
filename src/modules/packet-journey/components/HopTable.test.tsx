@@ -36,10 +36,17 @@ function setup(virtualTime = 0, tableRows: readonly HopRow[] = rows) {
  * An exact name rather than a pattern: hop numbers restart per packet, so `hop 2` alone
  * matches a dozen rows, and a machine label like `Home router (NAPT)` is not a safe
  * regular expression.
+ *
+ * A row the playhead has not reached says so at the end of its label -- dimming a future
+ * row is not something a screen reader can hear -- so the match allows that one suffix
+ * and nothing else.
  */
 function seekButtonFor(row: HopRow): HTMLElement {
+  const name = `Seek to ${row.summary}, hop ${row.hop}: ${labels[row.from]} to ${labels[row.to]} at ${formatTimecode(row.at, run.result.durationMs)}`;
+
   return screen.getByRole('button', {
-    name: `Seek to ${row.summary}, hop ${row.hop}: ${labels[row.from]} to ${labels[row.to]} at ${formatTimecode(row.at, run.result.durationMs)}`,
+    name: (accessibleName) =>
+      accessibleName === name || accessibleName === `${name}. Not reached yet`,
   });
 }
 

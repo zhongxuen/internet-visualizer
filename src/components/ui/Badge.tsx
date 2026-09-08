@@ -52,6 +52,12 @@ export function Badge({
 
   return (
     <span
+      /*
+       * Exempt from `.state-dim` (see globals.css): a badge sits on its own tinted
+       * background, where the dim token is not guaranteed to clear 4.5:1, and it already
+       * states its meaning in words.
+       */
+      data-no-dim=""
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium',
         layer ? 'border' : TONES[tone],

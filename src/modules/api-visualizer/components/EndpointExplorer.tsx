@@ -60,8 +60,18 @@ function VerbChip({
     <span className="flex items-center gap-1.5">
       <span className="font-mono text-[0.6875rem] font-semibold">{method}</span>
       <span aria-hidden="true" className="flex items-center gap-0.5 text-[0.5625rem]">
-        <span className={semantics.safe ? 'text-state-ok' : 'text-fg-muted/50'}>S</span>
-        <span className={semantics.idempotent ? 'text-accent' : 'text-fg-muted/50'}>
+        <span
+          className={
+            semantics.safe ? 'text-state-ok' : 'text-fg-dim line-through decoration-1'
+          }
+        >
+          S
+        </span>
+        <span
+          className={
+            semantics.idempotent ? 'text-accent' : 'text-fg-dim line-through decoration-1'
+          }
+        >
           I
         </span>
       </span>
@@ -173,7 +183,8 @@ function ResourceCard({
   return (
     <li className="border-border bg-surface-raised flex min-w-0 flex-col gap-2 rounded-xl border p-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="text-fg text-sm font-medium">{resource.name}</h4>
+        {/* `h3`, not `h4`: the nearest heading above this is the panel's `h2`. */}
+        <h3 className="text-fg text-sm font-medium">{resource.name}</h3>
         {resource.asynchronousCreate ? (
           <Badge tone="pending">creates asynchronously — 202</Badge>
         ) : null}

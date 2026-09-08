@@ -88,18 +88,28 @@ function RttChart({
               <button
                 type="button"
                 onClick={() => onSeek(probe.sentAt)}
-                aria-label={`${label}. Seek to it.`}
+                aria-label={`${label}.${reached ? '' : ' Not sent yet.'} Seek to it.`}
                 className={cn(
                   'group flex h-full w-full flex-col justify-end rounded-t-sm',
                   focusRing,
-                  !reached && 'opacity-35',
                 )}
               >
                 <span
                   className={cn(
                     'w-full rounded-t-sm transition-[height,background-color]',
-                    toneFor(probe),
-                    probe.outcome === 'timeout' &&
+                    /*
+                     * A probe the run has not sent yet is drawn as an outline rather than
+                     * dimmed. It used to be `opacity-35` on the whole button, which took
+                     * a bar that already sits at 70% tint down to about 2:1 -- well under
+                     * the 3:1 a graphic that carries meaning has to hold. An outline is a
+                     * difference in *shape*, so it also survives the grayscale pass, and
+                     * the button's label says "Not sent yet" besides.
+                     */
+                    reached
+                      ? toneFor(probe)
+                      : 'border-border-strong border border-dashed bg-transparent',
+                    reached &&
+                      probe.outcome === 'timeout' &&
                       'border-state-error/60 border border-dashed',
                   )}
                   style={{ height: `${heightOf(probe, ceiling) * 100}%` }}
