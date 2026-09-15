@@ -163,6 +163,28 @@ describe('summarizePhases', () => {
     ];
     expect(summarizePhases(late, 10)[0]).toMatchObject({ startMs: 90, endMs: 90 });
   });
+
+  it('carries the plain sentence across, and adds no key when there is none', () => {
+    const events: SimEvent[] = [
+      {
+        kind: 'phase',
+        at: 0,
+        id: 'greet',
+        title: 'TCP handshake',
+        description: 'SYN, SYN-ACK, ACK.',
+        plain: 'Your laptop and the server greet each other three times.',
+      },
+      { kind: 'phase', at: 5, id: 'send', title: 'Request', description: 'GET /' },
+    ];
+
+    const [greet, send] = summarizePhases(events, 10);
+
+    expect(greet.plain).toBe('Your laptop and the server greet each other three times.');
+    expect(greet.description).toBe('SYN, SYN-ACK, ACK.');
+    // Absent, not `undefined`: the determinism guard compares with `toStrictEqual`.
+    expect('plain' in send).toBe(false);
+    expect(RESULT.phases.some((phase) => 'plain' in phase)).toBe(false);
+  });
 });
 
 describe('projectAt at t = 0', () => {

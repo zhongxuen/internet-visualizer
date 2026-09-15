@@ -87,6 +87,35 @@ export interface SimNode {
    * cipher support, AS number.
    */
   detail?: Record<string, string>;
+  /**
+   * What this particular machine does, in one plain line, e.g. `'Your home router'`.
+   * Omit it to fall back to the kind's default in `src/core/text/kinds.ts`.
+   */
+  plainRole?: string;
+  /** `TopologyZone.id` of the place this machine sits in. Must name a zone in `Topology.zones`. */
+  zone?: string;
+}
+
+/**
+ * What kind of place a zone is. Drives the zone's icon; the words come from its `label`.
+ */
+export type ZoneKind =
+  'home' | 'office' | 'isp' | 'internet' | 'cdn' | 'datacenter' | 'cloud';
+
+/**
+ * A place on the map -- your home, your provider, a data centre -- that machines sit
+ * inside. Zones are how the diagram shows *where* a machine is rather than only what it
+ * is connected to (docs/implementation/uiux.md §5.4). Purely descriptive: no simulation
+ * reads them.
+ */
+export interface TopologyZone {
+  /** Stable identifier, unique within a topology; what `SimNode.zone` refers to. */
+  id: string;
+  /** What the place is called on the diagram, e.g. `'Your home'`. */
+  label: string;
+  kind: ZoneKind;
+  /** One optional plain sentence about the place. */
+  plain?: string;
 }
 
 /**
@@ -128,11 +157,15 @@ export interface SimLink {
  * The complete static network a scenario runs on.
  *
  * Invariant every scenario is expected to hold: each `SimLink.from`/`to` names a node
- * present in `nodes`, and ids are unique within their own collection.
+ * present in `nodes`, each `SimNode.zone` names a zone present in `zones`, and ids are
+ * unique within their own collection. `topologyProblems` in `src/core/sim/topology.ts`
+ * checks all of it.
  */
 export interface Topology {
   /** Every machine taking part, in the order they should be introduced to the learner. */
   nodes: SimNode[];
   /** Every link between those machines. */
   links: SimLink[];
+  /** The places those machines sit in. Optional: a topology without zones draws as today. */
+  zones?: TopologyZone[];
 }

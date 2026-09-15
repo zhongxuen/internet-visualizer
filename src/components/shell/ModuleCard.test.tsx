@@ -14,6 +14,11 @@ const base: ModuleMeta = {
   status: 'planned',
   topics: ['DNS', 'UDP', 'Caching', 'Anycast'],
   usesRealNetwork: false,
+  question: "How does your computer find a website's address?",
+  plainSummary: 'Watch your computer ask a chain of servers until one knows the number.',
+  level: 'beginner',
+  chapter: 'websites',
+  minutes: 8,
 };
 
 function renderCard(module: ModuleMeta) {

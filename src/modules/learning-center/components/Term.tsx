@@ -4,15 +4,14 @@ import { Children, isValidElement, type ReactNode } from 'react';
 
 import { Tooltip } from '@/components/ui';
 import { focusRing } from '@/components/ui/styles';
+import { lookupTerm } from '@/core/glossary/lookup';
 import { cn } from '@/lib/cn';
-
-import { lookupTerm } from '../content/glossary';
 
 /**
  * A glossary term, wherever it appears.
  *
  * `<Term>packet</Term>` in any lesson gets the same sentence, because both this and
- * the glossary page read `content/glossary.ts` and there is no second copy of a
+ * the glossary page read `@/core/glossary` and there is no second copy of a
  * definition anywhere in the product.
  *
  * ## Why a button, and why hover is not enough
@@ -32,9 +31,9 @@ import { lookupTerm } from '../content/glossary';
  * ## Failing softly
  *
  * A term with no glossary entry renders as ordinary text. A missing definition is a
- * content bug to fix in `glossary.ts`, not a reason for a paragraph to stop rendering
- * or to sprout a button that explains nothing -- and `content.test.ts` is what catches
- * it, rather than a reader.
+ * content bug to fix in `src/core/glossary/`, not a reason for a paragraph to stop
+ * rendering or to sprout a button that explains nothing -- and `content.test.ts` is
+ * what catches it, rather than a reader.
  */
 
 export interface TermProps {

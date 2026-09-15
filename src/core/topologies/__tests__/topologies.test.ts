@@ -15,6 +15,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { cidr, cidrContains, classifyIp, ip, parseMac } from '../../net/address';
+import { topologyProblems } from '../../sim/topology';
 import { DATACENTER } from '../datacenter';
 import { HOME_LAN } from '../homeLan';
 import { getScenarioTopology, SCENARIO_TOPOLOGIES } from '../index';
@@ -63,6 +64,10 @@ describe.each(SCENARIOS.map((scenario) => [scenario.id, scenario] as const))(
         expect(known, `${link.id}.to`).toContain(link.to);
         expect(link.from).not.toBe(link.to);
       }
+    });
+
+    it('puts every machine only in a place the topology declares', () => {
+      expect(topologyProblems(topology)).toEqual([]);
     });
 
     it('connects every node to something', () => {

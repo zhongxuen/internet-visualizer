@@ -22,7 +22,6 @@ content/
   tracks.ts        # the seven paths. TRACKS[].lessons IS the ordering.
   lessons.ts       # per-lesson metadata. No .mdx import -- see below.
   navigation.ts    # every URL this module emits, and prev/next
-  glossary.ts      # one term list, read by <Term> and by /learn/glossary
   load.ts          # the ONLY file that imports a .mdx
   lessons/*.mdx    # the prose
 components/        # LessonLayout, LessonNav, TrackList, Quiz, KeyTakeaways, Term,
@@ -32,6 +31,9 @@ progress/
   actions.ts       # the four things a reader can do to their own progress
   useProgress.ts   # the React side. Returns null until the browser has been read.
 ```
+
+The glossary is not here. It moved to `src/core/glossary/` so that module screens can
+define words too; `<Term>` and the glossary page read it from there.
 
 ## Rules
 

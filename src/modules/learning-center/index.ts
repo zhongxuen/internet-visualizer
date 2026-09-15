@@ -41,12 +41,7 @@ export { Quiz, type QuizKind, type QuizOption, type QuizProps } from './componen
 export { Term, type TermProps } from './components/Term';
 export { TrackList, type TrackListProps } from './components/TrackList';
 
-export {
-  GLOSSARY,
-  lookupTerm,
-  sortedGlossary,
-  type GlossaryTerm,
-} from './content/glossary';
+// The glossary data is in `@/core/glossary`, where every module can read it.
 export {
   getLesson,
   LESSONS,

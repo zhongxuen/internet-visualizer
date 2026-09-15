@@ -54,8 +54,20 @@ export type SimEvent =
    * A named chapter of the story begins ("DNS resolution", "TCP handshake",
    * "TLS handshake", "HTTP request"). Phases are the boundaries the stepper jumps
    * between, so a module stays explorable by keyboard and under reduced motion.
+   *
+   * `title` and `description` are the technical voice. `plain` is the same step told to
+   * a complete beginner -- at most 30 words, one idea, present tense -- and is what the
+   * Simple detail level shows in their place. It sits beside them and never replaces
+   * them (docs/implementation/uiux.md §5.1).
    */
-  | { kind: 'phase'; at: number; id: string; title: string; description: string }
+  | {
+      kind: 'phase';
+      at: number;
+      id: string;
+      title: string;
+      description: string;
+      plain?: string;
+    }
   /**
    * A PDU is put on a link and travels to the far end. `at` is the moment the first bit
    * leaves; arrival is `at + durationMs`, which is propagation delay plus the time to
@@ -113,9 +125,17 @@ export type SimEvent =
   | { kind: 'drop'; at: number; pduId: string; atNode: string; reason: string }
   /**
    * A teaching note pinned to something on screen. `targetId` is the id of whatever it
-   * explains -- a node, a link, or a PDU.
+   * explains -- a node, a link, or a PDU. `plain` is an optional beginner's version of
+   * `text`, at most 40 words; the citation stays with the technical text.
    */
-  | { kind: 'annotate'; at: number; targetId: string; text: string; reference?: RfcRef }
+  | {
+      kind: 'annotate';
+      at: number;
+      targetId: string;
+      text: string;
+      reference?: RfcRef;
+      plain?: string;
+    }
   /** A line for the event log: the running commentary beside the animation. */
   | { kind: 'log'; at: number; level: LogLevel; text: string };
 

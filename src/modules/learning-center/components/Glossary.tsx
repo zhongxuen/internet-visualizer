@@ -2,10 +2,11 @@ import Link from 'next/link';
 
 import { Badge } from '@/components/ui';
 import { focusRing } from '@/components/ui/styles';
+import type { GlossaryTerm } from '@/core/glossary';
+import { sortedGlossary } from '@/core/glossary/lookup';
 import { cn } from '@/lib/cn';
 import { getModule } from '@/modules/registry';
 
-import { sortedGlossary, type GlossaryTerm } from '../content/glossary';
 import { getLesson } from '../content/lessons';
 import { lessonPath } from '../content/navigation';
 

@@ -9,6 +9,8 @@
  * acceptance criteria in `docs/implementation/` pass.
  */
 
+import type { Level } from '@/core/types/story';
+
 export type ModuleStatus = 'planned' | 'in-progress' | 'ready';
 
 /**
@@ -42,6 +44,63 @@ export const MODULE_GROUPS: readonly ModuleGroupMeta[] = [
     key: 'learn',
     label: 'Learn',
     description: 'Guided lessons built on the same scenarios the modules run.',
+  },
+];
+
+/**
+ * The beginner's chapters, which replace groups in the navigation and on the home page
+ * (docs/implementation/uiux.md §5.5). A chapter is named by the question a newcomer
+ * would ask, not by what kind of code a module is.
+ *
+ * `group` and `MODULE_GROUPS` stay beside these until the navigation moves over.
+ */
+export type ModuleChapter = 'basics' | 'websites' | 'apps' | 'tools' | 'learn';
+
+export interface ModuleChapterMeta {
+  key: ModuleChapter;
+  label: string;
+  /** The chapter's question, as the home page and the Explore menu ask it. */
+  question: string;
+  /**
+   * Registry ids in reading order, which is not registry order: a beginner opens a
+   * website end to end before taking it apart, so the Internet Simulator leads its
+   * chapter. `tests/registry.test.ts` asserts this lists exactly the modules whose
+   * `chapter` is `key`, so the two can never disagree.
+   */
+  moduleIds: readonly string[];
+}
+
+/** Chapter order, §5.5. */
+export const MODULE_CHAPTERS: readonly ModuleChapterMeta[] = [
+  {
+    key: 'basics',
+    label: 'How data travels',
+    question: 'How does data get from one place to another?',
+    moduleIds: ['network-map', 'packet-journey'],
+  },
+  {
+    key: 'websites',
+    label: 'Opening a website',
+    question: 'What happens when I open a website?',
+    moduleIds: ['internet-simulator', 'dns-explorer', 'http-explorer', 'https-explorer'],
+  },
+  {
+    key: 'apps',
+    label: 'Apps and servers',
+    question: 'How do apps talk to servers?',
+    moduleIds: ['api-visualizer', 'websocket-viewer'],
+  },
+  {
+    key: 'tools',
+    label: 'Real tools',
+    question: 'How do people check a network?',
+    moduleIds: ['network-diagnostics'],
+  },
+  {
+    key: 'learn',
+    label: 'Lessons',
+    question: 'Where do I start?',
+    moduleIds: ['learning-center'],
   },
 ];
 
@@ -97,6 +156,19 @@ export interface ModuleMeta {
    * Exactly one module (network-diagnostics) may ever set this.
    */
   usesRealNetwork: boolean;
+  /**
+   * The question this module answers, ending in '?'. This and `plainSummary` are the
+   * plain voice (docs/implementation/uiux.md §5.1); `title` and `summary` stay the
+   * technical one.
+   */
+  question: string;
+  /** At most 30 words, for someone who has never heard of the protocol. */
+  plainSummary: string;
+  level: Level;
+  /** Which chapter it is listed under. See MODULE_CHAPTERS. */
+  chapter: ModuleChapter;
+  /** Roughly how long a first visit takes. Absent for the Learning Center, whose lessons carry their own. */
+  minutes?: number;
 }
 
 export const MODULES: ModuleMeta[] = [
@@ -110,6 +182,12 @@ export const MODULES: ModuleMeta[] = [
     status: 'ready',
     topics: ['TCP/IP', 'Routing', 'Topology'],
     usesRealNetwork: false,
+    question: 'What is a network made of?',
+    plainSummary:
+      "See what's inside a network (laptops, phones, routers and cables) from one home to a whole data centre, and what each one does.",
+    level: 'beginner',
+    chapter: 'basics',
+    minutes: 8,
   },
   {
     id: 'packet-journey',
@@ -121,6 +199,12 @@ export const MODULES: ModuleMeta[] = [
     status: 'ready',
     topics: ['TCP/IP', 'UDP', 'Routing'],
     usesRealNetwork: false,
+    question: 'How does a message travel across the internet?',
+    plainSummary:
+      "Follow one small piece of data from your laptop, through your router and your internet provider, to a website's server and back.",
+    level: 'beginner',
+    chapter: 'basics',
+    minutes: 10,
   },
   {
     id: 'dns-explorer',
@@ -132,6 +216,12 @@ export const MODULES: ModuleMeta[] = [
     status: 'ready',
     topics: ['DNS', 'UDP', 'Caching'],
     usesRealNetwork: false,
+    question: "How does your computer find a website's address?",
+    plainSummary:
+      'Websites have names, but computers need numbers. Watch your computer ask a chain of servers until one knows the number.',
+    level: 'beginner',
+    chapter: 'websites',
+    minutes: 8,
   },
   {
     id: 'http-explorer',
@@ -142,6 +232,12 @@ export const MODULES: ModuleMeta[] = [
     status: 'ready',
     topics: ['HTTP', 'Cookies', 'Sessions', 'Caching'],
     usesRealNetwork: false,
+    question: 'What does your browser actually say to a website?',
+    plainSummary:
+      'Read the real messages your browser and a website send each other: the request, the reply, and the notes attached to both.',
+    level: 'intermediate',
+    chapter: 'websites',
+    minutes: 10,
   },
   {
     id: 'https-explorer',
@@ -152,6 +248,12 @@ export const MODULES: ModuleMeta[] = [
     status: 'ready',
     topics: ['HTTPS', 'SSL/TLS', 'Certificates'],
     usesRealNetwork: false,
+    question: 'How does the padlock keep what you send private?',
+    plainSummary:
+      "Watch your browser and a website agree on a secret, check the site's ID, and see what a snooper can and can't read.",
+    level: 'intermediate',
+    chapter: 'websites',
+    minutes: 10,
   },
   {
     id: 'api-visualizer',
@@ -162,6 +264,12 @@ export const MODULES: ModuleMeta[] = [
     status: 'ready',
     topics: ['APIs', 'HTTP', 'Authentication'],
     usesRealNetwork: false,
+    question: 'How do apps ask servers for data?',
+    plainSummary:
+      'Watch an app ask a server for data, prove who it is, and handle the answers, including the ones that say no.',
+    level: 'intermediate',
+    chapter: 'apps',
+    minutes: 10,
   },
   {
     id: 'websocket-viewer',
@@ -173,6 +281,12 @@ export const MODULES: ModuleMeta[] = [
     status: 'ready',
     topics: ['WebSockets', 'HTTP', 'TCP/IP'],
     usesRealNetwork: false,
+    question: 'How do chat apps get new messages instantly?',
+    plainSummary:
+      'See how a chat app keeps a line open to the server, so a message arrives the moment it is sent.',
+    level: 'advanced',
+    chapter: 'apps',
+    minutes: 8,
   },
   {
     id: 'internet-simulator',
@@ -184,6 +298,12 @@ export const MODULES: ModuleMeta[] = [
     status: 'ready',
     topics: ['DNS', 'TCP/IP', 'SSL/TLS', 'HTTP', 'CDN', 'Load Balancers'],
     usesRealNetwork: false,
+    question: 'What happens when you type a web address and press Enter?',
+    plainSummary:
+      'Type a web address and watch every step your browser takes: finding the site, connecting, locking the line, and drawing the page.',
+    level: 'beginner',
+    chapter: 'websites',
+    minutes: 10,
   },
   {
     id: 'network-diagnostics',
@@ -202,6 +322,12 @@ export const MODULES: ModuleMeta[] = [
     // now lives in the mode switch inside the module. `tests/registry.test.ts` asserts
     // that no other entry sets this.
     usesRealNetwork: true,
+    question: 'How do people check whether a website is reachable?',
+    plainSummary:
+      'Learn the tools people use to test a connection: ping, traceroute, DNS lookup and WHOIS. Simulated unless you switch on Live mode.',
+    level: 'intermediate',
+    chapter: 'tools',
+    minutes: 8,
   },
   {
     id: 'learning-center',
@@ -224,6 +350,11 @@ export const MODULES: ModuleMeta[] = [
     status: 'ready',
     topics: ['DNS', 'HTTP', 'HTTPS', 'TCP/IP', 'UDP', 'CDN', 'APIs', 'WebSockets'],
     usesRealNetwork: false,
+    question: 'Where do I start?',
+    plainSummary:
+      'Short lessons that explain one idea at a time, each with a simulation you can play.',
+    level: 'beginner',
+    chapter: 'learn',
   },
 ];
 
@@ -244,6 +375,16 @@ export function getModuleByRoute(pathname: string): ModuleMeta | undefined {
 /** Modules in one nav group, in registry order. */
 export function modulesInGroup(group: ModuleGroup): ModuleMeta[] {
   return MODULES.filter((m) => m.group === group);
+}
+
+/** Look up a chapter by its key. */
+export function getChapter(key: ModuleChapter): ModuleChapterMeta | undefined {
+  return MODULE_CHAPTERS.find((c) => c.key === key);
+}
+
+/** Modules in one chapter, in the chapter's reading order (see `moduleIds`). */
+export function modulesInChapter(key: ModuleChapter): ModuleMeta[] {
+  return (getChapter(key)?.moduleIds ?? []).flatMap((id) => getModule(id) ?? []);
 }
 
 /** Modules that are actually shippable today. */
