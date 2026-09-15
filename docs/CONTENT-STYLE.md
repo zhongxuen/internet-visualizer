@@ -93,8 +93,7 @@ play to watch the resolver ask the root" — the reader presses, the resolver as
 
 **No exclamation marks, no rhetorical questions, no jokes at the reader's expense.** A
 learner who has just failed a quiz should not be met with cheerfulness. A module's or a
-story's `question` is not rhetorical: it is the real question the run answers, and the
-run answers it.
+story's `question` is not rhetorical: it is a real question, and the run answers it.
 
 **Never refer to position or colour.** "The node on the left" is wrong on a narrow screen
 and meaningless to a screen reader; "the amber link" is meaningless in greyscale. Name the

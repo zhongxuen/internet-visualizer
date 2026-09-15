@@ -114,3 +114,60 @@ is 350–800px below the bottom of a 768px window, and about 1,500–2,800px bel
 The audit in `uiux-spec.md` §3 predicted all of it: Play below the fold everywhere, about
 30 controls before HTTP Explorer's diagram (33 here), and Packet Journey's labels at about
 3.5px (3.50 here, at React Flow's 0.25 minimum zoom).
+
+---
+
+## Wave 0 gate (`wave-0`)
+
+UX-W0, 2026-09-15, merge commit `1eb0adb` (UX-0.1 and UX-0.2 on top of the plan). Wave 0
+changed no product code: `git diff 5621325 1eb0adb` touches only `CLAUDE.md`,
+`docs/CONTENT-STYLE.md`, `.gitignore`, `package.json` (one script), this file and
+`scripts/uiux-screens.mjs`. So this gate is a second measurement of the baseline build,
+and every difference below is noise.
+
+Run in a clean detached worktree of `main` rather than the main checkout, because the
+main checkout was carrying uncommitted wave-1 work (UX-1.1 and UX-1.2) and serving it on
+:3111; a build there would have measured that instead. The worktree was re-checked-out
+with LF line endings first (see the note under the CI sequence). The wave-1 sessions were
+still running throughout.
+
+**CI sequence:** `npm ci`, `lint`, `build`, `typecheck`, `format:check`, `test:coverage`
+(190 files, 4406 tests, every threshold met; all files 96.2% statements, 87.4% branches),
+`test:e2e` (214 passed) — all green.
+
+The system-wide `core.autocrlf=true` makes a fresh worktree check every file out with
+CRLF, and `format:check` then fails on 614 files; the repository content is LF, as CI and
+the main checkout see it. The gate re-checked the tree out with `core.autocrlf=false`,
+then rebuilt.
+
+**`uiux:screens -- wave-0`:** every module metric identical to the baseline, at both
+viewports (Play in first viewport, controls above canvas, node label px and canvas top).
+
+**`perf:bundles`:** identical to the baseline on all 48 routes.
+
+**`perf:vitals`** (`BASE=http://127.0.0.1:3100`, the ten routes, 4x, median of 3):
+
+| Route                  | LCP ms | CLS    | INP ms | JS KB (browser) | Playback fps | LoAF count / ms |
+| ---------------------- | -----: | -----: | -----: | --------------: | -----------: | --------------: |
+| `/`                    |    532 |      0 |    272 |           151.7 |            – |               – |
+| `/network-map`         |   1340 |      0 |    304 |           187.7 |         33.4 |           0 / 0 |
+| `/packet-journey`      |   2672 | 0.0172 |    968 |           247.3 |          2.4 |        9 / 3878 |
+| `/dns-explorer`        |    552 |      0 |    336 |           292.1 |         55.0 |         3 / 237 |
+| `/http-explorer`       |   1224 |      0 |    416 |           316.8 |         58.5 |         3 / 437 |
+| `/https-explorer`      |   1848 |      0 |    576 |           223.0 |         58.5 |         2 / 219 |
+| `/api-visualizer`      |   1028 | 0.0002 |    600 |           319.2 |         10.2 |       22 / 2591 |
+| `/websocket-viewer`    |   1224 |      0 |    480 |           217.2 |         45.5 |         7 / 794 |
+| `/internet-simulator`  |   1080 |      0 |    712 |           347.3 |         51.9 |         5 / 719 |
+| `/network-diagnostics` |   1056 |      0 |    760 |           320.1 |         16.4 |       17 / 2075 |
+
+LCP and CLS pass everywhere. Against the baseline's two passes, `/packet-journey` is 2.4
+fps (baseline 4.2 / 2.9) and `/network-diagnostics` 16.4 (32.4 / 25.9). §8.2 asks for any
+regression to be explained: the build is byte-for-byte the same product, so these are
+the spread of the measurement on a shared machine, not a change — and they show the
+spread is wider than CLAUDE.md's ±0.5 fps. `/api-visualizer` repeats at 10.2 fps, so a
+third run agrees it is the page. **Accepted; the gate passes.**
+
+What this means for later gates: on this machine with other sessions running, a
+per-route fps change smaller than the spread across these three runs (Packet Journey
+2.4–4.2, Network Diagnostics 16.4–32.4) is not evidence of anything. Measure on a quiet
+machine, or run each side twice, before claiming a change.

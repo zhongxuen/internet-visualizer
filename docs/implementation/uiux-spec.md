@@ -813,6 +813,10 @@ ROUTES=/,/network-map,/packet-journey,/dns-explorer,/http-explorer,/https-explor
   npm run perf:vitals             # perf/vitals.mjs measures only three routes by default
 ```
 
+In Git Bash on Windows, prefix `MSYS_NO_PATHCONV=1` to any command that sets `ROUTES`:
+otherwise MSYS rewrites the leading `/` into a Windows path and perf:vitals navigates to
+`http://127.0.0.1:3100C:/Program Files/Git/`.
+
 Append the `perf:bundles` and `perf:vitals` output to `perf/uiux-baseline.md` under a
 heading for the step. Stop the server afterwards.
 
