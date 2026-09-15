@@ -166,24 +166,24 @@ function ExchangeLedger({
                 <div className="flex flex-wrap items-baseline gap-2">
                   {/* Dimness is not a label: say it. */}
                   {arrived ? null : <span className="sr-only">Not sent yet. </span>}
-                  <code className="text-fg-secondary font-mono text-[0.6875rem]">
+                  <code className="text-fg-secondary text-caption font-mono">
                     {exchange.request.method}
                   </code>
-                  <code className="text-fg min-w-0 flex-1 truncate font-mono text-[0.6875rem]">
+                  <code className="text-fg text-caption min-w-0 flex-1 truncate font-mono">
                     {exchange.request.target}
                   </code>
                   <Badge tone={statusTone(exchange.status)}>
                     {exchange.status === 0 ? 'no reply' : exchange.status}
                   </Badge>
                 </div>
-                <p className="text-fg-secondary mt-1 text-[0.6875rem] leading-relaxed">
+                <p className="text-fg-secondary text-caption mt-1 leading-relaxed">
                   {exchange.why}
                 </p>
                 {active
                   ? exchange.notes.map((note) => (
                       <p
                         key={note}
-                        className="text-fg-muted mt-1 text-[0.6875rem] leading-relaxed"
+                        className="text-fg-muted text-caption mt-1 leading-relaxed"
                       >
                         {note}
                       </p>
@@ -192,7 +192,7 @@ function ExchangeLedger({
                 {active && exchange.signature ? (
                   <p
                     className={cn(
-                      'mt-1 text-[0.6875rem] leading-relaxed',
+                      'text-caption mt-1 leading-relaxed',
                       exchange.signature.valid ? 'text-state-ok' : 'text-state-error',
                     )}
                   >
@@ -203,7 +203,7 @@ function ExchangeLedger({
                   </p>
                 ) : null}
                 {active && exchange.page && exchange.page.repeated.length > 0 ? (
-                  <p className="text-state-error mt-1 text-[0.6875rem] leading-relaxed">
+                  <p className="text-state-error text-caption mt-1 leading-relaxed">
                     Already sent on an earlier page: {exchange.page.repeated.join(', ')}
                   </p>
                 ) : null}
@@ -335,7 +335,7 @@ export function ApiVisualizerModule() {
                   <span
                     aria-hidden="true"
                     className={cn(
-                      'font-mono text-[0.6875rem]',
+                      'text-caption font-mono',
                       active ? 'text-accent' : 'text-fg-muted',
                     )}
                   >

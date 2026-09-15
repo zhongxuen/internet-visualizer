@@ -221,7 +221,7 @@ export function ModeSwitch({
                 <span className="text-fg-secondary text-sm leading-relaxed">
                   {item.text}
                 </span>
-                <span className="text-fg-muted font-mono text-[0.6875rem]">
+                <span className="text-fg-muted text-caption font-mono">
                   {item.enforcedBy}
                 </span>
               </li>

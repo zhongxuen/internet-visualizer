@@ -113,13 +113,13 @@ function ComponentRow({
         )}
       >
         <span className="flex flex-wrap items-baseline justify-between gap-2">
-          <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+          <span className="text-fg-muted text-caption tracking-widest uppercase">
             {component.role}
           </span>
           {component.token ? (
             <span
               className={cn(
-                'font-mono text-[0.6875rem]',
+                'text-caption font-mono',
                 active ? 'text-accent' : 'text-fg-secondary',
               )}
             >
@@ -133,12 +133,12 @@ function ComponentRow({
         <span className="text-fg mt-0.5 block text-xs leading-snug">
           {component.value}
         </span>
-        <span className="text-fg-muted mt-1 block text-[0.625rem] leading-snug">
+        <span className="text-fg-muted text-caption mt-1 block leading-snug">
           {component.explain}
         </span>
 
         {component.negotiatedBy ? (
-          <span className="text-fg-secondary mt-1 block font-mono text-[0.5625rem] leading-snug">
+          <span className="text-fg-secondary text-caption mt-1 block font-mono leading-snug">
             negotiated instead by {component.negotiatedBy}
           </span>
         ) : null}
@@ -189,7 +189,7 @@ export function CipherSuiteBreakdown({
           <span className="text-fg-muted"> · {suite.codePoint}</span>
         </p>
 
-        <p className="text-fg-secondary text-[0.6875rem] leading-snug">
+        <p className="text-fg-secondary text-caption leading-snug">
           {suite.version} spells out <strong className="text-fg">{named}</strong> of the
           four decisions in the name.{' '}
           {suite.version === 'TLS 1.3'
@@ -211,12 +211,12 @@ export function CipherSuiteBreakdown({
 
         <dl className="border-border/60 grid grid-cols-2 gap-x-3 gap-y-1 border-t pt-2">
           <div>
-            <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
+            <dt className="text-fg-muted text-caption tracking-wide uppercase">
               Forward secrecy
             </dt>
             <dd
               className={cn(
-                'font-mono text-[0.6875rem]',
+                'text-caption font-mono',
                 suite.forwardSecrecy ? 'text-state-ok' : 'text-state-error',
               )}
             >
@@ -224,19 +224,19 @@ export function CipherSuiteBreakdown({
             </dd>
           </div>
           <div>
-            <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
+            <dt className="text-fg-muted text-caption tracking-wide uppercase">
               Per-record overhead
             </dt>
-            <dd className="text-fg-secondary font-mono text-[0.6875rem]">
+            <dd className="text-fg-secondary text-caption font-mono">
               {suite.tagBytes}-byte tag · {suite.ivBytes}-byte IV
             </dd>
           </div>
         </dl>
 
-        <p className="text-fg-muted text-[0.625rem] leading-snug">{suite.note}</p>
+        <p className="text-fg-muted text-caption leading-snug">{suite.note}</p>
 
         {compareWith ? (
-          <p className="border-border/60 text-fg-muted border-t pt-2 text-[0.625rem] leading-snug">
+          <p className="border-border/60 text-fg-muted text-caption border-t pt-2 leading-snug">
             <span className="text-fg-secondary font-mono">{compareWith.name}</span> is the{' '}
             {compareWith.version} suite this run is compared against —{' '}
             {namedComponentCount(compareWith.version)} components named, and{' '}

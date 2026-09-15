@@ -9,6 +9,17 @@
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * "Large text". The preference writes `data-text-size` on <html> before first paint, and
+ * this one rule is all it takes: every size in the type scale, every hit target and every
+ * Tailwind spacing step is in rem (../styles/tokens.css), so they all grow together.
+ * A percentage rather than 18px, so a reader who has already raised the browser's own
+ * default keeps that and gets 12.5% on top.
+ */
+:root[data-text-size='large'] {
+  font-size: 112.5%;
+}
+
 body {
   background: var(--bg-base);
   color: var(--text-primary);
@@ -110,6 +121,16 @@ body {
 .state-dim,
 .state-dim *:not([data-no-dim], [data-no-dim] *) {
   color: var(--text-dim);
+}
+
+/*
+ * React Flow's stylesheet draws its attribution link and edge labels at 10px, under the
+ * 12px floor (../styles/tokens.css). That file arrives with the lazy canvas chunk, after
+ * this one, so the override carries one more class than React Flow's own rule rather
+ * than relying on order.
+ */
+.react-flow :is(.react-flow__attribution, .react-flow__edge-text) {
+  font-size: var(--text-caption);
 }
 
 /*

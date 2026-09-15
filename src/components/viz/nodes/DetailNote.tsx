@@ -21,7 +21,7 @@ export function DetailNote({ node, keys }: DetailNoteProps) {
   if (!key) return null;
 
   return (
-    <p className="text-fg-muted truncate text-[0.6875rem]" title={node.detail?.[key]}>
+    <p className="text-fg-muted text-caption truncate" title={node.detail?.[key]}>
       <span className="tracking-wider uppercase">{key}</span>{' '}
       <span className="text-fg-secondary">{node.detail?.[key]}</span>
     </p>

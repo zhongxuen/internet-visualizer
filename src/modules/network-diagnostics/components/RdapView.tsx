@@ -122,7 +122,7 @@ export function RdapView({ run, className }: RdapViewProps) {
             <div className="flex flex-col gap-4">
               {record.nameservers.length > 0 ? (
                 <div>
-                  <p className="text-fg-muted text-[0.65rem] tracking-wider uppercase">
+                  <p className="text-fg-muted text-caption tracking-wider uppercase">
                     Nameservers
                   </p>
                   <ul className="mt-1 flex flex-col gap-0.5">
@@ -145,7 +145,7 @@ export function RdapView({ run, className }: RdapViewProps) {
 
               {record.delegationSigned !== undefined ? (
                 <div>
-                  <p className="text-fg-muted text-[0.65rem] tracking-wider uppercase">
+                  <p className="text-fg-muted text-caption tracking-wider uppercase">
                     DNSSEC
                   </p>
                   <p className="text-fg mt-1 text-sm">
@@ -160,7 +160,7 @@ export function RdapView({ run, className }: RdapViewProps) {
               ) : null}
 
               <div>
-                <p className="text-fg-muted text-[0.65rem] tracking-wider uppercase">
+                <p className="text-fg-muted text-caption tracking-wider uppercase">
                   Contacts
                 </p>
                 <ul className="mt-1 flex flex-col gap-2">
@@ -194,7 +194,7 @@ export function RdapView({ run, className }: RdapViewProps) {
 
               {record.registrar ? (
                 <div>
-                  <p className="text-fg-muted text-[0.65rem] tracking-wider uppercase">
+                  <p className="text-fg-muted text-caption tracking-wider uppercase">
                     Registrar
                   </p>
                   <p className="text-fg mt-1 text-sm">
@@ -266,7 +266,7 @@ export function RdapView({ run, className }: RdapViewProps) {
       <Panel title="Why RDAP replaced WHOIS" scroll className="max-h-[26rem]">
         <table className="w-full border-collapse text-left text-sm">
           <thead>
-            <tr className="text-fg-muted text-[0.65rem] tracking-wider uppercase">
+            <tr className="text-fg-muted text-caption tracking-wider uppercase">
               <th scope="col" className="pr-4 pb-2 font-medium">
                 Aspect
               </th>

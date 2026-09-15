@@ -74,7 +74,7 @@ function StreamBar({ stream, scale }: { stream: StreamTiming; scale: number }) {
 
   return (
     <li className="flex items-center gap-2">
-      <span className="text-fg-muted w-24 shrink-0 truncate font-mono text-[0.5625rem]">
+      <span className="text-fg-muted text-caption w-24 shrink-0 truncate font-mono">
         {stream.label}
       </span>
       <span className="bg-surface relative h-2.5 min-w-0 flex-1 overflow-hidden rounded-sm">
@@ -104,7 +104,7 @@ function StreamBar({ stream, scale }: { stream: StreamTiming; scale: number }) {
           />
         </span>
       </span>
-      <span className="text-fg-muted w-16 shrink-0 text-right font-mono text-[0.5625rem] tabular-nums">
+      <span className="text-fg-muted text-caption w-16 shrink-0 text-right font-mono tabular-nums">
         {ms(stream.completedAt)}
         {stalled > 0 ? <span className="text-state-error"> ⚠</span> : null}
       </span>
@@ -155,10 +155,8 @@ function Breakdown({ run }: { run: VersionRun }) {
     <dl className="mt-2 grid gap-x-3 gap-y-1 sm:grid-cols-2">
       {rows.map(([label, value, hint]) => (
         <div key={label} title={hint} className="min-w-0">
-          <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
-            {label}
-          </dt>
-          <dd className="text-fg-secondary font-mono text-[0.6875rem]">{value}</dd>
+          <dt className="text-fg-muted text-caption tracking-wide uppercase">{label}</dt>
+          <dd className="text-fg-secondary text-caption font-mono">{value}</dd>
         </div>
       ))}
     </dl>
@@ -173,7 +171,7 @@ export function VersionComparison({ comparison, className }: VersionComparisonPr
     <Panel
       title="The same page load, three ways"
       aside={
-        <span className="text-fg-muted text-[0.625rem]">
+        <span className="text-fg-muted text-caption">
           {comparison.resources.length} resources · {comparison.conditions.rttMs} ms RTT ·{' '}
           {comparison.losses.length} packet{' '}
           {comparison.losses.length === 1 ? 'loss' : 'losses'}
@@ -229,7 +227,7 @@ export function VersionComparison({ comparison, className }: VersionComparisonPr
                     />
                   </span>
 
-                  <span className="text-fg-muted mt-1 block text-[0.625rem] leading-snug">
+                  <span className="text-fg-muted text-caption mt-1 block leading-snug">
                     {verdict.because}
                   </span>
                 </button>
@@ -237,7 +235,7 @@ export function VersionComparison({ comparison, className }: VersionComparisonPr
                 {open ? (
                   <div className="border-border/60 bg-surface-raised mt-1 rounded-lg border px-2.5 py-2">
                     <Breakdown run={run} />
-                    <p className="text-fg-muted mt-2 text-[0.5625rem] tracking-wide uppercase">
+                    <p className="text-fg-muted text-caption mt-2 tracking-wide uppercase">
                       Each resource, on the shared scale
                     </p>
                     <ul className="mt-1 flex flex-col gap-0.5">
@@ -249,7 +247,7 @@ export function VersionComparison({ comparison, className }: VersionComparisonPr
                         />
                       ))}
                     </ul>
-                    <p className="text-fg-muted mt-1.5 text-[0.5625rem] leading-snug">
+                    <p className="text-fg-muted text-caption mt-1.5 leading-snug">
                       Red is time queued behind another request, grey is waiting for the
                       first byte, and blue is the body arriving. ⚠ marks a transfer that
                       stalled on a retransmission.
@@ -264,7 +262,7 @@ export function VersionComparison({ comparison, className }: VersionComparisonPr
         <section aria-labelledby="hol-heading">
           <h3
             id="hol-heading"
-            className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+            className="text-fg-muted text-caption font-medium tracking-widest uppercase"
           >
             Head-of-line blocking is two problems
           </h3>
@@ -277,11 +275,11 @@ export function VersionComparison({ comparison, className }: VersionComparisonPr
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h4 className="text-fg text-xs font-medium">{analysis.title}</h4>
-                  <span className="text-fg-muted font-mono text-[0.5625rem]">
+                  <span className="text-fg-muted text-caption font-mono">
                     RFC {analysis.reference.rfc}
                   </span>
                 </div>
-                <p className="text-fg-secondary mt-1 text-[0.6875rem] leading-snug">
+                <p className="text-fg-secondary text-caption mt-1 leading-snug">
                   {analysis.what}
                 </p>
 
@@ -299,14 +297,14 @@ export function VersionComparison({ comparison, className }: VersionComparisonPr
                         )}
                       >
                         <div className="flex items-baseline justify-between gap-1">
-                          <span className="text-fg font-mono text-[0.6875rem]">
+                          <span className="text-fg text-caption font-mono">
                             {VERSION_PROFILES[version].alias}
                           </span>
                           <Badge tone={verdict.blocked ? 'warn' : 'ok'}>
                             {verdict.blocked ? 'blocked' : 'clear'}
                           </Badge>
                         </div>
-                        <p className="text-fg-muted mt-1 text-[0.5625rem] leading-snug">
+                        <p className="text-fg-muted text-caption mt-1 leading-snug">
                           {verdict.text}
                         </p>
                       </li>
@@ -318,7 +316,7 @@ export function VersionComparison({ comparison, className }: VersionComparisonPr
           </div>
         </section>
 
-        <p className="text-fg-muted border-border/60 border-t pt-2 text-[0.625rem] leading-snug">
+        <p className="text-fg-muted border-border/60 text-caption border-t pt-2 leading-snug">
           The losses are drawn once per resource and met by all three runs, so this is one
           network scored three ways rather than three networks. That is why HTTP/2 can
           lose the transport row to HTTP/1.1 and still finish ahead: six connections limit

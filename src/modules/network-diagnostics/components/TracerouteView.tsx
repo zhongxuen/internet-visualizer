@@ -141,7 +141,7 @@ function TtlWalk({ hop }: { hop: TracerouteHop }) {
               : 'border-border bg-surface-overlay/40',
           )}
         >
-          <span className="text-fg-muted font-mono text-[0.65rem]">{index + 1}</span>
+          <span className="text-fg-muted text-caption font-mono">{index + 1}</span>
           <span className="text-fg min-w-0 flex-1 text-sm">{step.label}</span>
           <span className="text-fg-secondary font-mono text-xs">
             TTL {step.ttlIn}
@@ -153,7 +153,7 @@ function TtlWalk({ hop }: { hop: TracerouteHop }) {
             </span>
           </span>
           <span
-            className="text-fg-muted font-mono text-[0.65rem]"
+            className="text-fg-muted text-caption font-mono"
             title="The header checksum covers the header, and the TTL is in the header -- so it is recomputed at every hop."
           >
             cksum {hex(step.checksumIn)} &rarr; {hex(step.checksumOut)}
@@ -214,7 +214,7 @@ export function TracerouteView({
               One row per TTL. Three probes per row; a star is a probe that got no answer.
             </caption>
             <thead>
-              <tr className="text-fg-muted text-[0.65rem] tracking-wider uppercase">
+              <tr className="text-fg-muted text-caption tracking-wider uppercase">
                 <th scope="col" className="pr-3 pb-1.5 font-medium">
                   TTL
                 </th>

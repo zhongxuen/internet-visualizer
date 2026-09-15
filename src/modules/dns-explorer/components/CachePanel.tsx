@@ -153,7 +153,7 @@ export function CachePanel({ cache, virtualTime, className }: CachePanelProps) {
     <Panel
       title="Resolver cache"
       aside={
-        <span className="text-fg-muted text-[0.6875rem]">
+        <span className="text-fg-muted text-caption">
           {stats.total} live · {stats.negative} negative
           {stats.expired > 0 ? ` · ${stats.expired} expired` : ''}
         </span>
@@ -175,7 +175,7 @@ export function CachePanel({ cache, virtualTime, className }: CachePanelProps) {
                 title={choice.hint}
                 onClick={() => setRate(choice.value)}
                 className={cn(
-                  'rounded-md border px-2 py-1 font-mono text-[0.625rem] transition-colors',
+                  'text-caption rounded-md border px-2 py-1 font-mono transition-colors',
                   focusRing,
                   active
                     ? 'border-accent/60 bg-accent/12 text-fg'
@@ -187,7 +187,7 @@ export function CachePanel({ cache, virtualTime, className }: CachePanelProps) {
             );
           })}
         </div>
-        <p className="text-fg-muted text-[0.625rem]">
+        <p className="text-fg-muted text-caption">
           {driftMs > 0
             ? `${formatTtl(driftMs / 1000)} past the playhead`
             : 'At the playhead'}
@@ -206,7 +206,7 @@ export function CachePanel({ cache, virtualTime, className }: CachePanelProps) {
             has left before it expires.
           </caption>
           <thead className="bg-surface-raised sticky top-0 z-10">
-            <tr className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+            <tr className="text-fg-muted text-caption tracking-wider uppercase">
               {['Name', 'Type', 'Kind', 'Value', 'TTL left'].map((heading) => (
                 <th
                   key={heading}
@@ -265,7 +265,7 @@ export function CachePanel({ cache, virtualTime, className }: CachePanelProps) {
                         )}
                       />
                     </span>
-                    <span className="text-fg-muted mt-0.5 block font-mono text-[0.5625rem]">
+                    <span className="text-fg-muted text-caption mt-0.5 block font-mono">
                       of {formatTtl(entry.ttlSeconds)}
                     </span>
                   </td>

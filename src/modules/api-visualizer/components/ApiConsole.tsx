@@ -198,7 +198,7 @@ export function ApiConsole({ prefill, onTargetChange, className }: ApiConsolePro
         <form onSubmit={send} className="flex min-w-0 flex-col gap-2">
           <div className="flex flex-wrap gap-2">
             <label className="flex flex-col gap-1">
-              <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+              <span className="text-fg-muted text-caption tracking-widest uppercase">
                 Method
               </span>
               <select
@@ -215,7 +215,7 @@ export function ApiConsole({ prefill, onTargetChange, className }: ApiConsolePro
             </label>
 
             <label className="flex min-w-[12rem] flex-1 flex-col gap-1">
-              <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+              <span className="text-fg-muted text-caption tracking-widest uppercase">
                 Request-target
               </span>
               <input
@@ -228,7 +228,7 @@ export function ApiConsole({ prefill, onTargetChange, className }: ApiConsolePro
             </label>
           </div>
 
-          <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+          <p className="text-fg-muted text-caption leading-relaxed">
             <span className={semantics.safe ? 'text-state-ok' : 'text-fg-muted'}>
               {semantics.safe ? 'Safe' : 'Not safe'}
             </span>
@@ -240,7 +240,7 @@ export function ApiConsole({ prefill, onTargetChange, className }: ApiConsolePro
           </p>
 
           <div className="flex flex-col gap-1">
-            <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+            <span className="text-fg-muted text-caption tracking-widest uppercase">
               Credential
             </span>
             <div role="group" aria-label="Credential" className="flex flex-wrap gap-1.5">
@@ -263,14 +263,14 @@ export function ApiConsole({ prefill, onTargetChange, className }: ApiConsolePro
                 </button>
               ))}
             </div>
-            <p className="text-fg-muted text-[0.625rem] leading-snug">
+            <p className="text-fg-muted text-caption leading-snug">
               {CREDENTIALS.find((option) => option.value === draft.credential)?.hint}
             </p>
           </div>
 
           {draft.credential === 'bearer' ? (
             <label className="flex flex-col gap-1">
-              <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+              <span className="text-fg-muted text-caption tracking-widest uppercase">
                 Token
               </span>
               <input
@@ -287,7 +287,7 @@ export function ApiConsole({ prefill, onTargetChange, className }: ApiConsolePro
           {semantics.body !== 'none' ? (
             <>
               <label className="flex flex-col gap-1">
-                <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+                <span className="text-fg-muted text-caption tracking-widest uppercase">
                   Content-Type
                 </span>
                 <select
@@ -306,7 +306,7 @@ export function ApiConsole({ prefill, onTargetChange, className }: ApiConsolePro
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+                <span className="text-fg-muted text-caption tracking-widest uppercase">
                   Body
                 </span>
                 <textarea
@@ -323,7 +323,7 @@ export function ApiConsole({ prefill, onTargetChange, className }: ApiConsolePro
 
           <p
             className={cn(
-              'text-[0.6875rem] leading-relaxed',
+              'text-caption leading-relaxed',
               coverage.known ? 'text-fg-muted' : 'text-state-warn',
             )}
           >
@@ -363,12 +363,12 @@ export function ApiConsole({ prefill, onTargetChange, className }: ApiConsolePro
               {outcome.decision.why}
             </p>
             {choice?.contrast ? (
-              <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+              <p className="text-fg-muted text-caption leading-relaxed">
                 {choice.contrast}
               </p>
             ) : null}
             {outcome.decision.notes.map((note) => (
-              <p key={note} className="text-fg-muted text-[0.6875rem] leading-relaxed">
+              <p key={note} className="text-fg-muted text-caption leading-relaxed">
                 {note}
               </p>
             ))}

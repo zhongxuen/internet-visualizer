@@ -213,7 +213,7 @@ export function HttpsExplorerModule() {
                   <span
                     aria-hidden="true"
                     className={cn(
-                      'font-mono text-[0.6875rem]',
+                      'text-caption font-mono',
                       active ? 'text-accent' : 'text-fg-muted',
                     )}
                   >
@@ -239,7 +239,7 @@ export function HttpsExplorerModule() {
           </div>
 
           <div className="border-border bg-surface-raised flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2">
-            <span className="text-fg-muted text-[0.625rem] tracking-widest uppercase">
+            <span className="text-fg-muted text-caption tracking-widest uppercase">
               Reading this connection as
             </span>
             <div role="group" aria-label="Vantage point" className="flex gap-1.5">
@@ -264,7 +264,7 @@ export function HttpsExplorerModule() {
                 </button>
               ))}
             </div>
-            <p className="text-fg-muted min-w-0 flex-1 text-[0.625rem] leading-snug">
+            <p className="text-fg-muted text-caption min-w-0 flex-1 leading-snug">
               {VIEW_OPTIONS.find((option) => option.value === view)?.hint}
             </p>
           </div>

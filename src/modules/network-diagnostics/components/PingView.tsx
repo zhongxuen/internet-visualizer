@@ -121,7 +121,7 @@ function RttChart({
       </ol>
 
       <ol
-        className="text-fg-muted flex gap-1.5 font-mono text-[0.65rem]"
+        className="text-fg-muted text-caption flex gap-1.5 font-mono"
         aria-hidden="true"
       >
         {run.probes.map((probe) => (
@@ -165,7 +165,7 @@ function Statistics({ run }: { run: PingRun }) {
     <dl className="grid grid-cols-3 gap-x-4 gap-y-3 sm:grid-cols-4 lg:grid-cols-7">
       {cells.map((cell) => (
         <div key={cell.label} className="min-w-0">
-          <dt className="text-fg-muted text-[0.65rem] tracking-wider uppercase">
+          <dt className="text-fg-muted text-caption tracking-wider uppercase">
             {cell.label}
           </dt>
           <dd className="text-fg font-mono text-sm" title={cell.note}>
@@ -240,7 +240,7 @@ export function PingView({ run, now, onSeek, className }: PingViewProps) {
 
           <dl className="grid gap-3 sm:grid-cols-2">
             <div>
-              <dt className="text-state-ok text-[0.65rem] tracking-wider uppercase">
+              <dt className="text-state-ok text-caption tracking-wider uppercase">
                 It proves
               </dt>
               <dd className="text-fg-secondary mt-1 text-sm leading-relaxed">
@@ -248,7 +248,7 @@ export function PingView({ run, now, onSeek, className }: PingViewProps) {
               </dd>
             </div>
             <div>
-              <dt className="text-state-warn text-[0.65rem] tracking-wider uppercase">
+              <dt className="text-state-warn text-caption tracking-wider uppercase">
                 It does not prove
               </dt>
               <dd className="text-fg-secondary mt-1 text-sm leading-relaxed">
@@ -259,7 +259,7 @@ export function PingView({ run, now, onSeek, className }: PingViewProps) {
 
           {verdict.causes.length > 0 ? (
             <div>
-              <p className="text-fg-muted text-[0.65rem] tracking-wider uppercase">
+              <p className="text-fg-muted text-caption tracking-wider uppercase">
                 What could produce this
               </p>
               <ul className="text-fg-secondary mt-1.5 flex flex-col gap-1 text-sm">

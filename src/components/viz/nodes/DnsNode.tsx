@@ -42,7 +42,7 @@ function TierRail({ kind }: { kind: NodeKind }) {
             key={rung.kind}
             aria-current={here ? 'step' : undefined}
             className={cn(
-              'flex flex-1 items-center gap-1 rounded-sm border px-1 py-px text-[0.5625rem] tracking-wide uppercase',
+              'text-caption flex flex-1 items-center gap-1 rounded-sm border px-1 py-px tracking-wide uppercase',
               here
                 ? 'border-accent/60 text-accent font-semibold'
                 : 'border-border/60 text-fg-muted',

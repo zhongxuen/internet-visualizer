@@ -189,7 +189,7 @@ export function UrlBar({ value, onSubmit, busy = false, className }: UrlBarProps
                   if (next.ok) onSubmit(next.value.href, next.value);
                 }}
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[0.6875rem] transition-colors',
+                  'text-caption inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono transition-colors',
                   focusRing,
                   active
                     ? 'border-accent/60 bg-accent/12 text-fg'

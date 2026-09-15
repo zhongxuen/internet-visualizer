@@ -101,14 +101,12 @@ function Control({
     <div className="flex min-w-0 flex-col gap-1.5">
       <label
         htmlFor={htmlFor}
-        className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+        className="text-fg-muted text-caption font-medium tracking-widest uppercase"
       >
         {label}
       </label>
       {children}
-      {hint ? (
-        <p className="text-fg-muted text-[0.6875rem] leading-snug">{hint}</p>
-      ) : null}
+      {hint ? <p className="text-fg-muted text-caption leading-snug">{hint}</p> : null}
     </div>
   );
 }
@@ -174,7 +172,7 @@ export function DomainInput({
         <SafetyBadge variant="simulated" />
       </div>
 
-      <p id={hintId} className="text-fg-muted max-w-3xl text-[0.6875rem] leading-snug">
+      <p id={hintId} className="text-fg-muted text-caption max-w-3xl leading-snug">
         Resolved against the zone fixtures bundled with this page, inside this browser
         tab. No name typed here is ever sent to a real nameserver, and there is no code
         path in this module that could send one.
@@ -184,7 +182,7 @@ export function DomainInput({
         <div className="flex min-w-[14rem] flex-1 flex-col gap-1.5">
           <label
             htmlFor={nameId}
-            className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+            className="text-fg-muted text-caption font-medium tracking-widest uppercase"
           >
             Domain name
           </label>
@@ -352,7 +350,7 @@ export function DomainInput({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <p className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase">
+        <p className="text-fg-muted text-caption font-medium tracking-widest uppercase">
           Names these zones can answer for
         </p>
         <ul className="flex flex-wrap gap-1.5">
@@ -365,7 +363,7 @@ export function DomainInput({
                   commit({ ...draft, name: example.name, type: example.type })
                 }
                 className={cn(
-                  'border-border bg-surface text-fg-secondary hover:border-border-strong hover:text-fg inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[0.6875rem] transition-colors',
+                  'border-border bg-surface text-fg-secondary hover:border-border-strong hover:text-fg text-caption inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono transition-colors',
                   focusRing,
                 )}
               >

@@ -241,7 +241,7 @@ export function DnsExplorerModule() {
                   <span
                     aria-hidden="true"
                     className={cn(
-                      'font-mono text-[0.6875rem]',
+                      'text-caption font-mono',
                       active ? 'text-accent' : 'text-fg-muted',
                     )}
                   >

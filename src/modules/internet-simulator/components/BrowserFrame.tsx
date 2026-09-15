@@ -102,7 +102,7 @@ function Chrome({ run }: { run: PageLoadRun }) {
         ) : (
           <Unlock aria-hidden="true" className="text-state-warn size-3 shrink-0" />
         )}
-        <span className="text-fg-secondary min-w-0 truncate font-mono text-[0.6875rem]">
+        <span className="text-fg-secondary text-caption min-w-0 truncate font-mono">
           {url?.href ?? run.scenario.url}
         </span>
       </div>
@@ -123,8 +123,8 @@ function ErrorPage({ run }: { run: PageLoadRun }) {
       <p className="text-fg-secondary max-w-md text-xs leading-relaxed">
         {failure.message}
       </p>
-      <p className="text-fg-muted font-mono text-[0.6875rem]">{failure.code}</p>
-      <p className="text-state-warn border-state-warn/40 bg-state-warn/10 mt-1 max-w-md rounded-lg border px-2.5 py-2 text-[0.6875rem] leading-relaxed">
+      <p className="text-fg-muted text-caption font-mono">{failure.code}</p>
+      <p className="text-state-warn border-state-warn/40 bg-state-warn/10 text-caption mt-1 max-w-md rounded-lg border px-2.5 py-2 leading-relaxed">
         {failure.explanation}
       </p>
     </div>
@@ -146,10 +146,10 @@ function Viewport({ state, run }: { state: PaintState; run: PageLoadRun }) {
   if (state === 'blank' || state === 'parsed') {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-        <span className="border-border/60 text-fg-muted block rounded-lg border border-dashed px-4 py-3 text-[0.6875rem]">
+        <span className="border-border/60 text-fg-muted text-caption block rounded-lg border border-dashed px-4 py-3">
           Nothing painted yet
         </span>
-        <p className="text-fg-muted max-w-sm text-[0.6875rem] leading-relaxed">
+        <p className="text-fg-muted text-caption max-w-sm leading-relaxed">
           {state === 'blank'
             ? 'The document has not arrived. Everything happening on the rail above is happening behind an empty frame.'
             : blocking.length > 0
@@ -176,11 +176,11 @@ function Viewport({ state, run }: { state: PaintState; run: PageLoadRun }) {
         )}
       >
         {state === 'complete' ? (
-          <span className="text-fg-secondary text-[0.625rem]">
+          <span className="text-fg-secondary text-caption">
             {lcp?.label ?? 'hero image'} &mdash; largest contentful element
           </span>
         ) : (
-          <span className="text-fg-muted flex items-center gap-1.5 text-[0.625rem]">
+          <span className="text-fg-muted text-caption flex items-center gap-1.5">
             <ImageIcon aria-hidden="true" className="size-3.5" />
             {lcp?.label ?? 'image'} still downloading
           </span>
@@ -227,7 +227,7 @@ function PaintTimeline({ marks, now }: { marks: Milestones; now: number }) {
             />
             <span
               className={cn(
-                'ml-1 font-mono text-[0.5625rem] whitespace-nowrap',
+                'text-caption ml-1 font-mono whitespace-nowrap',
                 tick.tone === 'ok' ? 'text-state-ok' : 'text-layer-link',
               )}
             >
@@ -311,7 +311,7 @@ export function BrowserFrame({ run, now, className }: BrowserFrameProps) {
               key={metric.label}
               className="border-border/60 bg-surface rounded-lg border px-2.5 py-1.5"
             >
-              <dt className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+              <dt className="text-fg-muted text-caption tracking-widest uppercase">
                 {metric.label}
               </dt>
               <dd className="text-fg font-mono text-xs tabular-nums">{metric.value}</dd>

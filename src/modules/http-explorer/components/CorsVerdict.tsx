@@ -56,13 +56,13 @@ function Step({
       <div className="flex items-baseline gap-1.5">
         <span
           aria-hidden="true"
-          className="text-fg-muted font-mono text-[0.625rem] tabular-nums"
+          className="text-fg-muted text-caption font-mono tabular-nums"
         >
           {n}
         </span>
         <span className="text-fg text-xs font-medium">{label}</span>
       </div>
-      <p className="text-fg-secondary mt-1 text-[0.6875rem] leading-snug">{detail}</p>
+      <p className="text-fg-secondary text-caption mt-1 leading-snug">{detail}</p>
     </li>
   );
 }
@@ -122,7 +122,7 @@ export function CorsVerdict({ exchange, className }: CorsVerdictProps) {
       </ol>
 
       {blocked ? (
-        <p className="text-fg-muted mt-2 text-[0.625rem] leading-snug">
+        <p className="text-fg-muted text-caption mt-2 leading-snug">
           This is the step people read as &ldquo;the request was blocked&rdquo;. It was
           not. CORS is a rule about who may <em>read</em> a response, enforced by the
           browser on behalf of the page — it is not, and has never been, server-side

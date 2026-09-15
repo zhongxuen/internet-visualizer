@@ -33,12 +33,10 @@ function Ladder({ run }: { run: LookupRun }) {
           className="border-border bg-surface-overlay/40 flex flex-col gap-1 rounded-md border px-3 py-2"
         >
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="text-fg-muted font-mono text-[0.65rem]">
-              {step.index + 1}
-            </span>
+            <span className="text-fg-muted text-caption font-mono">{step.index + 1}</span>
             <span className="text-fg text-sm font-medium">{step.to.label}</span>
             <Badge tone={toneFor(step.outcome)}>{step.outcome}</Badge>
-            <span className="text-fg-muted ml-auto font-mono text-[0.65rem]">
+            <span className="text-fg-muted text-caption ml-auto font-mono">
               {step.durationMs.toFixed(1)} ms
               {step.transport === 'tcp' ? ' · TCP' : ''}
             </span>
@@ -118,7 +116,7 @@ export function LookupView({ run, className }: LookupViewProps) {
           <div className="flex flex-col gap-3">
             <dl className="grid grid-cols-2 gap-3">
               <div>
-                <dt className="text-fg-muted text-[0.65rem] tracking-wider uppercase">
+                <dt className="text-fg-muted text-caption tracking-wider uppercase">
                   Cold
                 </dt>
                 <dd className="text-fg font-mono text-sm">
@@ -126,7 +124,7 @@ export function LookupView({ run, className }: LookupViewProps) {
                 </dd>
               </div>
               <div>
-                <dt className="text-fg-muted text-[0.65rem] tracking-wider uppercase">
+                <dt className="text-fg-muted text-caption tracking-wider uppercase">
                   Warm
                 </dt>
                 <dd className="text-accent font-mono text-sm">

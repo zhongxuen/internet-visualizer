@@ -141,14 +141,14 @@ function LayerRow({
               expanded && 'rotate-90',
             )}
           />
-          <span className="text-fg-muted font-mono text-[0.625rem]">
+          <span className="text-fg-muted text-caption font-mono">
             {ordinal}
             <span className="sr-only"> of {total}</span>
           </span>
-          <Badge layer={layer.layer} className="px-1.5 py-0 text-[0.6875rem]">
+          <Badge layer={layer.layer} className="text-caption px-1.5 py-0">
             {layer.protocol}
           </Badge>
-          <span className="text-fg-muted ml-auto pr-1 text-[0.625rem] whitespace-nowrap">
+          <span className="text-fg-muted text-caption ml-auto pr-1 whitespace-nowrap">
             {layer.fields.length === 1 ? '1 field' : `${layer.fields.length} fields`}
           </span>
         </button>
@@ -162,10 +162,10 @@ function LayerRow({
             />
             {layer.payloadPreview ? (
               <figure className="mt-2">
-                <figcaption className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+                <figcaption className="text-fg-muted text-caption tracking-wider uppercase">
                   Payload
                 </figcaption>
-                <pre className="text-fg-secondary border-border/60 bg-surface mt-1 overflow-x-auto rounded-md border p-2 font-mono text-[0.6875rem] leading-snug whitespace-pre-wrap">
+                <pre className="text-fg-secondary border-border/60 bg-surface text-caption mt-1 overflow-x-auto rounded-md border p-2 font-mono leading-snug whitespace-pre-wrap">
                   {layer.payloadPreview}
                 </pre>
               </figure>
@@ -217,7 +217,7 @@ export function EncapsulationPanel({
     <Panel
       title="Encapsulation"
       aside={
-        <span className="text-fg-muted font-mono text-[0.6875rem]">
+        <span className="text-fg-muted text-caption font-mono">
           {focus.pdu.sizeBytes} B
         </span>
       }
@@ -227,7 +227,7 @@ export function EncapsulationPanel({
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <p className="text-fg font-mono text-xs break-words">{focus.pdu.summary}</p>
-          <p className="text-[0.6875rem]">
+          <p className="text-caption">
             <span className={cn('font-medium', status.tone)}>{status.title}</span>
             {where ? <span className="text-fg-muted"> · {where}</span> : null}
           </p>
@@ -236,7 +236,7 @@ export function EncapsulationPanel({
         {focus.reason ? (
           <p
             className={cn(
-              'border-border/60 bg-surface rounded-md border px-2 py-1.5 text-[0.6875rem] leading-snug',
+              'border-border/60 bg-surface text-caption rounded-md border px-2 py-1.5 leading-snug',
               focus.status === 'dropped' ? 'text-state-error' : 'text-fg-secondary',
             )}
           >
@@ -264,7 +264,7 @@ export function EncapsulationPanel({
           </AnimatePresence>
         </div>
 
-        <p className="text-fg-muted text-[0.6875rem] leading-snug">
+        <p className="text-fg-muted text-caption leading-snug">
           Outermost header first — the order a receiving network card reads them. Each hop
           throws away the frame at the top and builds a new one; everything below it
           crosses the whole path untouched.

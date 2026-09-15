@@ -97,7 +97,7 @@ const EventLine = memo(function EventLine({
           !reached && 'state-dim',
         )}
       >
-        <span className="text-fg-muted w-14 shrink-0 text-right font-mono text-[0.6875rem] tabular-nums">
+        <span className="text-fg-muted text-caption w-14 shrink-0 text-right font-mono tabular-nums">
           {formatTimecode(event.at, durationMs)}
         </span>
         <span className={cn('min-w-0 flex-1', tone.className)}>
@@ -211,7 +211,7 @@ export function EventLog({
     >
       <summary className="focus-visible:outline-focus text-fg-secondary flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-xs font-medium tracking-widest uppercase focus-visible:outline-2 focus-visible:outline-offset-2">
         Event log
-        <span className="text-fg-muted font-mono text-[0.6875rem] normal-case">
+        <span className="text-fg-muted text-caption font-mono normal-case">
           {latestIndex + 1} / {events.length}
         </span>
       </summary>

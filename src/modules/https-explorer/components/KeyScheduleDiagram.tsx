@@ -90,14 +90,14 @@ function KnowledgeCell({
           {items.map((item) => (
             <li
               key={item}
-              className="text-fg-secondary text-[0.5625rem] leading-snug break-words"
+              className="text-fg-secondary text-caption leading-snug break-words"
             >
               {item}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-fg-muted text-[0.5625rem] leading-snug">
+        <p className="text-fg-muted text-caption leading-snug">
           Nothing new. The derivation needs a value this party does not have.
         </p>
       )}
@@ -125,7 +125,7 @@ function StepRow({
   return (
     <li className="flex flex-col gap-1.5">
       {isCutoff ? (
-        <p className="border-state-warn/50 text-state-warn mt-1 flex flex-wrap items-baseline gap-2 border-t border-dashed pt-1.5 text-[0.5625rem] tracking-widest uppercase">
+        <p className="border-state-warn/50 text-state-warn text-caption mt-1 flex flex-wrap items-baseline gap-2 border-t border-dashed pt-1.5 tracking-widest uppercase">
           The observer stops here
           <span className="text-fg-muted tracking-normal normal-case">
             — it holds both public shares and neither private value, and there is no known
@@ -148,16 +148,16 @@ function StepRow({
       >
         <span className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="text-fg text-xs font-medium">
-            <span className="text-fg-muted mr-1.5 font-mono text-[0.625rem]">
+            <span className="text-fg-muted text-caption mr-1.5 font-mono">
               {index + 1}
             </span>
             {step.title}
           </span>
-          <span className="text-fg-muted font-mono text-[0.5625rem]">
+          <span className="text-fg-muted text-caption font-mono">
             RFC {step.reference.rfc} § {step.reference.section}
           </span>
         </span>
-        <span className="text-fg-secondary mt-0.5 block text-[0.625rem] leading-snug">
+        <span className="text-fg-secondary text-caption mt-0.5 block leading-snug">
           {step.explain}
         </span>
       </button>
@@ -178,38 +178,38 @@ function StepRow({
           {step.output ? (
             <dl className="flex flex-col gap-1">
               <div>
-                <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
+                <dt className="text-fg-muted text-caption tracking-wide uppercase">
                   Produces
                 </dt>
-                <dd className="text-fg font-mono text-[0.625rem] break-all">
+                <dd className="text-fg text-caption font-mono break-all">
                   {step.output.name}
                 </dd>
               </div>
               <div>
-                <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
+                <dt className="text-fg-muted text-caption tracking-wide uppercase">
                   Derivation
                 </dt>
-                <dd className="text-fg-secondary font-mono text-[0.5625rem] break-all">
+                <dd className="text-fg-secondary text-caption font-mono break-all">
                   {step.output.derivation}
                 </dd>
               </div>
               <div>
-                <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
+                <dt className="text-fg-muted text-caption tracking-wide uppercase">
                   Transcript it is bound to
                 </dt>
-                <dd className="text-fg-secondary font-mono text-[0.5625rem] break-all">
+                <dd className="text-fg-secondary text-caption font-mono break-all">
                   {step.output.transcript || '(none — this label takes no transcript)'}
                 </dd>
               </div>
               <div>
-                <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
+                <dt className="text-fg-muted text-caption tracking-wide uppercase">
                   Value ({step.output.bytes} bytes)
                 </dt>
-                <dd className="text-fg-muted font-mono text-[0.5625rem] break-all">
+                <dd className="text-fg-muted text-caption font-mono break-all">
                   {step.output.value}
                 </dd>
               </div>
-              <p className="text-fg-muted mt-0.5 text-[0.5625rem] leading-snug">
+              <p className="text-fg-muted text-caption mt-0.5 leading-snug">
                 {step.output.purpose}
               </p>
             </dl>
@@ -219,21 +219,21 @@ function StepRow({
             <ul className="border-border/60 mt-2 flex flex-col gap-1 border-t pt-2">
               {step.keys.map((keys) => (
                 <li key={`${keys.from}-${keys.whoWrites}`} className="min-w-0">
-                  <p className="text-fg-secondary text-[0.5625rem]">
+                  <p className="text-fg-secondary text-caption">
                     <span className="text-fg-muted tracking-wide uppercase">
                       {keys.whoWrites} write keys
                     </span>{' '}
                     — from {keys.from}
                   </p>
-                  <p className="text-fg-muted font-mono text-[0.5625rem] break-all">
+                  <p className="text-fg-muted text-caption font-mono break-all">
                     key ({keys.keyBytes} B) {keys.key}
                   </p>
-                  <p className="text-fg-muted font-mono text-[0.5625rem] break-all">
+                  <p className="text-fg-muted text-caption font-mono break-all">
                     iv ({keys.ivBytes} B) {keys.iv}
                   </p>
                 </li>
               ))}
-              <li className="text-fg-muted text-[0.5625rem] leading-snug">
+              <li className="text-fg-muted text-caption leading-snug">
                 The IV is not a nonce. It is XORed with the record sequence number to make
                 one, which is why the sequence number never has to be transmitted.
               </li>
@@ -255,7 +255,7 @@ function ToyExchange({ schedule }: { schedule: KeySchedule }) {
     <details className="border-border bg-surface rounded-lg border px-2.5 py-2">
       <summary
         className={cn(
-          'text-fg-secondary cursor-pointer text-[0.625rem] font-medium',
+          'text-fg-secondary text-caption cursor-pointer font-medium',
           focusRing,
         )}
       >
@@ -264,25 +264,25 @@ function ToyExchange({ schedule }: { schedule: KeySchedule }) {
       </summary>
       <ol className="mt-1.5 flex flex-col gap-0.5">
         {toy.lines.map((line) => (
-          <li key={line} className="text-fg-secondary font-mono text-[0.5625rem]">
+          <li key={line} className="text-fg-secondary text-caption font-mono">
             {line}
           </li>
         ))}
       </ol>
-      <p className="text-state-warn mt-1.5 text-[0.5625rem] leading-snug">{toy.caveat}</p>
+      <p className="text-state-warn text-caption mt-1.5 leading-snug">{toy.caveat}</p>
 
       <div className="border-border/60 mt-2 border-t pt-2">
-        <p className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
+        <p className="text-fg-muted text-caption tracking-wide uppercase">
           What the observer holds after the real exchange
         </p>
         <ul className="mt-0.5 flex flex-col gap-0.5">
           {exchange.observerHolds.map((item) => (
-            <li key={item} className="text-fg-secondary text-[0.5625rem] leading-snug">
+            <li key={item} className="text-fg-secondary text-caption leading-snug">
               {item}
             </li>
           ))}
         </ul>
-        <p className="text-fg-muted mt-1 text-[0.5625rem] leading-snug">
+        <p className="text-fg-muted text-caption mt-1 leading-snug">
           {exchange.whyObserverFails}
         </p>
       </div>
@@ -312,7 +312,7 @@ export function KeyScheduleDiagram({ schedule, className }: KeyScheduleDiagramPr
       className={cn('max-h-[46rem]', className)}
     >
       <div className="flex flex-col gap-3">
-        <p className="border-state-warn/40 bg-state-warn/8 text-state-warn rounded-lg border px-2.5 py-2 text-[0.625rem] leading-snug">
+        <p className="border-state-warn/40 bg-state-warn/8 text-state-warn text-caption rounded-lg border px-2.5 py-2 leading-snug">
           {schedule.notice}
         </p>
 
@@ -322,10 +322,10 @@ export function KeyScheduleDiagram({ schedule, className }: KeyScheduleDiagramPr
               key={party.key}
               className={cn('rounded-lg border px-2 py-1', PARTY_TONE[party.key])}
             >
-              <p className="text-fg text-[0.625rem] font-medium tracking-widest uppercase">
+              <p className="text-fg text-caption font-medium tracking-widest uppercase">
                 {party.label}
               </p>
-              <p className="text-fg-muted text-[0.5625rem] leading-snug">{party.hint}</p>
+              <p className="text-fg-muted text-caption leading-snug">{party.hint}</p>
             </div>
           ))}
         </div>

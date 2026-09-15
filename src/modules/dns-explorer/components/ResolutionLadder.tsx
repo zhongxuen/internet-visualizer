@@ -119,7 +119,7 @@ export function ResolutionLadder({
     <Panel
       title="Resolution ladder"
       aside={
-        <span className="text-fg-muted text-[0.6875rem]">
+        <span className="text-fg-muted text-caption">
           {summary ? `${summary} · ` : ''}click a rung to seek
         </span>
       }
@@ -145,13 +145,11 @@ export function ResolutionLadder({
                 key={column.id}
                 className="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-2 text-center"
               >
-                <span className="text-fg text-[0.6875rem] font-medium">
-                  {column.label}
-                </span>
-                <span className="text-fg-muted truncate font-mono text-[0.625rem]">
+                <span className="text-fg text-caption font-medium">{column.label}</span>
+                <span className="text-fg-muted text-caption max-w-full font-mono wrap-anywhere">
                   {column.name}
                 </span>
-                <span className="text-fg-dim truncate font-mono text-[0.5625rem]">
+                <span className="text-fg-dim text-caption max-w-full font-mono wrap-anywhere">
                   {column.address}
                 </span>
               </li>
@@ -211,7 +209,7 @@ export function ResolutionLadder({
                       )}
                     >
                       <span
-                        className="text-fg-muted absolute top-2.5 left-1 font-mono text-[0.5625rem] tabular-nums"
+                        className="text-fg-muted text-caption absolute top-2.5 left-1 font-mono tabular-nums"
                         aria-hidden="true"
                       >
                         {time}
@@ -226,7 +224,7 @@ export function ResolutionLadder({
                         <span className="flex flex-col items-center gap-1">
                           <span
                             className={cn(
-                              'max-w-full truncate px-1 font-mono text-[0.6875rem]',
+                              'text-caption max-w-full truncate px-1 font-mono',
                               isFuture ? 'text-fg-muted' : 'text-fg',
                             )}
                           >
@@ -265,7 +263,7 @@ export function ResolutionLadder({
 
                           <span
                             className={cn(
-                              'max-w-full truncate px-1 text-[0.625rem]',
+                              'text-caption max-w-full truncate px-1',
                               TONE_TEXT[rung.tone],
                             )}
                           >

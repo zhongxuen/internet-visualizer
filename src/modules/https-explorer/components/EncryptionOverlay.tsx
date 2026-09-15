@@ -88,7 +88,7 @@ function ObservedRow({
       )}
     >
       {sent ? null : <span className="sr-only">Not sent yet. </span>}
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 font-mono text-[0.5625rem]">
+      <div className="text-caption flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 font-mono">
         <span className={observed.from === 'client' ? 'text-accent' : 'text-state-ok'}>
           {observed.from === 'client' ? 'client → server' : 'server → client'}
         </span>
@@ -104,7 +104,7 @@ function ObservedRow({
       </div>
       <p
         className={cn(
-          'mt-0.5 truncate font-mono text-[0.5625rem]',
+          'text-caption mt-0.5 truncate font-mono',
           observed.plaintext ? 'text-fg-secondary' : 'text-fg-muted',
         )}
       >
@@ -141,7 +141,7 @@ function PlainRow({
       )}
     >
       {sent ? null : <span className="sr-only">Not sent yet. </span>}
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 font-mono text-[0.5625rem]">
+      <div className="text-caption flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 font-mono">
         <span className={from === 'client' ? 'text-accent' : 'text-state-ok'}>
           {from === 'client' ? 'client → server' : 'server → client'}
         </span>
@@ -155,7 +155,7 @@ function PlainRow({
         )}
       </div>
       {plaintext ? (
-        <pre className="text-fg-secondary mt-1 overflow-x-auto font-mono text-[0.5625rem] leading-relaxed whitespace-pre-wrap">
+        <pre className="text-fg-secondary text-caption mt-1 overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap">
           {plaintext}
         </pre>
       ) : null}
@@ -174,17 +174,17 @@ function FactRow({ fact }: { fact: ObserverFact }) {
       )}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <span className="text-fg text-[0.6875rem] font-medium">{fact.label}</span>
+        <span className="text-fg text-caption font-medium">{fact.label}</span>
         <Badge tone={fact.visible ? 'warn' : 'ok'}>
           {fact.visible ? 'visible' : 'hidden'}
         </Badge>
       </div>
       {fact.value ? (
-        <p className="text-fg-secondary mt-0.5 font-mono text-[0.5625rem] break-all">
+        <p className="text-fg-secondary text-caption mt-0.5 font-mono break-all">
           {fact.value}
         </p>
       ) : null}
-      <p className="text-fg-muted mt-1 text-[0.5625rem] leading-snug">{fact.detail}</p>
+      <p className="text-fg-muted text-caption mt-1 leading-snug">{fact.detail}</p>
     </li>
   );
 }
@@ -217,7 +217,7 @@ export function EncryptionOverlay({
               title={option.hint}
               onClick={() => onViewChange(option.value)}
               className={cn(
-                'rounded-md border px-2 py-0.5 text-[0.625rem] font-medium transition-colors',
+                'text-caption rounded-md border px-2 py-0.5 font-medium transition-colors',
                 focusRing,
                 view === option.value
                   ? 'border-accent/60 bg-accent/12 text-fg'
@@ -233,7 +233,7 @@ export function EncryptionOverlay({
       className={cn('max-h-[46rem]', className)}
     >
       <div className="flex flex-col gap-3">
-        <p className="text-fg-secondary text-[0.6875rem] leading-snug">
+        <p className="text-fg-secondary text-caption leading-snug">
           {observer
             ? 'You are the machine in the middle — an ISP router, a café access point, a national tap. Every byte in both directions passes through you, and you are addressed by neither end. This is all of it.'
             : 'You are one of the two endpoints. You hold the traffic keys, so you have the records and their contents. Switch to the observer view to see the same connection from the path.'}
@@ -242,38 +242,38 @@ export function EncryptionOverlay({
         <section aria-labelledby="overlay-outside">
           <h3
             id="overlay-outside"
-            className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+            className="text-fg-muted text-caption font-medium tracking-widest uppercase"
           >
             Outside TLS entirely — the IP and TCP headers
           </h3>
           <dl className="border-state-warn/40 bg-state-warn/8 mt-1.5 grid gap-x-3 gap-y-1 rounded-lg border px-2.5 py-2 sm:grid-cols-2">
             <div>
-              <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
+              <dt className="text-fg-muted text-caption tracking-wide uppercase">
                 IPv4 source → destination
               </dt>
-              <dd className="text-fg-secondary font-mono text-[0.5625rem]">
+              <dd className="text-fg-secondary text-caption font-mono">
                 {CLIENT_IP} → {run.scenario.serverIp}
               </dd>
             </div>
             <div>
-              <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
+              <dt className="text-fg-muted text-caption tracking-wide uppercase">
                 TCP source → destination port
               </dt>
-              <dd className="text-fg-secondary font-mono text-[0.5625rem]">
+              <dd className="text-fg-secondary text-caption font-mono">
                 {CLIENT_PORT} → {HTTPS_PORT} (HTTPS)
               </dd>
             </div>
             <div className="sm:col-span-2">
-              <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">
+              <dt className="text-fg-muted text-caption tracking-wide uppercase">
                 Traffic shape
               </dt>
-              <dd className="text-fg-secondary font-mono text-[0.5625rem]">
+              <dd className="text-fg-secondary text-caption font-mono">
                 {run.wire.length} records · {run.wireBytes} bytes · {span} ms from first
                 byte to last
               </dd>
             </div>
           </dl>
-          <p className="text-fg-muted mt-1 text-[0.5625rem] leading-snug">
+          <p className="text-fg-muted text-caption mt-1 leading-snug">
             TLS protects the payload of a connection. It cannot hide the connection.
             Everything in this box is readable by every machine on the path, in both
             views, whatever version was negotiated.
@@ -283,7 +283,7 @@ export function EncryptionOverlay({
         <section aria-labelledby="overlay-records">
           <h3
             id="overlay-records"
-            className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+            className="text-fg-muted text-caption font-medium tracking-widest uppercase"
           >
             {observer
               ? 'Every record, as the observer reads it'
@@ -321,7 +321,7 @@ export function EncryptionOverlay({
             })}
           </ol>
           {observer ? (
-            <p className="text-fg-muted mt-1 text-[0.5625rem] leading-snug">
+            <p className="text-fg-muted text-caption mt-1 leading-snug">
               The payloads above are placeholder bytes — there is no cryptography in this
               module. What is accurate is the framing: the five-byte header, the type, the
               length, and the instant each record went out. Those are what an observer
@@ -333,7 +333,7 @@ export function EncryptionOverlay({
         <section aria-labelledby="overlay-facts">
           <h3
             id="overlay-facts"
-            className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+            className="text-fg-muted text-caption font-medium tracking-widest uppercase"
           >
             What HTTPS does not hide ({visible.length} of {run.observerFacts.length})
           </h3>
@@ -346,7 +346,7 @@ export function EncryptionOverlay({
             ))}
           </ul>
 
-          <h3 className="text-fg-muted mt-3 text-[0.625rem] font-medium tracking-widest uppercase">
+          <h3 className="text-fg-muted text-caption mt-3 font-medium tracking-widest uppercase">
             What it does hide
           </h3>
           <ul
@@ -359,7 +359,7 @@ export function EncryptionOverlay({
           </ul>
         </section>
 
-        <p className="border-border/60 text-fg-muted border-t pt-2 text-[0.625rem] leading-snug">
+        <p className="border-border/60 text-fg-muted text-caption border-t pt-2 leading-snug">
           A padlock is a claim that the payload is confidential and authentic between you
           and the name on the certificate. It is not a claim of anonymity: the address,
           the hostname, the timing and the sizes all survive it, and website

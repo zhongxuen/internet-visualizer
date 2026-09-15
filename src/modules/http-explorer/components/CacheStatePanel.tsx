@@ -78,7 +78,7 @@ const TIER_RULES: Readonly<Record<CacheTier, string>> = {
 
 function OutcomeCell({ outcome }: { outcome: CacheOutcome | undefined }) {
   if (!outcome) {
-    return <span className="text-fg-muted text-[0.6875rem]">not consulted</span>;
+    return <span className="text-fg-muted text-caption">not consulted</span>;
   }
   return (
     <span className="inline-flex items-center gap-1.5">
@@ -113,18 +113,18 @@ function TierColumn({
         )}
       </div>
 
-      <p className="text-fg-muted mt-1 text-[0.625rem] leading-snug">
+      <p className="text-fg-muted text-caption mt-1 leading-snug">
         {disabled ?? TIER_RULES[tier]}
       </p>
 
       {!disabled && outcome ? (
-        <p className="text-fg-secondary mt-1.5 text-[0.6875rem] leading-snug">
+        <p className="text-fg-secondary text-caption mt-1.5 leading-snug">
           {OUTCOME_NOTES[outcome]}
         </p>
       ) : null}
 
       {disabled ? null : entries.length === 0 ? (
-        <p className="text-fg-muted mt-2 text-[0.6875rem] italic">
+        <p className="text-fg-muted text-caption mt-2 italic">
           Holding nothing. Either nothing storable has come back yet, or something said
           no-store.
         </p>
@@ -136,10 +136,10 @@ function TierColumn({
               className="border-border/60 bg-surface-raised rounded border px-2 py-1.5"
             >
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-fg-secondary truncate font-mono text-[0.6875rem]">
+                <span className="text-fg-secondary text-caption truncate font-mono">
                   {entry.key}
                 </span>
-                <span className="text-fg-muted font-mono text-[0.625rem]">
+                <span className="text-fg-muted text-caption font-mono">
                   {entry.status}
                 </span>
               </div>
@@ -147,11 +147,11 @@ function TierColumn({
                 <Badge tone={entry.freshness.isFresh ? 'ok' : 'warn'}>
                   {entry.label}
                 </Badge>
-                <span className="text-fg-muted text-[0.5625rem]">
+                <span className="text-fg-muted text-caption">
                   {entry.freshness.lifetime.explanation}
                 </span>
                 {entry.revalidations > 0 ? (
-                  <span className="text-fg-muted text-[0.5625rem]">
+                  <span className="text-fg-muted text-caption">
                     · confirmed {entry.revalidations}×
                   </span>
                 ) : null}
@@ -182,7 +182,7 @@ export function CacheStatePanel({
           aria-expanded={showDirectives}
           onClick={() => setShowDirectives((open) => !open)}
           className={cn(
-            'border-border bg-surface text-fg-secondary hover:border-border-strong rounded-md border px-2 py-0.5 text-[0.625rem] transition-colors',
+            'border-border bg-surface text-fg-secondary hover:border-border-strong text-caption rounded-md border px-2 py-0.5 transition-colors',
             focusRing,
           )}
         >
@@ -205,21 +205,21 @@ export function CacheStatePanel({
                     {directive.stored ? 'stored' : 'never stored'}
                   </Badge>
                 </div>
-                <p className="text-fg-secondary mt-1 text-[0.6875rem] leading-snug">
+                <p className="text-fg-secondary text-caption mt-1 leading-snug">
                   {directive.meaning}
                 </p>
-                <p className="text-fg-muted mt-1 text-[0.625rem] leading-snug">
+                <p className="text-fg-muted text-caption mt-1 leading-snug">
                   <strong className="font-medium">Costs:</strong>{' '}
                   {directive.costPerRequest}
                 </p>
-                <p className="text-fg-muted mt-1 text-[0.625rem] leading-snug">
+                <p className="text-fg-muted text-caption mt-1 leading-snug">
                   <strong className="font-medium">Use it for:</strong>{' '}
                   {directive.useItFor}
                 </p>
-                <p className="text-state-warn/90 mt-1 text-[0.625rem] leading-snug">
+                <p className="text-state-warn/90 text-caption mt-1 leading-snug">
                   {directive.misconception}
                 </p>
-                <p className="text-fg-muted mt-1 font-mono text-[0.5625rem]">
+                <p className="text-fg-muted text-caption mt-1 font-mono">
                   {directive.rfc}
                 </p>
               </div>
@@ -228,14 +228,14 @@ export function CacheStatePanel({
         ) : null}
 
         {current ? (
-          <p className="text-fg-secondary text-[0.6875rem] leading-snug">
+          <p className="text-fg-secondary text-caption leading-snug">
             <span className="text-fg font-mono">
               {current.request.method} {current.request.target}
             </span>{' '}
             — {current.cacheReason}
           </p>
         ) : (
-          <p className="text-fg-muted text-[0.6875rem]">
+          <p className="text-fg-muted text-caption">
             Nothing has been asked for yet. Press play.
           </p>
         )}

@@ -108,14 +108,14 @@ function NodeRow({
           */}
           <status.icon aria-hidden="true" className="size-3.5 shrink-0" />
           <span className="text-fg text-xs font-medium">{node.label}</span>
-          <Badge layer={kind.layer} className="px-1.5 py-0 text-[0.625rem]">
+          <Badge layer={kind.layer} className="text-caption px-1.5 py-0">
             {kind.roleLabel}
           </Badge>
           {/*
             The state as a word, not as a colour and not as an outline: this is the view
             that has room to simply say it.
           */}
-          <span className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+          <span className="text-fg-muted text-caption tracking-wider uppercase">
             {status.label}
           </span>
         </span>
@@ -157,11 +157,11 @@ function LinkRow({
           {label(link.from)} <span className="text-fg-muted">to</span> {label(link.to)}
         </span>
         {medium ? (
-          <span className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+          <span className="text-fg-muted text-caption tracking-wider uppercase">
             {medium.label}
           </span>
         ) : null}
-        <span className="text-fg-secondary font-mono text-[0.6875rem] tabular-nums">
+        <span className="text-fg-secondary text-caption font-mono tabular-nums">
           {link.latencyMs} ms
           {link.bandwidthMbps === undefined ? '' : ` · ${link.bandwidthMbps} Mbps`}
         </span>
@@ -211,7 +211,7 @@ export const TopologyList = memo(function TopologyList({
 
       <div className="border-border grid gap-x-6 gap-y-4 border-t px-4 py-3 lg:grid-cols-2">
         <section className="flex min-w-0 flex-col gap-2">
-          <h3 className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase">
+          <h3 className="text-fg-muted text-caption font-medium tracking-widest uppercase">
             Machines
           </h3>
           <ul className="flex flex-col gap-1.5">
@@ -230,7 +230,7 @@ export const TopologyList = memo(function TopologyList({
         </section>
 
         <section className="flex min-w-0 flex-col gap-2">
-          <h3 className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase">
+          <h3 className="text-fg-muted text-caption font-medium tracking-widest uppercase">
             Links
           </h3>
           {topology.links.length === 0 ? (

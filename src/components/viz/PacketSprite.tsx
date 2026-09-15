@@ -186,7 +186,7 @@ export function PacketSprite({
       className={cn(
         'nodrag nopan pointer-events-auto absolute top-0 left-0 z-10',
         'flex items-center gap-1.5 rounded-full border px-2 py-0.5',
-        'text-fg text-[0.625rem] whitespace-nowrap shadow-lg',
+        'text-fg text-caption whitespace-nowrap shadow-lg',
         'focus-visible:outline-focus focus-visible:outline-2 focus-visible:outline-offset-2',
         selected && 'ring-accent ring-2 ring-offset-1 ring-offset-transparent',
       )}

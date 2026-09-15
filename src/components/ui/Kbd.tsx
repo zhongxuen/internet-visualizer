@@ -9,7 +9,7 @@ export interface KbdProps extends HTMLAttributes<HTMLElement> {
 }
 
 const KEY_CAP =
-  'border-border bg-surface-overlay text-fg-secondary inline-flex h-5 min-w-5 items-center justify-center rounded border px-1.5 font-mono text-[0.7rem] leading-none';
+  'border-border bg-surface-overlay text-fg-secondary inline-flex h-5 min-w-5 items-center justify-center rounded border px-1.5 font-mono text-caption leading-none';
 
 /** Keyboard shortcut hint. `<Kbd>Esc</Kbd>` or `<Kbd keys={['Ctrl', 'K']} />`. */
 export function Kbd({ keys, className, children, ...props }: KbdProps) {
@@ -19,7 +19,7 @@ export function Kbd({ keys, className, children, ...props }: KbdProps) {
         {keys.map((key, index) => (
           <span key={key} className="inline-flex items-center gap-1">
             {index > 0 ? (
-              <span aria-hidden="true" className="text-fg-muted text-[0.7rem]">
+              <span aria-hidden="true" className="text-fg-muted text-caption">
                 +
               </span>
             ) : null}

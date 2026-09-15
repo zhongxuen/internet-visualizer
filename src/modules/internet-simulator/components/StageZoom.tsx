@@ -103,7 +103,7 @@ export function StageZoom({
             type="button"
             onClick={() => onSeek(stage.startMs)}
             className={cn(
-              'text-fg-muted hover:text-accent self-start font-mono text-[0.6875rem] underline decoration-dotted underline-offset-2 transition-colors',
+              'text-fg-muted hover:text-accent text-caption self-start font-mono underline decoration-dotted underline-offset-2 transition-colors',
               focusRing,
             )}
           >
@@ -119,13 +119,13 @@ export function StageZoom({
                 className="border-border/60 bg-surface grid gap-0.5 rounded-lg border px-2.5 py-1.5"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <dt className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+                  <dt className="text-fg-muted text-caption tracking-widest uppercase">
                     {fact.label}
                   </dt>
                   <dd className="text-fg font-mono text-xs">{fact.value}</dd>
                 </div>
                 {fact.note ? (
-                  <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+                  <p className="text-fg-secondary text-caption leading-relaxed">
                     {fact.note}
                   </p>
                 ) : null}
@@ -145,7 +145,7 @@ export function StageZoom({
 
         {lines.length > 0 ? (
           <div className="flex flex-col gap-1">
-            <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+            <span className="text-fg-muted text-caption tracking-widest uppercase">
               What this stage said
             </span>
             <ol className="flex flex-col gap-0.5">
@@ -159,12 +159,12 @@ export function StageZoom({
                       focusRing,
                     )}
                   >
-                    <span className="text-fg-muted shrink-0 font-mono text-[0.625rem] tabular-nums">
+                    <span className="text-fg-muted text-caption shrink-0 font-mono tabular-nums">
                       {formatDuration(event.at)}
                     </span>
                     <span
                       className={cn(
-                        'text-[0.6875rem] leading-relaxed',
+                        'text-caption leading-relaxed',
                         event.level === 'warn'
                           ? 'text-state-warn'
                           : event.level === 'error'
@@ -191,12 +191,12 @@ export function StageZoom({
               {handoff.label}
               <ArrowUpRight aria-hidden="true" className="ml-1 size-3.5" />
             </Link>
-            <p className="text-fg-muted font-mono text-[0.625rem] break-all">
+            <p className="text-fg-muted text-caption font-mono break-all">
               {handoff.href}
             </p>
           </div>
         ) : (
-          <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+          <p className="text-fg-muted text-caption leading-relaxed">
             No module of its own: parsing a URL and painting a page are browser behaviour
             rather than protocols, so there is nowhere honest to hand this one off to.
           </p>

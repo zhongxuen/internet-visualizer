@@ -63,7 +63,7 @@ export interface InspectorProps {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase">
+      <h3 className="text-fg-muted text-caption font-medium tracking-widest uppercase">
         {title}
       </h3>
       {children}
@@ -133,7 +133,7 @@ function Notes({ annotations }: { annotations: readonly Annotation[] }) {
           >
             {annotation.text}
             {annotation.reference ? (
-              <span className="text-fg-muted mt-1 block text-[0.6875rem]">
+              <span className="text-fg-muted text-caption mt-1 block">
                 RFC {annotation.reference.rfc}
                 {annotation.reference.section ? ` §${annotation.reference.section}` : ''}
                 {' — '}
@@ -183,13 +183,13 @@ function NodeDetail({
           <span className="text-fg block text-sm font-medium break-words">
             {node.label}
           </span>
-          <span className="text-fg-muted block text-[0.6875rem] tracking-wider uppercase">
+          <span className="text-fg-muted text-caption block tracking-wider uppercase">
             {kind.roleLabel}
           </span>
         </span>
         <span
           className={cn(
-            'flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[0.6875rem] font-medium',
+            'text-caption flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 font-medium',
             status.chip,
           )}
         >
@@ -200,7 +200,7 @@ function NodeDetail({
 
       <p className="text-fg-secondary text-xs leading-snug">{kind.description}</p>
 
-      <Badge layer={kind.layer} className="w-fit px-1.5 py-0 text-[0.6875rem]">
+      <Badge layer={kind.layer} className="text-caption w-fit px-1.5 py-0">
         {kind.layerAction}
       </Badge>
 
@@ -240,7 +240,7 @@ function NodeDetail({
                     <span className="text-fg-secondary min-w-0 flex-1 truncate">
                       {labels.get(otherId) ?? otherId}
                     </span>
-                    <span className="text-fg-muted shrink-0 font-mono text-[0.6875rem]">
+                    <span className="text-fg-muted text-caption shrink-0 font-mono">
                       {link.latencyMs} ms
                     </span>
                   </SelectButton>
@@ -274,7 +274,7 @@ function LinkDetail({
         <span className="text-fg text-sm font-medium break-words">
           {fromLabel} &harr; {toLabel}
         </span>
-        <span className="text-fg-muted text-[0.6875rem] tracking-wider uppercase">
+        <span className="text-fg-muted text-caption tracking-wider uppercase">
           {medium ? medium.label : 'Link'}
         </span>
       </header>
@@ -332,7 +332,7 @@ function PduDetail({ pdu }: { pdu: PDU }) {
     <>
       <header className="flex flex-col gap-1">
         <span className="text-fg font-mono text-sm break-words">{pdu.summary}</span>
-        <span className="text-fg-muted text-[0.6875rem] tracking-wider uppercase">
+        <span className="text-fg-muted text-caption tracking-wider uppercase">
           {outer && inner
             ? `${outer.protocol} carrying ${inner.protocol}`
             : 'Protocol data unit'}

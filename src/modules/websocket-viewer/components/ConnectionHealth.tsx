@@ -97,7 +97,7 @@ function KeepaliveTrace({ run }: { run: KeepaliveRun }) {
           <li
             key={beat.index}
             className={cn(
-              'rounded-lg border px-2 py-1 text-[0.625rem]',
+              'text-caption rounded-lg border px-2 py-1',
               beat.timedOut
                 ? 'border-state-error/50 bg-state-error/10 text-state-error'
                 : 'border-border bg-surface text-fg-secondary',
@@ -112,7 +112,7 @@ function KeepaliveTrace({ run }: { run: KeepaliveRun }) {
         ))}
       </ol>
 
-      <p className="text-fg-muted text-[0.6875rem] leading-relaxed">{run.explain}</p>
+      <p className="text-fg-muted text-caption leading-relaxed">{run.explain}</p>
     </section>
   );
 }
@@ -138,17 +138,17 @@ function BackoffLadder({
       </div>
 
       <p className="text-fg text-xs font-medium">{backoff.explain.headline}</p>
-      <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+      <p className="text-fg-secondary text-caption leading-relaxed">
         {backoff.explain.detail}
       </p>
 
       <table className="w-full border-collapse text-left text-xs">
-        <caption className="text-fg-muted pb-2 text-left text-[0.6875rem] leading-snug">
+        <caption className="text-fg-muted text-caption pb-2 text-left leading-snug">
           The window doubles either way. What the randomisation changes is where inside it
           each client lands.
         </caption>
         <thead>
-          <tr className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+          <tr className="text-fg-muted text-caption tracking-wider uppercase">
             <th scope="col" className="py-1 pr-3 font-medium">
               Attempt
             </th>
@@ -173,11 +173,11 @@ function BackoffLadder({
                   !used && 'state-dim',
                 )}
               >
-                <td className="text-fg py-2 pr-3 font-mono text-[0.6875rem] tabular-nums">
+                <td className="text-fg text-caption py-2 pr-3 font-mono tabular-nums">
                   {attempt.attempt}
                   {used ? '' : ' (not needed)'}
                 </td>
-                <td className="text-fg-muted py-2 pr-3 font-mono text-[0.6875rem] whitespace-nowrap tabular-nums">
+                <td className="text-fg-muted text-caption py-2 pr-3 font-mono whitespace-nowrap tabular-nums">
                   0 – {Math.round(attempt.capMs)} ms
                 </td>
                 <td className="py-2">
@@ -202,7 +202,7 @@ function BackoffLadder({
                         />
                       ) : null}
                     </div>
-                    <span className="text-fg font-mono text-[0.6875rem] tabular-nums">
+                    <span className="text-fg text-caption font-mono tabular-nums">
                       {Math.round(attempt.delayMs)} ms
                     </span>
                   </div>
@@ -213,7 +213,7 @@ function BackoffLadder({
         </tbody>
       </table>
 
-      <p className="text-fg-muted text-[0.625rem] leading-relaxed">
+      <p className="text-fg-muted text-caption leading-relaxed">
         The pale bar is the window, the solid one is where this client actually landed,
         and the amber line is where <em>every</em> client lands with no jitter at all —
         the same instant, every round.

@@ -85,7 +85,7 @@ export function TopologyLegend({
 
       <div className="border-border grid gap-x-6 gap-y-4 border-t px-4 py-3 sm:grid-cols-2">
         <section className="flex flex-col gap-2">
-          <h3 className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase">
+          <h3 className="text-fg-muted text-caption font-medium tracking-widest uppercase">
             Machines
           </h3>
           <ul className="flex flex-col gap-2">
@@ -106,7 +106,7 @@ export function TopologyLegend({
                       <span className="text-fg text-xs font-medium">
                         {token.roleLabel}
                       </span>
-                      <Badge layer={token.layer} className="px-1.5 py-0 text-[0.625rem]">
+                      <Badge layer={token.layer} className="text-caption px-1.5 py-0">
                         {token.layerAction}
                       </Badge>
                     </span>
@@ -121,7 +121,7 @@ export function TopologyLegend({
         </section>
 
         <section className="flex flex-col gap-2">
-          <h3 className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase">
+          <h3 className="text-fg-muted text-caption font-medium tracking-widest uppercase">
             Hops
           </h3>
           <ul className="flex flex-col gap-2">

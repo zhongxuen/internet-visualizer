@@ -89,7 +89,7 @@ export function NodeDetailTab({
 
   return (
     <section className={cn('border-border flex flex-col gap-2 border-t pt-3', className)}>
-      <h3 className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase">
+      <h3 className="text-fg-muted text-caption font-medium tracking-widest uppercase">
         Why it is here
       </h3>
 
@@ -115,7 +115,7 @@ export function NodeDetailTab({
         >
           <Route aria-hidden="true" className="size-3.5 shrink-0" />
           <span className="min-w-0 flex-1 truncate">Go to this stop on the tour</span>
-          <span className="text-fg-muted shrink-0 font-mono text-[0.6875rem]">
+          <span className="text-fg-muted text-caption shrink-0 font-mono">
             {step.index + 1}/{tour.steps.length}
           </span>
         </button>

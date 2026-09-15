@@ -1,6 +1,9 @@
 /*
  * Design tokens — the single source of colour, layer semantics, and timing.
  *
+ * Also the type scale and the hit-target sizes (docs/implementation/uiux.md §5.7), which
+ * are at the bottom of the file.
+ *
  * Rules (docs/implementation/02-design-system-and-shell.md, step 1):
  *
  *   1. No raw hex outside this file. Components reach for a token, never a value.
@@ -82,6 +85,15 @@
   --default-transition-duration: var(--dur-fast);
   --default-transition-timing-function: var(--ease-out);
   --ease-in-out: var(--ease-inout);
+
+  /* --- Hit targets -------------------------------------------------------- */
+  /*
+   * Two sizes, both in rem so "Large text" grows them with the words they hold.
+   * `--target-min` is 44px, the size of every primary control. `--target-floor` is 24px,
+   * WCAG 2.5.8's absolute minimum, and nothing that can be pressed may be smaller.
+   */
+  --target-min: 2.75rem;
+  --target-floor: 1.5rem;
 }
 
 /*
@@ -159,4 +171,47 @@
   --color-state-warn: var(--state-warn);
   --color-state-error: var(--state-error);
   --color-state-pending: var(--state-pending);
+
+  /* `min-h-target`, `min-w-target`, `size-target`, and the `-floor` of each. */
+  --spacing-target: var(--target-min);
+  --spacing-target-floor: var(--target-floor);
+}
+
+/*
+ * The type scale -- the only font sizes the product names.
+ *
+ * `--text-caption` is the floor: nothing on screen is drawn smaller than 12px, and
+ * `tests/type-scale.test.ts` fails any arbitrary size in `src` that would go under it.
+ * Body text is `body` (16px) and the step caption is `story` (20px).
+ *
+ * Every size and every line height is relative to the root font size, so the "Large
+ * text" preference -- `<html data-text-size="large">`, which globals.css turns into a
+ * 112.5% root -- scales the whole scale, the hit targets above, and Tailwind's own
+ * `text-xs`..`text-3xl` in one move. Line heights are unitless for the same reason.
+ * The first five steps sit exactly on Tailwind's xs / sm / base / lg / xl, so a class
+ * already using those is already on the scale.
+ *
+ * These are theme variables proper rather than aliases of a `:root` value, because
+ * `--text-*` is Tailwind's font-size namespace and the aliasing pattern above would have
+ * to invent a second name for each. Note the older colour tokens `--text-primary` ..
+ * `--text-dim` share the prefix but live only in `:root`, so they make no utility.
+ * `static` emits every step whether or not a utility uses it yet, so a stylesheet can
+ * reach for `var(--text-story)` directly. `src/lib/cn.ts` registers the same names with
+ * tailwind-merge; add a step there when you add one here.
+ */
+@theme static {
+  --text-caption: 0.75rem;
+  --text-caption--line-height: calc(1 / 0.75);
+  --text-small: 0.875rem;
+  --text-small--line-height: calc(1.25 / 0.875);
+  --text-body: 1rem;
+  --text-body--line-height: 1.5;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: calc(1.75 / 1.125);
+  --text-story: 1.25rem;
+  --text-story--line-height: 1.4;
+  --text-title: 1.875rem;
+  --text-title--line-height: 1.2;
+  --text-display: 2.75rem;
+  --text-display--line-height: 1.1;
 }

@@ -90,7 +90,7 @@ export function StatusCodeMap({ active, onSelect, className }: StatusCodeMapProp
     <Panel
       title="Status codes"
       aside={
-        <span className="text-fg-muted text-[0.625rem]">
+        <span className="text-fg-muted text-caption">
           click a lit code to load a run that produces it
         </span>
       }
@@ -110,8 +110,8 @@ export function StatusCodeMap({ active, onSelect, className }: StatusCodeMapProp
                 >
                   {group.range}
                 </h3>
-                <span className="text-fg-secondary text-[0.6875rem]">{group.label}</span>
-                <span className="text-fg-muted text-[0.625rem]">{group.summary}</span>
+                <span className="text-fg-secondary text-caption">{group.label}</span>
+                <span className="text-fg-muted text-caption">{group.summary}</span>
               </div>
 
               <ul className="mt-1.5 flex flex-wrap gap-1">
@@ -139,7 +139,7 @@ export function StatusCodeMap({ active, onSelect, className }: StatusCodeMapProp
                       <span className="font-mono text-xs tabular-nums">
                         {status.code}
                       </span>
-                      <span className="max-w-[5.5rem] truncate text-[0.5625rem]">
+                      <span className="text-caption max-w-[5.5rem] truncate">
                         {status.reason}
                       </span>
                       {status.heuristicallyCacheable ? (
@@ -183,7 +183,7 @@ export function StatusCodeMap({ active, onSelect, className }: StatusCodeMapProp
           );
         })}
 
-        <p className="text-fg-muted border-border/60 border-t pt-2 text-[0.625rem] leading-snug">
+        <p className="text-fg-muted border-border/60 text-caption border-t pt-2 leading-snug">
           A dot marks a code that is <em>heuristically cacheable</em> — reusable by a
           cache with no explicit freshness information at all. 301 has one and 302 does
           not, which is why a permanent redirect set by mistake is remembered long after

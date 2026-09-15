@@ -108,7 +108,7 @@ const HopRowView = memo(function HopRowView({
           <th
             scope="colgroup"
             colSpan={HEADINGS.length}
-            className="border-border/60 text-fg-secondary border-t px-2 pt-2.5 pb-1 text-left font-mono text-[0.6875rem] font-normal"
+            className="border-border/60 text-fg-secondary text-caption border-t px-2 pt-2.5 pb-1 text-left font-mono font-normal"
           >
             {row.summary}
           </th>
@@ -137,7 +137,7 @@ const HopRowView = memo(function HopRowView({
               onSeek(row.at);
             }}
             className={cn(
-              'text-fg-muted hover:text-fg rounded px-1 font-mono text-[0.6875rem]',
+              'text-fg-muted hover:text-fg text-caption rounded px-1 font-mono',
               focusRing,
               isCurrent && 'text-accent',
             )}
@@ -162,12 +162,12 @@ const HopRowView = memo(function HopRowView({
             )}
           </span>
           {row.via.length > 0 ? (
-            <span className="text-fg-muted block text-[0.625rem]">
+            <span className="text-fg-muted text-caption block">
               via {row.via.map(label).join(', ')} — unchanged
             </span>
           ) : null}
           {row.reason ? (
-            <span className="text-state-error block text-[0.625rem] leading-snug">
+            <span className="text-state-error text-caption block leading-snug">
               {row.reason}
             </span>
           ) : null}
@@ -175,13 +175,13 @@ const HopRowView = memo(function HopRowView({
 
         <td className="text-fg px-2 py-1.5 font-mono">{row.addressing.ttl}</td>
 
-        <td className="text-fg-secondary px-2 py-1.5 font-mono text-[0.6875rem] whitespace-nowrap">
+        <td className="text-fg-secondary text-caption px-2 py-1.5 font-mono whitespace-nowrap">
           {row.addressing.sourceMac}
           <span className="text-fg-muted"> → </span>
           {row.addressing.destinationMac}
         </td>
 
-        <td className="text-fg-secondary px-2 py-1.5 font-mono text-[0.6875rem] whitespace-nowrap">
+        <td className="text-fg-secondary text-caption px-2 py-1.5 font-mono whitespace-nowrap">
           {row.addressing.source}
           <span className="text-fg-muted"> → </span>
           {row.addressing.destination}
@@ -193,7 +193,7 @@ const HopRowView = memo(function HopRowView({
 
         <td className="px-2 py-1.5">
           {row.changes.length === 0 ? (
-            <span className="text-fg-muted text-[0.625rem]">
+            <span className="text-fg-muted text-caption">
               {row.hop === 1 && row.kind === 'crossing' ? 'first hop' : '—'}
             </span>
           ) : (
@@ -202,7 +202,7 @@ const HopRowView = memo(function HopRowView({
                 <li
                   key={change.text}
                   className={cn(
-                    'font-mono text-[0.625rem] leading-snug whitespace-nowrap',
+                    'text-caption font-mono leading-snug whitespace-nowrap',
                     CHANGE_TONE[change.kind],
                   )}
                 >
@@ -256,7 +256,7 @@ export function HopTable({
     <Panel
       title="Hop by hop"
       aside={
-        <span className="text-fg-muted text-[0.6875rem]">
+        <span className="text-fg-muted text-caption">
           {rows.length} hops · click a row to seek
         </span>
       }
@@ -271,7 +271,7 @@ export function HopTable({
             it and what the sending machine changed first. Each row seeks the timeline.
           </caption>
           <thead className="bg-surface-raised sticky top-0 z-10">
-            <tr className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+            <tr className="text-fg-muted text-caption tracking-wider uppercase">
               {HEADINGS.map((heading) => (
                 <th
                   key={heading}

@@ -51,7 +51,7 @@ function valueParts(value: string): string[] {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase">
+      <span className="text-fg-muted text-caption font-medium tracking-widest uppercase">
         {label}
       </span>
       <p className="text-fg-secondary text-xs leading-relaxed">{children}</p>
@@ -124,7 +124,7 @@ export function HeaderExplainer({ name, value, className }: HeaderExplainerProps
           <Badge tone={entry.reference.kind === 'none' ? 'warn' : 'neutral'}>
             {formatSpec(entry.reference)}
           </Badge>
-          <span className="text-fg-muted text-[0.6875rem]">
+          <span className="text-fg-muted text-caption">
             {entry.reference.kind === 'none'
               ? entry.reference.note
               : entry.reference.title}

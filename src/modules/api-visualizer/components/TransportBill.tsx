@@ -115,7 +115,7 @@ export function TransportBill({
         <div className="min-w-0 overflow-x-auto">
           <table className="w-full min-w-[22rem] text-left text-xs">
             <thead>
-              <tr className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+              <tr className="text-fg-muted text-caption tracking-widest uppercase">
                 <th scope="col" className="py-1 font-normal">
                   Measure
                 </th>
@@ -138,7 +138,7 @@ export function TransportBill({
                   <tr key={row.label} className="border-border/60 border-t align-top">
                     <th scope="row" className="py-1.5 pr-2 font-normal">
                       <span className="text-fg">{row.label}</span>
-                      <span className="text-fg-muted block text-[0.625rem] leading-snug">
+                      <span className="text-fg-muted text-caption block leading-snug">
                         {row.hint}
                       </span>
                     </th>
@@ -164,12 +164,12 @@ export function TransportBill({
               <tr className="border-border/60 border-t align-top">
                 <th scope="row" className="py-1.5 pr-2 font-normal">
                   <span className="text-fg">Data-source calls on the server</span>
-                  <span className="text-fg-muted block text-[0.625rem] leading-snug">
+                  <span className="text-fg-muted text-caption block leading-snug">
                     Work the client stopped doing and somebody still pays for. The second
                     number is the same query with per-field batching.
                   </span>
                 </th>
-                <td className="text-fg-muted py-1.5 text-right font-mono text-[0.625rem]">
+                <td className="text-fg-muted text-caption py-1.5 text-right font-mono">
                   one per endpoint
                 </td>
                 <td className="py-1.5 text-right font-mono tabular-nums">
@@ -186,7 +186,7 @@ export function TransportBill({
 
         <ul className="flex flex-col gap-1">
           {comparison.notes.map((note) => (
-            <li key={note} className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+            <li key={note} className="text-fg-secondary text-caption leading-relaxed">
               — {note}
             </li>
           ))}
@@ -200,7 +200,7 @@ export function TransportBill({
         />
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+          <span className="text-fg-muted text-caption tracking-widest uppercase">
             Where each one is stronger
           </span>
           <ul className="flex flex-col gap-1">
@@ -212,18 +212,18 @@ export function TransportBill({
                 <p className="text-fg text-xs font-medium">{tradeoff.topic}</p>
                 <div className="mt-1 grid gap-1.5 sm:grid-cols-2">
                   <div>
-                    <p className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+                    <p className="text-fg-muted text-caption tracking-widest uppercase">
                       REST
                     </p>
-                    <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+                    <p className="text-fg-secondary text-caption leading-relaxed">
                       {tradeoff.rest}
                     </p>
                   </div>
                   <div>
-                    <p className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+                    <p className="text-fg-muted text-caption tracking-widest uppercase">
                       GraphQL
                     </p>
-                    <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+                    <p className="text-fg-secondary text-caption leading-relaxed">
                       {tradeoff.graphql}
                     </p>
                   </div>

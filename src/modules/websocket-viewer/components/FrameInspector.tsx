@@ -111,7 +111,7 @@ function BitDiagram({ record }: { record: FrameRecord }) {
     <div className="flex flex-col gap-1.5">
       <div
         aria-hidden="true"
-        className="text-fg-muted grid gap-px font-mono text-[0.5rem] tabular-nums"
+        className="text-fg-muted text-caption grid gap-px font-mono tabular-nums"
         style={{ gridTemplateColumns: `2.75rem repeat(${ROW_BITS}, minmax(0, 1fr))` }}
       >
         <span />
@@ -130,7 +130,7 @@ function BitDiagram({ record }: { record: FrameRecord }) {
         >
           <span
             aria-hidden="true"
-            className="text-fg-muted self-center pr-1 text-right font-mono text-[0.5625rem] tabular-nums"
+            className="text-fg-muted text-caption self-center pr-1 text-right font-mono tabular-nums"
           >
             {row * 4}
           </span>
@@ -138,7 +138,7 @@ function BitDiagram({ record }: { record: FrameRecord }) {
             <div
               key={`${segment.field.id}-${segment.start}`}
               className={cn(
-                'min-w-0 truncate rounded-sm border px-1 py-1 text-center text-[0.5625rem] font-medium',
+                'text-caption min-w-0 truncate rounded-sm border px-1 py-1 text-center font-medium',
                 fieldTone(segment.field.id),
               )}
               style={{ gridColumn: `${segment.start + 2} / span ${segment.span}` }}
@@ -150,7 +150,7 @@ function BitDiagram({ record }: { record: FrameRecord }) {
         </div>
       ))}
 
-      <p className="text-fg-muted text-[0.625rem] leading-relaxed">
+      <p className="text-fg-muted text-caption leading-relaxed">
         Each row is 32 bits, laid out as RFC 6455 § 5.2 draws it. The byte offset is in
         the gutter.{' '}
         {truncated
@@ -167,11 +167,11 @@ function BitDiagram({ record }: { record: FrameRecord }) {
 function FieldTable({ record }: { record: FrameRecord }) {
   return (
     <table className="w-full border-collapse text-left text-xs">
-      <caption className="text-fg-muted pb-2 text-left text-[0.6875rem] leading-snug">
+      <caption className="text-fg-muted text-caption pb-2 text-left leading-snug">
         Fields in wire order, with the bit each one starts at.
       </caption>
       <thead>
-        <tr className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+        <tr className="text-fg-muted text-caption tracking-wider uppercase">
           <th scope="col" className="py-1 pr-3 font-medium">
             Bit
           </th>
@@ -186,26 +186,26 @@ function FieldTable({ record }: { record: FrameRecord }) {
       <tbody>
         {record.layout.fields.map((field) => (
           <tr key={field.id} className="border-border/60 border-t align-top">
-            <td className="text-fg-muted py-2 pr-3 font-mono text-[0.6875rem] whitespace-nowrap tabular-nums">
+            <td className="text-fg-muted text-caption py-2 pr-3 font-mono whitespace-nowrap tabular-nums">
               {field.bitOffset}
               <span className="text-fg-dim"> +{field.bits}</span>
             </td>
             <td className="py-2 pr-3">
               <span className="text-fg font-medium">{field.name}</span>
-              <p className="text-fg-muted mt-1 text-[0.6875rem] leading-relaxed">
+              <p className="text-fg-muted text-caption mt-1 leading-relaxed">
                 {field.explain}
               </p>
-              <p className="text-fg-muted mt-1 text-[0.625rem]">
+              <p className="text-fg-muted text-caption mt-1">
                 RFC {field.reference.rfc}
                 {field.reference.section ? ` § ${field.reference.section}` : ''}
               </p>
             </td>
             <td className="py-2">
-              <code className="text-fg-secondary font-mono text-[0.6875rem] break-all">
+              <code className="text-fg-secondary text-caption font-mono break-all">
                 {field.value}
               </code>
               {field.binary ? (
-                <code className="text-accent mt-1 block font-mono text-[0.6875rem]">
+                <code className="text-accent text-caption mt-1 block font-mono">
                   {field.binary}
                 </code>
               ) : null}
@@ -233,14 +233,14 @@ function LengthEncodings({ record }: { record: FrameRecord }) {
             )}
           >
             <div className="flex items-baseline justify-between gap-2">
-              <code className="text-fg font-mono text-[0.6875rem]">{info.encoding}</code>
+              <code className="text-fg text-caption font-mono">{info.encoding}</code>
               {active ? <Badge tone="accent">this frame</Badge> : null}
             </div>
-            <p className="text-fg-secondary mt-1 text-[0.6875rem]">{info.range}</p>
-            <p className="text-fg-muted mt-1 text-[0.625rem] leading-relaxed">
+            <p className="text-fg-secondary text-caption mt-1">{info.range}</p>
+            <p className="text-fg-muted text-caption mt-1 leading-relaxed">
               7-bit field holds {info.field}. Header: {info.headerBytes}.
             </p>
-            <p className="text-fg-muted mt-1 text-[0.625rem] leading-relaxed">
+            <p className="text-fg-muted text-caption mt-1 leading-relaxed">
               {info.detail}
             </p>
           </li>
@@ -271,12 +271,12 @@ function Masking({ record }: { record: FrameRecord }) {
           {explanation.required ? 'required' : 'forbidden'}
         </Badge>
       </div>
-      <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+      <p className="text-fg-secondary text-caption leading-relaxed">
         {explanation.detail}
       </p>
 
       {key !== undefined && masked !== undefined ? (
-        <dl className="flex flex-col gap-1 text-[0.6875rem]">
+        <dl className="text-caption flex flex-col gap-1">
           <div className="flex flex-wrap gap-x-2">
             <dt className="text-fg-muted w-28 shrink-0">Masking key</dt>
             <dd className="text-fg font-mono break-all">
@@ -307,7 +307,7 @@ function Masking({ record }: { record: FrameRecord }) {
          * mapping a screen reader builds from the list -- axe's `definition-list` rule.
          * The sentence is a note about the whole table, not a value in it.
          */
-        <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+        <p className="text-fg-muted text-caption leading-relaxed">
           <code>transformed[i] = original[i] XOR key[i mod 4]</code> — its own inverse,
           which is why one routine serves both ends. It is not encryption: the key is in
           the clear, four bytes ahead of the data it masks.
@@ -361,7 +361,7 @@ export function FrameInspector({ record, className }: FrameInspectorProps) {
           </div>
           <p className="text-fg-secondary text-xs leading-relaxed">{record.why}</p>
           {record.notes.map((note) => (
-            <p key={note} className="text-fg-muted text-[0.6875rem] leading-relaxed">
+            <p key={note} className="text-fg-muted text-caption leading-relaxed">
               {note}
             </p>
           ))}
@@ -370,18 +370,18 @@ export function FrameInspector({ record, className }: FrameInspectorProps) {
         <BitDiagram record={record} />
 
         <div className="border-border bg-surface rounded-lg border px-3 py-2">
-          <h4 className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+          <h4 className="text-fg-muted text-caption tracking-wider uppercase">
             The bytes on the wire
           </h4>
-          <code className="text-fg-secondary mt-1 block font-mono text-[0.6875rem] leading-relaxed break-all">
+          <code className="text-fg-secondary text-caption mt-1 block font-mono leading-relaxed break-all">
             {record.wireHex}
           </code>
           {text === undefined ? null : (
-            <p className="text-fg-muted mt-1 text-[0.6875rem] leading-relaxed">
+            <p className="text-fg-muted text-caption mt-1 leading-relaxed">
               Payload as text: <span className="text-fg-secondary">{text}</span>
             </p>
           )}
-          <p className="text-fg-muted mt-1 text-[0.625rem] leading-relaxed">
+          <p className="text-fg-muted text-caption mt-1 leading-relaxed">
             {record.layout.headerBytes} bytes of header for {record.layout.payloadBytes}{' '}
             of payload — {Math.round(record.layout.overheadRatio * 100)}% overhead. The
             equivalent HTTP request would have cost several hundred bytes of field lines
@@ -395,7 +395,7 @@ export function FrameInspector({ record, className }: FrameInspectorProps) {
           <h4 className="text-fg-secondary text-xs font-medium tracking-widest uppercase">
             The three length encodings
           </h4>
-          <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+          <p className="text-fg-muted text-caption leading-relaxed">
             And the encoding must be the <em>minimal</em> one. A 100-byte payload sent
             with the 16-bit escape is a protocol error, not merely wasteful — two legal
             spellings of one frame is how two parsers come to disagree about where the

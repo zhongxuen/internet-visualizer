@@ -79,7 +79,7 @@ function HandshakeTrack({
           </Badge>
           {active ? <Badge tone="accent">this run</Badge> : null}
         </span>
-        <span className="text-fg-secondary font-mono text-[0.625rem] tabular-nums">
+        <span className="text-fg-secondary text-caption font-mono tabular-nums">
           {track.applicationDataAt} ms
         </span>
       </div>
@@ -117,7 +117,7 @@ function HandshakeTrack({
             className="border-accent absolute inset-y-0 border-l border-dashed"
             style={{ left: percent(encryptionAt) }}
           >
-            <span className="text-accent absolute -top-0.5 left-1 font-mono text-[0.5rem] whitespace-nowrap">
+            <span className="text-accent text-caption absolute -top-0.5 left-1 font-mono whitespace-nowrap">
               encryption starts
             </span>
           </span>
@@ -128,7 +128,7 @@ function HandshakeTrack({
           className="border-state-ok absolute inset-y-0 border-l"
           style={{ left: percent(track.applicationDataAt) }}
         >
-          <span className="text-state-ok absolute -bottom-0.5 left-1 font-mono text-[0.5rem] whitespace-nowrap">
+          <span className="text-state-ok text-caption absolute -bottom-0.5 left-1 font-mono whitespace-nowrap">
             request can go
           </span>
         </span>
@@ -173,7 +173,7 @@ export function VersionComparison({
     <Panel
       title="TLS 1.2 vs TLS 1.3"
       aside={
-        <span className="text-fg-muted text-[0.625rem]">
+        <span className="text-fg-muted text-caption">
           same 40 ms round trip, one scale
         </span>
       }
@@ -192,7 +192,7 @@ export function VersionComparison({
           ))}
         </ul>
 
-        <p className="text-fg-secondary text-[0.6875rem] leading-snug">
+        <p className="text-fg-secondary text-caption leading-snug">
           TLS 1.2 waits <span className="text-fg font-mono">{extra} ms</span> longer
           before the request can leave — one extra round trip, on every new connection, to
           every origin. It also starts encrypting a full round trip later, which is why
@@ -208,13 +208,13 @@ export function VersionComparison({
           </caption>
           <thead>
             <tr className="border-border border-b">
-              <th className="text-fg-muted py-1 pr-2 text-[0.5625rem] font-medium tracking-widest uppercase">
+              <th className="text-fg-muted text-caption py-1 pr-2 font-medium tracking-widest uppercase">
                 Aspect
               </th>
-              <th className="text-fg-muted py-1 pr-2 text-[0.5625rem] font-medium tracking-widest uppercase">
+              <th className="text-fg-muted text-caption py-1 pr-2 font-medium tracking-widest uppercase">
                 TLS 1.2
               </th>
-              <th className="text-fg-muted py-1 text-[0.5625rem] font-medium tracking-widest uppercase">
+              <th className="text-fg-muted text-caption py-1 font-medium tracking-widest uppercase">
                 TLS 1.3
               </th>
             </tr>
@@ -228,21 +228,18 @@ export function VersionComparison({
                   !row.improved && 'bg-state-warn/8',
                 )}
               >
-                <th
-                  scope="row"
-                  className="text-fg py-1.5 pr-2 text-[0.625rem] font-medium"
-                >
+                <th scope="row" className="text-fg text-caption py-1.5 pr-2 font-medium">
                   {row.aspect}
-                  <span className="text-fg-muted mt-0.5 block font-mono text-[0.5rem] font-normal">
+                  <span className="text-fg-muted text-caption mt-0.5 block font-mono font-normal">
                     RFC {row.reference.rfc} § {row.reference.section}
                   </span>
                 </th>
-                <td className="text-fg-secondary py-1.5 pr-2 text-[0.625rem] leading-snug">
+                <td className="text-fg-secondary text-caption py-1.5 pr-2 leading-snug">
                   {row.tls12}
                 </td>
                 <td
                   className={cn(
-                    'py-1.5 text-[0.625rem] leading-snug',
+                    'text-caption py-1.5 leading-snug',
                     row.improved ? 'text-state-ok' : 'text-state-warn',
                   )}
                 >
@@ -253,14 +250,14 @@ export function VersionComparison({
           </tbody>
         </table>
 
-        <p className="text-fg-muted text-[0.5625rem] leading-snug">
+        <p className="text-fg-muted text-caption leading-snug">
           The shaded row is the one where TLS 1.3 is not simply better. 0-RTT early data
           buys a round trip by sending the request under a key derived from a ticket, and
           a key derived from a ticket cannot be fresh — so a recorded 0-RTT flight can be
           replayed. It is safe only for requests that are safe to run twice.
         </p>
 
-        <p className="text-fg-muted border-border/60 border-t pt-2 text-[0.625rem] leading-snug">
+        <p className="text-fg-muted border-border/60 text-caption border-t pt-2 leading-snug">
           Most of what happened between the two versions is <em>removal</em>:
           renegotiation, compression, static RSA key exchange, custom Diffie–Hellman
           groups, CBC, and every hash weaker than SHA-256 are all gone. Static RSA is the

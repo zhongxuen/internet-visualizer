@@ -94,7 +94,7 @@ export function segmentId(direction: 'request' | 'response', index: number): str
 function SectionHeading({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
   return (
     <div className="border-border/60 bg-surface-raised flex items-center justify-between gap-2 border-b px-3 py-1.5">
-      <span className="text-fg-secondary text-[0.625rem] font-medium tracking-widest uppercase">
+      <span className="text-fg-secondary text-caption font-medium tracking-widest uppercase">
         {children}
       </span>
       {aside}
@@ -128,7 +128,7 @@ function Line({
     return (
       <div className="border-state-warn/40 bg-state-warn/5 my-0.5 flex items-baseline gap-2 border-l-2 py-0.5 pl-2">
         <span className="font-mono text-xs">{terminator}</span>
-        <span className="text-state-warn/90 text-[0.625rem] italic">
+        <span className="text-state-warn/90 text-caption italic">
           the blank line — everything above is fields, everything below is body
         </span>
       </div>
@@ -267,7 +267,7 @@ function FrameMessage({
   return (
     <div className="flex flex-col gap-2 px-2 py-2">
       <div className="border-accent/30 bg-accent/5 rounded border px-2 py-1.5">
-        <div className="flex flex-wrap items-baseline gap-2 font-mono text-[0.6875rem]">
+        <div className="text-caption flex flex-wrap items-baseline gap-2 font-mono">
           <span className="text-accent font-medium">HEADERS</span>
           <span className="text-fg-muted">stream={streamId}</span>
           <span className="text-fg-muted">
@@ -325,7 +325,7 @@ function FrameMessage({
 
       {bodyBytes > 0 ? (
         <div className="border-border bg-surface rounded border px-2 py-1.5">
-          <div className="flex flex-wrap items-baseline gap-2 font-mono text-[0.6875rem]">
+          <div className="text-caption flex flex-wrap items-baseline gap-2 font-mono">
             <span className="text-fg font-medium">DATA</span>
             <span className="text-fg-muted">stream={streamId}</span>
             <span className="text-fg-muted">flags=END_STREAM</span>
@@ -337,7 +337,7 @@ function FrameMessage({
         </div>
       ) : null}
 
-      <p className="text-fg-muted text-[0.625rem] leading-snug">
+      <p className="text-fg-muted text-caption leading-snug">
         No blank line and no CRLF: the frame header carries a length, so there is nothing
         for a delimiter to do. Field names are lower-case because {version} requires it.
         The same fields cost {rawHeaderBytes} B as HTTP/1.1 text, {firstPass} B here on
@@ -377,7 +377,7 @@ export function WireView({
               aria-labelledby={groupId}
               className="flex items-center gap-1"
             >
-              <span id={groupId} className="text-fg-muted text-[0.625rem]">
+              <span id={groupId} className="text-fg-muted text-caption">
                 CRLF
               </span>
               {CRLF_MODES.map((mode) => {
@@ -390,7 +390,7 @@ export function WireView({
                     title={mode.hint}
                     onClick={() => onCrlfChange(mode.value)}
                     className={cn(
-                      'rounded-md border px-1.5 py-0.5 font-mono text-[0.625rem] transition-colors',
+                      'text-caption rounded-md border px-1.5 py-0.5 font-mono transition-colors',
                       focusRing,
                       active
                         ? 'border-accent/60 bg-accent/12 text-fg'
@@ -410,16 +410,14 @@ export function WireView({
       className={cn('max-h-[34rem]', className)}
     >
       {note ? (
-        <p className="border-state-warn/30 bg-state-warn/5 text-fg-secondary border-b px-3 py-2 text-[0.6875rem] leading-snug">
+        <p className="border-state-warn/30 bg-state-warn/5 text-fg-secondary text-caption border-b px-3 py-2 leading-snug">
           {note}
         </p>
       ) : null}
 
       <SectionHeading
         aside={
-          <span className="text-fg-muted font-mono text-[0.625rem]">
-            {request.bytes} B
-          </span>
+          <span className="text-fg-muted text-caption font-mono">{request.bytes} B</span>
         }
       >
         Request · {request.label}
@@ -445,7 +443,7 @@ export function WireView({
 
       <SectionHeading
         aside={
-          <span className="text-fg-muted font-mono text-[0.625rem]">
+          <span className="text-fg-muted text-caption font-mono">
             {response.bytes} B{response.bodyless ? ' · no body' : ''}
           </span>
         }

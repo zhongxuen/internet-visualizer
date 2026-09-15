@@ -189,7 +189,7 @@ export function Timeline({
         />
       </div>
 
-      <div className="text-fg-muted flex justify-between font-mono text-[0.6875rem]">
+      <div className="text-fg-muted text-caption flex justify-between font-mono">
         <span ref={elapsedRef}>{formatTimecode(virtualTime, durationMs)}</span>
         <span>{total}</span>
       </div>

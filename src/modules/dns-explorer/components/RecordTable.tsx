@@ -128,21 +128,19 @@ function Section({
     <div className="flex flex-col">
       <div className="bg-surface/60 border-border/60 flex items-baseline justify-between gap-2 border-t px-2 py-1.5">
         {/* `h3`, not `h4`: the nearest heading above this is the panel's `h2`. */}
-        <h3 className="text-fg-secondary text-[0.6875rem] font-medium tracking-wider uppercase">
+        <h3 className="text-fg-secondary text-caption font-medium tracking-wider uppercase">
           {spec.title}
         </h3>
-        <span className="text-fg-muted font-mono text-[0.625rem]">{records.length}</span>
+        <span className="text-fg-muted text-caption font-mono">{records.length}</span>
       </div>
 
       {records.length === 0 ? (
-        <p className="text-fg-muted px-2 py-2 text-[0.6875rem] leading-snug">
-          {spec.empty}
-        </p>
+        <p className="text-fg-muted text-caption px-2 py-2 leading-snug">{spec.empty}</p>
       ) : (
         <table className="w-full border-collapse text-left text-xs">
           <caption className="sr-only">{`${spec.title} section`}</caption>
           <thead>
-            <tr className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+            <tr className="text-fg-muted text-caption tracking-wider uppercase">
               {HEADINGS.map((heading) => (
                 <th
                   key={heading}
@@ -178,10 +176,8 @@ function Field({
 }) {
   return (
     <div className="flex min-w-0 flex-col" title={title}>
-      <dt className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
-        {label}
-      </dt>
-      <dd className="text-fg-secondary truncate font-mono text-[0.6875rem]">{value}</dd>
+      <dt className="text-fg-muted text-caption tracking-widest uppercase">{label}</dt>
+      <dd className="text-fg-secondary text-caption truncate font-mono">{value}</dd>
     </div>
   );
 }
@@ -241,7 +237,7 @@ export function RecordTable({
         </dl>
 
         <div className="bg-surface/60 border-border/60 border-t px-2 py-1.5">
-          <h3 className="text-fg-secondary text-[0.6875rem] font-medium tracking-wider uppercase">
+          <h3 className="text-fg-secondary text-caption font-medium tracking-wider uppercase">
             Question
           </h3>
         </div>

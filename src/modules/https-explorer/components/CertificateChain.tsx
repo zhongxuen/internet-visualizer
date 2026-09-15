@@ -108,12 +108,12 @@ function StepRow({ step }: { step: ValidationStep }) {
           </Badge>
         </span>
 
-        <span className="text-fg-secondary mt-1 block text-[0.625rem] leading-snug">
+        <span className="text-fg-secondary text-caption mt-1 block leading-snug">
           {step.detail}
         </span>
 
         {step.alert ? (
-          <span className="text-state-error mt-1 block font-mono text-[0.5625rem]">
+          <span className="text-state-error text-caption mt-1 block font-mono">
             alert {step.alert.name}({step.alert.code})
             {step.browserError ? ` · ${step.browserError}` : ''}
           </span>
@@ -122,13 +122,13 @@ function StepRow({ step }: { step: ValidationStep }) {
 
       {open ? (
         <div className="border-border bg-surface mt-1 rounded-lg border px-2.5 py-2">
-          <p className="text-fg-secondary text-[0.625rem] leading-snug">{step.explain}</p>
+          <p className="text-fg-secondary text-caption leading-snug">{step.explain}</p>
           {step.userFacing ? (
-            <p className="text-fg-muted border-border/60 mt-1.5 border-t pt-1.5 text-[0.625rem] leading-snug italic">
+            <p className="text-fg-muted border-border/60 text-caption mt-1.5 border-t pt-1.5 leading-snug italic">
               “{step.userFacing}”
             </p>
           ) : null}
-          <p className="text-fg-muted mt-1.5 font-mono text-[0.5625rem]">
+          <p className="text-fg-muted text-caption mt-1.5 font-mono">
             RFC {step.reference.rfc} § {step.reference.section} — {step.reference.title}
           </p>
         </div>
@@ -169,20 +169,20 @@ function CertificateCard({
         )}
       >
         <span className="flex flex-wrap items-baseline justify-between gap-2">
-          <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+          <span className="text-fg-muted text-caption tracking-widest uppercase">
             {role}
           </span>
-          <span className="text-fg-muted font-mono text-[0.5625rem]">
+          <span className="text-fg-muted text-caption font-mono">
             {cert.publicKey.algorithm} {cert.publicKey.sizeBits}
             {cert.publicKey.curve ? ` · ${cert.publicKey.curve}` : ''}
           </span>
         </span>
-        <span className="text-fg mt-0.5 block font-mono text-[0.6875rem] break-all">
+        <span className="text-fg text-caption mt-0.5 block font-mono break-all">
           {cert.subject.commonName}
         </span>
         <span
           className={cn(
-            'mt-0.5 block font-mono text-[0.5625rem]',
+            'text-caption mt-0.5 block font-mono',
             expired || notYet ? 'text-state-error' : 'text-fg-muted',
           )}
         >
@@ -264,8 +264,8 @@ function Row({
 }) {
   return (
     <div className={cn('min-w-0', wide && 'sm:col-span-2')}>
-      <dt className="text-fg-muted text-[0.5625rem] tracking-wide uppercase">{label}</dt>
-      <dd className="text-fg-secondary font-mono text-[0.5625rem] break-all">{value}</dd>
+      <dt className="text-fg-muted text-caption tracking-wide uppercase">{label}</dt>
+      <dd className="text-fg-secondary text-caption font-mono break-all">{value}</dd>
     </div>
   );
 }
@@ -282,7 +282,7 @@ export function CertificateChain({
   if (!validation || !chain) {
     return (
       <Panel title="Certificate chain" className={className}>
-        <p className="text-fg-secondary text-[0.6875rem] leading-snug">
+        <p className="text-fg-secondary text-caption leading-snug">
           {absentReason ??
             'No certificate was presented on this connection. A resumed handshake authenticates with the pre-shared key from the ticket instead — the server proves it is the same server by proving it holds a secret only the previous, certificate-authenticated handshake could have produced.'}
         </p>
@@ -309,7 +309,7 @@ export function CertificateChain({
       className={cn('max-h-[46rem]', className)}
     >
       <div className="flex flex-col gap-3">
-        <p className="text-fg-secondary text-[0.6875rem] leading-snug">
+        <p className="text-fg-secondary text-caption leading-snug">
           The client asked for{' '}
           <span className="text-fg font-mono">{validation.host}</span> and judged the
           chain as of{' '}
@@ -324,14 +324,14 @@ export function CertificateChain({
               This is the warning the browser would show
             </h3>
             {failure.browserError ? (
-              <p className="text-state-error mt-0.5 font-mono text-[0.625rem]">
+              <p className="text-state-error text-caption mt-0.5 font-mono">
                 {failure.browserError}
               </p>
             ) : null}
-            <p className="text-fg-secondary mt-1 text-[0.625rem] leading-snug">
+            <p className="text-fg-secondary text-caption mt-1 leading-snug">
               {failure.userFacing ?? failure.detail}
             </p>
-            <p className="text-fg-muted mt-1 text-[0.5625rem] leading-snug">
+            <p className="text-fg-muted text-caption mt-1 leading-snug">
               A browser shows one interstitial even when several checks fail, and it shows
               the first failure in validation order. The other verdicts are all still
               below.
@@ -342,7 +342,7 @@ export function CertificateChain({
         <section aria-labelledby="cert-checks">
           <h3
             id="cert-checks"
-            className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+            className="text-fg-muted text-caption font-medium tracking-widest uppercase"
           >
             Five checks, each independent
           </h3>
@@ -356,7 +356,7 @@ export function CertificateChain({
         <section aria-labelledby="cert-path">
           <h3
             id="cert-path"
-            className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+            className="text-fg-muted text-caption font-medium tracking-widest uppercase"
           >
             The path, leaf first
           </h3>
@@ -374,13 +374,13 @@ export function CertificateChain({
           </ol>
 
           {validation.anchor ? (
-            <p className="text-fg-muted mt-1.5 text-[0.5625rem] leading-snug">
+            <p className="text-fg-muted text-caption mt-1.5 leading-snug">
               The root above came from your trust store, not from the wire. A server may
               send its root and many do, but the client ignores that copy — otherwise
               anyone could append a self-signed root and vouch for themselves.
             </p>
           ) : (
-            <p className="text-state-error mt-1.5 text-[0.5625rem] leading-snug">
+            <p className="text-state-error text-caption mt-1.5 leading-snug">
               No path to a trusted root exists, so there is no anchor to draw. The chain
               above is only what the server presented.
             </p>

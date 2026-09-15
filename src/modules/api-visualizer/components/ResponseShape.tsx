@@ -104,16 +104,14 @@ function ExplanationText({ explanation }: { explanation: FieldExplanation }) {
     <div className="mt-1 flex flex-col gap-1">
       <p className="text-fg-secondary text-xs leading-relaxed">{explanation.what}</p>
       {explanation.detail ? (
-        <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
-          {explanation.detail}
-        </p>
+        <p className="text-fg-muted text-caption leading-relaxed">{explanation.detail}</p>
       ) : null}
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge tone={ORIGIN_TONES[explanation.origin]}>
           {ORIGIN_LABELS[explanation.origin]}
         </Badge>
         {explanation.reference ? (
-          <span className="text-fg-muted font-mono text-[0.625rem]">
+          <span className="text-fg-muted text-caption font-mono">
             RFC {explanation.reference.rfc}
             {explanation.reference.section ? ` §${explanation.reference.section}` : ''}
           </span>
@@ -161,7 +159,7 @@ function FieldRow({
             )}
           >
             <span className="text-accent shrink-0 font-mono text-xs">{field.name}</span>
-            <span className="text-fg-muted shrink-0 text-[0.625rem]">
+            <span className="text-fg-muted text-caption shrink-0">
               {open ? '▾' : '▸'}
             </span>
             <span className="text-fg min-w-0 flex-1 truncate font-mono text-xs">
@@ -222,7 +220,7 @@ function ValueTree({
       <ol className="mt-1 ml-3 flex min-w-0 flex-col gap-1 border-l border-dashed border-[var(--border)] pl-3">
         {value.map((item, index) => (
           <li key={`${path}[${index}]`} className="min-w-0">
-            <p className="text-fg-muted font-mono text-[0.625rem]">[{index}]</p>
+            <p className="text-fg-muted text-caption font-mono">[{index}]</p>
             {typeof item === 'object' && item !== null ? (
               <ValueTree
                 value={item}
@@ -315,7 +313,7 @@ export function ResponseShape({
           </p>
         ) : (
           <>
-            <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+            <p className="text-fg-muted text-caption leading-relaxed">
               Keys with a coloured name are explained — open one. What is not explained is
               this resource&rsquo;s own data.
             </p>

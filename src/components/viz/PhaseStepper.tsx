@@ -100,7 +100,7 @@ export const PhaseStepper = memo(function PhaseStepper({
                   >
                     {phase.title}
                   </span>
-                  <span className="text-fg-muted shrink-0 font-mono text-[0.6875rem]">
+                  <span className="text-fg-muted text-caption shrink-0 font-mono">
                     {formatDuration(phase.endMs - phase.startMs)}
                   </span>
                 </span>

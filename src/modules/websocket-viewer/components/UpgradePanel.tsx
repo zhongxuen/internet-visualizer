@@ -96,19 +96,19 @@ function Derivation({ handshake }: { handshake: HandshakeRecord }) {
           <div className="flex flex-wrap items-baseline gap-2">
             <span
               aria-hidden="true"
-              className="text-accent font-mono text-[0.6875rem] tabular-nums"
+              className="text-accent text-caption font-mono tabular-nums"
             >
               {index + 1}
             </span>
             <h4 className="text-fg text-xs font-medium">{step.label}</h4>
-            <span className="text-fg-muted ml-auto font-mono text-[0.625rem] tabular-nums">
+            <span className="text-fg-muted text-caption ml-auto font-mono tabular-nums">
               {step.size} {step.unit}
             </span>
           </div>
-          <code className="text-fg-secondary block font-mono text-[0.6875rem] leading-relaxed break-all">
+          <code className="text-fg-secondary text-caption block font-mono leading-relaxed break-all">
             {step.value}
           </code>
-          <p className="text-fg-muted text-[0.6875rem] leading-relaxed">{step.explain}</p>
+          <p className="text-fg-muted text-caption leading-relaxed">{step.explain}</p>
         </li>
       ))}
     </ol>
@@ -118,12 +118,12 @@ function Derivation({ handshake }: { handshake: HandshakeRecord }) {
 function Checks({ handshake }: { handshake: HandshakeRecord }) {
   return (
     <table className="w-full border-collapse text-left text-xs">
-      <caption className="text-fg-muted pb-2 text-left text-[0.6875rem] leading-snug">
+      <caption className="text-fg-muted text-caption pb-2 text-left leading-snug">
         Every check the server runs, in specification order — passes included, because the
         passes are what a handshake <em>is</em>.
       </caption>
       <thead>
-        <tr className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+        <tr className="text-fg-muted text-caption tracking-wider uppercase">
           <th scope="col" className="py-1 pr-3 font-medium">
             Requirement
           </th>
@@ -153,16 +153,16 @@ function Checks({ handshake }: { handshake: HandshakeRecord }) {
             </td>
             <td className="py-2 pr-3">
               <span className="text-fg">{check.title}</span>
-              <p className="text-fg-muted mt-1 text-[0.6875rem] leading-relaxed">
+              <p className="text-fg-muted text-caption mt-1 leading-relaxed">
                 {check.detail}
               </p>
-              <p className="text-fg-muted mt-1 text-[0.625rem]">
+              <p className="text-fg-muted text-caption mt-1">
                 RFC {check.reference.rfc}
                 {check.reference.section ? ` § ${check.reference.section}` : ''}
               </p>
             </td>
             <td className="py-2">
-              <code className="text-fg-secondary font-mono text-[0.6875rem] break-all">
+              <code className="text-fg-secondary text-caption font-mono break-all">
                 {check.found ?? '(absent)'}
               </code>
             </td>
@@ -245,13 +245,13 @@ export function UpgradePanel({
 
         <dl className="grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
           <div className="border-border bg-surface rounded-lg border px-3 py-2">
-            <dt className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+            <dt className="text-fg-muted text-caption tracking-wider uppercase">
               Connection tokens
             </dt>
-            <dd className="text-fg-secondary mt-1 font-mono text-[0.6875rem]">
+            <dd className="text-fg-secondary text-caption mt-1 font-mono">
               {handshake.tokens.requestConnection.join(', ') || '(none)'}
             </dd>
-            <dd className="text-fg-muted mt-1 text-[0.6875rem] leading-relaxed">
+            <dd className="text-fg-muted text-caption mt-1 leading-relaxed">
               A token <em>list</em>. Browsers send <code>keep-alive, Upgrade</code>, and a
               server comparing the whole value to <code>&quot;Upgrade&quot;</code> rejects
               them.
@@ -259,28 +259,28 @@ export function UpgradePanel({
           </div>
 
           <div className="border-border bg-surface rounded-lg border px-3 py-2">
-            <dt className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+            <dt className="text-fg-muted text-caption tracking-wider uppercase">
               Subprotocol
             </dt>
-            <dd className="text-fg mt-1 font-mono text-[0.6875rem]">
+            <dd className="text-fg text-caption mt-1 font-mono">
               {handshake.subprotocol ?? '(none agreed)'}
             </dd>
-            <dd className="text-fg-muted mt-1 text-[0.6875rem] leading-relaxed">
+            <dd className="text-fg-muted text-caption mt-1 leading-relaxed">
               The server chooses, applying its own preference order to what the client
               offered. Agreeing on nothing is a success, not a failure.
             </dd>
           </div>
 
           <div className="border-border bg-surface rounded-lg border px-3 py-2">
-            <dt className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+            <dt className="text-fg-muted text-caption tracking-wider uppercase">
               Extensions
             </dt>
-            <dd className="text-fg mt-1 font-mono text-[0.6875rem]">
+            <dd className="text-fg text-caption mt-1 font-mono">
               {handshake.extensions.length === 0
                 ? '(none granted)'
                 : handshake.extensions.join(', ')}
             </dd>
-            <dd className="text-fg-muted mt-1 text-[0.6875rem] leading-relaxed">
+            <dd className="text-fg-muted text-caption mt-1 leading-relaxed">
               An extension changes how frames are read — <code>permessage-deflate</code>{' '}
               claims RSV1. A server may never grant one that was not offered.
             </dd>
@@ -294,16 +294,16 @@ export function UpgradePanel({
                 : 'border-border bg-surface',
             )}
           >
-            <dt className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+            <dt className="text-fg-muted text-caption tracking-wider uppercase">
               Request target
             </dt>
-            <dd className="text-fg mt-1 font-mono text-[0.6875rem] break-all">
+            <dd className="text-fg text-caption mt-1 font-mono break-all">
               {handshake.resource.path}
               {handshake.resource.query === '' ? '' : `?${handshake.resource.query}`}
             </dd>
             <dd
               className={cn(
-                'mt-1 text-[0.6875rem] leading-relaxed',
+                'text-caption mt-1 leading-relaxed',
                 handshake.resource.credentialInQuery
                   ? 'text-state-warn'
                   : 'text-fg-muted',
@@ -323,7 +323,7 @@ export function UpgradePanel({
           <h3 className="text-fg-secondary text-xs font-medium tracking-widest uppercase">
             Deriving Sec-WebSocket-Accept
           </h3>
-          <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+          <p className="text-fg-muted text-caption leading-relaxed">
             A proof of comprehension, not a secret. Nothing authenticates on this digest,
             which is why SHA-1 is not a mistake here — a collision buys an attacker
             nothing. What it proves is that the responder read the request and knew what

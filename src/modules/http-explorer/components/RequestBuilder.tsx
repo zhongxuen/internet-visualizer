@@ -82,14 +82,12 @@ function Control({
     <div className="flex min-w-0 flex-col gap-1.5">
       <label
         htmlFor={htmlFor}
-        className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+        className="text-fg-muted text-caption font-medium tracking-widest uppercase"
       >
         {label}
       </label>
       {children}
-      {hint ? (
-        <p className="text-fg-muted text-[0.6875rem] leading-snug">{hint}</p>
-      ) : null}
+      {hint ? <p className="text-fg-muted text-caption leading-snug">{hint}</p> : null}
     </div>
   );
 }
@@ -120,7 +118,7 @@ function Toggle({
       />
       <label htmlFor={id} className="cursor-pointer">
         <span className="text-fg-secondary block text-xs">{label}</span>
-        <span className="text-fg-muted block text-[0.625rem] leading-snug">{hint}</span>
+        <span className="text-fg-muted text-caption block leading-snug">{hint}</span>
       </label>
     </div>
   );
@@ -179,7 +177,7 @@ export function RequestBuilder({
         <SafetyBadge variant="simulated" />
       </div>
 
-      <p id={hintId} className="text-fg-muted max-w-3xl text-[0.6875rem] leading-snug">
+      <p id={hintId} className="text-fg-muted text-caption max-w-3xl leading-snug">
         Answered by the fixture routes bundled with this page, inside this browser tab.
         There is no host field because there is only one host: <code>{SANDBOX_HOST}</code>
         , a name in the TLD reserved so it can never be registered. Nothing typed here is
@@ -210,7 +208,7 @@ export function RequestBuilder({
         <div className="flex min-w-[14rem] flex-1 flex-col gap-1.5">
           <label
             htmlFor={`${baseId}-target`}
-            className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+            className="text-fg-muted text-caption font-medium tracking-widest uppercase"
           >
             Request target
           </label>
@@ -257,7 +255,7 @@ export function RequestBuilder({
         </p>
       ) : null}
 
-      <p id={coverageId} className="text-fg-muted text-[0.6875rem] leading-snug">
+      <p id={coverageId} className="text-fg-muted text-caption leading-snug">
         {coverage.note}
       </p>
 
@@ -346,7 +344,7 @@ export function RequestBuilder({
       </fieldset>
 
       <div>
-        <span className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase">
+        <span className="text-fg-muted text-caption font-medium tracking-widest uppercase">
           Routes this server has
         </span>
         <ul className="mt-1.5 flex flex-wrap gap-1">
@@ -365,7 +363,7 @@ export function RequestBuilder({
                     })
                   }
                   className={cn(
-                    'rounded-md border px-2 py-0.5 font-mono text-[0.625rem] transition-colors',
+                    'text-caption rounded-md border px-2 py-0.5 font-mono transition-colors',
                     focusRing,
                     active
                       ? 'border-accent/60 bg-accent/12 text-fg'

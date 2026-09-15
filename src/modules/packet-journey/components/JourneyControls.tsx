@@ -70,14 +70,12 @@ function Control({
     <div className="flex min-w-0 flex-col gap-1.5">
       <label
         htmlFor={htmlFor}
-        className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+        className="text-fg-muted text-caption font-medium tracking-widest uppercase"
       >
         {label}
       </label>
       {children}
-      {hint ? (
-        <p className="text-fg-muted text-[0.6875rem] leading-snug">{hint}</p>
-      ) : null}
+      {hint ? <p className="text-fg-muted text-caption leading-snug">{hint}</p> : null}
     </div>
   );
 }
@@ -132,7 +130,7 @@ export function JourneyControls({
               <span
                 aria-hidden="true"
                 className={cn(
-                  'font-mono text-[0.6875rem]',
+                  'text-caption font-mono',
                   active ? 'text-accent' : 'text-fg-muted',
                 )}
               >

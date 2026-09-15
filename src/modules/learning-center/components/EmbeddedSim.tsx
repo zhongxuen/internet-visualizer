@@ -302,7 +302,7 @@ export function EmbeddedSim({
               <li key={phase.id} className="flex gap-2.5">
                 <span
                   aria-hidden="true"
-                  className="text-fg-muted bg-surface-overlay border-border mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-full border text-[0.625rem]"
+                  className="text-fg-muted bg-surface-overlay border-border text-caption mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-full border"
                 >
                   {index + 1}
                 </span>

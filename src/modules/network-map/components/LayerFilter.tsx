@@ -92,10 +92,7 @@ export function LayerFilter({ topology, layer, onChange, className }: LayerFilte
                   : undefined
               }
             >
-              <span
-                className="font-mono text-[0.6875rem]"
-                style={{ color: layerColor(key) }}
-              >
+              <span className="text-caption font-mono" style={{ color: layerColor(key) }}>
                 {token.short}
               </span>
               <span aria-hidden="true">{token.label}</span>

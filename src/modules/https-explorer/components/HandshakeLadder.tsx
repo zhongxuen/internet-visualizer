@@ -113,22 +113,19 @@ function Field({ field, view }: { field: MessageField; view: OverlayView }) {
     <div className="border-border/60 border-t px-2.5 py-1.5 first:border-t-0">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span
-          className={cn(
-            'font-mono text-[0.625rem]',
-            hidden ? 'text-fg-muted' : 'text-fg',
-          )}
+          className={cn('text-caption font-mono', hidden ? 'text-fg-muted' : 'text-fg')}
         >
           {field.name}
         </span>
         {field.reference ? (
-          <span className="text-fg-muted font-mono text-[0.5625rem]">
+          <span className="text-fg-muted text-caption font-mono">
             RFC {field.reference.rfc} § {field.reference.section}
           </span>
         ) : null}
       </div>
 
       {hidden ? (
-        <p className="text-fg-muted mt-0.5 flex items-center gap-1.5 font-mono text-[0.5625rem]">
+        <p className="text-fg-muted text-caption mt-0.5 flex items-center gap-1.5 font-mono">
           <span
             aria-hidden="true"
             className="bg-fg-muted/25 inline-block h-2 w-24 rounded-sm"
@@ -136,15 +133,15 @@ function Field({ field, view }: { field: MessageField; view: OverlayView }) {
           encrypted — not on the wire in the clear
         </p>
       ) : (
-        <p className="text-fg-secondary mt-0.5 font-mono text-[0.625rem] break-all">
+        <p className="text-fg-secondary text-caption mt-0.5 font-mono break-all">
           {field.value}
         </p>
       )}
 
-      <p className="text-fg-muted mt-1 text-[0.5625rem] leading-snug">{field.explain}</p>
+      <p className="text-fg-muted text-caption mt-1 leading-snug">{field.explain}</p>
 
       {view === 'observer' && field.visibleToObserver ? (
-        <p className="text-state-warn mt-0.5 text-[0.5625rem] leading-snug">
+        <p className="text-state-warn text-caption mt-0.5 leading-snug">
           Readable by anyone on the path.
         </p>
       ) : null}
@@ -216,10 +213,10 @@ function Rung({
 
       {expanded ? (
         <div className="border-border bg-surface mt-1 overflow-hidden rounded-lg border">
-          <p className="border-border/60 text-fg-secondary border-b px-2.5 py-1.5 text-[0.625rem] leading-snug">
+          <p className="border-border/60 text-fg-secondary text-caption border-b px-2.5 py-1.5 leading-snug">
             {message.summary}
           </p>
-          <p className="border-border/60 text-fg-muted flex flex-wrap gap-x-3 gap-y-0.5 border-b px-2.5 py-1 font-mono text-[0.5625rem]">
+          <p className="border-border/60 text-fg-muted text-caption flex flex-wrap gap-x-3 gap-y-0.5 border-b px-2.5 py-1 font-mono">
             <span>t = {message.at} ms</span>
             <span>{message.bytes} bytes</span>
             <span className={style.tone.split(' ').pop()}>{style.label}</span>
@@ -232,7 +229,7 @@ function Rung({
               <Field key={field.name} field={field} view={view} />
             ))
           ) : (
-            <p className="text-fg-muted px-2.5 py-1.5 text-[0.625rem]">
+            <p className="text-fg-muted text-caption px-2.5 py-1.5">
               No fields worth listing — this message is a marker rather than a payload.
             </p>
           )}
@@ -272,17 +269,17 @@ function MessageButton({
       )}
     >
       <span className="flex flex-wrap items-baseline justify-between gap-1.5">
-        <span className="font-mono text-[0.6875rem] font-medium">
+        <span className="text-caption font-mono font-medium">
           {style.open}
           {message.name}
           {style.close}
         </span>
-        <span className="text-fg-muted font-mono text-[0.5625rem] tabular-nums">
+        <span className="text-fg-muted text-caption font-mono tabular-nums">
           {message.bytes} B
         </span>
       </span>
       {message.optional ? (
-        <span className="text-fg-muted mt-0.5 block text-[0.5625rem]">optional</span>
+        <span className="text-fg-muted text-caption mt-0.5 block">optional</span>
       ) : null}
       {readable ? null : (
         <span className="sr-only">Opaque to an observer on the path. </span>
@@ -316,7 +313,7 @@ export function HandshakeLadder({
     <Panel
       title="Handshake ladder"
       aside={
-        <span className="text-fg-muted text-[0.625rem]">
+        <span className="text-fg-muted text-caption">
           {view === 'observer' ? 'as an observer sees it' : 'as a participant sees it'}
         </span>
       }
@@ -325,7 +322,7 @@ export function HandshakeLadder({
       <div className="flex flex-col gap-2">
         <div
           aria-hidden="true"
-          className="text-fg-muted grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)] gap-2 text-[0.5625rem] tracking-widest uppercase"
+          className="text-fg-muted text-caption grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)] gap-2 tracking-widest uppercase"
         >
           <span>Client</span>
           <span />
@@ -341,7 +338,7 @@ export function HandshakeLadder({
             return (
               <li key={message.id} className="flex flex-col gap-1.5">
                 {isNewFlight && flight ? (
-                  <p className="text-fg-muted mt-1 flex items-baseline gap-2 text-[0.5625rem] leading-snug first:mt-0">
+                  <p className="text-fg-muted text-caption mt-1 flex items-baseline gap-2 leading-snug first:mt-0">
                     <span className="tracking-widest uppercase">
                       Flight {flight.number}
                     </span>
@@ -350,7 +347,7 @@ export function HandshakeLadder({
                 ) : null}
 
                 {message.id === encryptionStartsAt ? (
-                  <p className="border-accent/50 text-accent my-1 flex items-center gap-2 border-t border-dashed pt-1.5 text-[0.5625rem] tracking-widest uppercase">
+                  <p className="border-accent/50 text-accent text-caption my-1 flex items-center gap-2 border-t border-dashed pt-1.5 tracking-widest uppercase">
                     Encryption starts here
                     <span className="text-fg-muted tracking-normal normal-case">
                       — everything below this line is protected
@@ -372,21 +369,21 @@ export function HandshakeLadder({
 
         {abort ? (
           <div className="border-state-error/50 bg-state-error/10 mt-1 rounded-lg border px-2.5 py-2">
-            <p className="text-state-error flex flex-wrap items-baseline justify-between gap-2 text-[0.6875rem] font-medium">
+            <p className="text-state-error text-caption flex flex-wrap items-baseline justify-between gap-2 font-medium">
               <span>
                 Connection aborted — Alert: {abort.alert.description} ({abort.alert.code})
               </span>
-              <span className="font-mono text-[0.5625rem]">t = {abort.at} ms</span>
+              <span className="text-caption font-mono">t = {abort.at} ms</span>
             </p>
-            <p className="text-fg-secondary mt-1 text-[0.625rem] leading-snug">
+            <p className="text-fg-secondary text-caption mt-1 leading-snug">
               {abort.detail}
             </p>
             {abort.browserError ? (
-              <p className="text-fg-muted mt-1 font-mono text-[0.5625rem]">
+              <p className="text-fg-muted text-caption mt-1 font-mono">
                 {abort.browserError}
               </p>
             ) : null}
-            <p className="text-fg-muted mt-1 text-[0.5625rem] leading-snug">
+            <p className="text-fg-muted text-caption mt-1 leading-snug">
               {abort.alert.explain} No application data is ever exchanged — the ladder
               stops here.
             </p>
@@ -397,7 +394,7 @@ export function HandshakeLadder({
           <section aria-labelledby="ladder-notes" className="mt-1">
             <h3
               id="ladder-notes"
-              className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+              className="text-fg-muted text-caption font-medium tracking-widest uppercase"
             >
               What is worth noticing about this handshake
             </h3>
@@ -415,18 +412,18 @@ export function HandshakeLadder({
                   <p className="flex flex-wrap items-baseline justify-between gap-2">
                     <span
                       className={cn(
-                        'text-[0.6875rem] font-medium',
+                        'text-caption font-medium',
                         note.level === 'warning' ? 'text-state-error' : 'text-fg',
                       )}
                     >
                       {note.level === 'warning' ? '⚠ ' : ''}
                       {note.title}
                     </span>
-                    <span className="text-fg-muted font-mono text-[0.5625rem]">
+                    <span className="text-fg-muted text-caption font-mono">
                       RFC {note.reference.rfc} § {note.reference.section}
                     </span>
                   </p>
-                  <p className="text-fg-secondary mt-1 text-[0.625rem] leading-snug">
+                  <p className="text-fg-secondary text-caption mt-1 leading-snug">
                     {note.body}
                   </p>
                 </li>

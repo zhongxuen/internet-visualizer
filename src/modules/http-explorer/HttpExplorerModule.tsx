@@ -256,7 +256,7 @@ function ExchangeLedger({
               seek(exchange.receivedAt);
             }}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[0.625rem] transition-colors',
+              'text-caption inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono transition-colors',
               focusRing,
               pinned
                 ? 'border-accent/60 bg-accent/12 text-fg'
@@ -295,7 +295,7 @@ function ExchangeLedger({
           type="button"
           onClick={() => onPin(null)}
           className={cn(
-            'border-border text-fg-muted hover:text-fg rounded-md border px-2 py-1 text-[0.625rem] transition-colors',
+            'border-border text-fg-muted hover:text-fg text-caption rounded-md border px-2 py-1 transition-colors',
             focusRing,
           )}
         >
@@ -406,7 +406,7 @@ export function HttpExplorerModule() {
                   <span
                     aria-hidden="true"
                     className={cn(
-                      'font-mono text-[0.6875rem]',
+                      'text-caption font-mono',
                       active ? 'text-accent' : 'text-fg-muted',
                     )}
                   >

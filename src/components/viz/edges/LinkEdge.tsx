@@ -114,7 +114,7 @@ export function LinkEdge({
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             }}
             className={cn(
-              'bg-surface-overlay/95 pointer-events-none absolute flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[0.625rem] whitespace-nowrap',
+              'bg-surface-overlay/95 text-caption pointer-events-none absolute flex items-center gap-1.5 rounded-full border px-2 py-0.5 whitespace-nowrap',
               selected ? 'border-accent/60 text-fg' : 'border-border text-fg-secondary',
               // The chip is rendered in React Flow's label layer, outside the <g> the
               // stroke lives in, so it has to be dimmed on its own.

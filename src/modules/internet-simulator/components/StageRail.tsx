@@ -145,7 +145,7 @@ export function StageRail({
                   <span className="truncate text-xs font-medium">{stage.title}</span>
                 </span>
 
-                <span className="block font-mono text-[0.625rem] tabular-nums opacity-90">
+                <span className="text-caption block font-mono tabular-nums opacity-90">
                   {stage.status === 'ran' ? formatDuration(stage.durationMs) : '--'}
                 </span>
               </button>
@@ -154,7 +154,7 @@ export function StageRail({
         })}
       </ol>
 
-      <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+      <p className="text-fg-muted text-caption leading-relaxed">
         Widths are each stage&rsquo;s real share of the run, with a floor so a
         fifth-of-a-millisecond stage stays clickable. Hatched segments took no time: they
         were skipped, or the run ended before them. Pick one to open it.

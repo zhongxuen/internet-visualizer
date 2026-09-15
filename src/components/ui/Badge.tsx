@@ -59,7 +59,7 @@ export function Badge({
        */
       data-no-dim=""
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium',
+        'text-caption inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-medium',
         layer ? 'border' : TONES[tone],
         className,
       )}
@@ -72,7 +72,7 @@ export function Badge({
         </span>
       ) : null}
       {layer ? (
-        <span className="font-mono text-[0.65rem] tracking-wider opacity-90">
+        <span className="text-caption font-mono tracking-wider opacity-90">
           {layerShortLabel(layer)}
         </span>
       ) : null}

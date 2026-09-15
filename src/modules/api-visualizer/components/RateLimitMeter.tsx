@@ -75,7 +75,7 @@ function Meter({ bucket, now }: { bucket: TokenBucket; now: number }) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+        <span className="text-fg-muted text-caption tracking-widest uppercase">
           Tokens available
         </span>
         <span
@@ -115,7 +115,7 @@ function Meter({ bucket, now }: { bucket: TokenBucket; now: number }) {
         </div>
       </div>
 
-      <p className="text-fg-muted text-[0.625rem] leading-snug">
+      <p className="text-fg-muted text-caption leading-snug">
         Capacity {bucket.capacity} is the <em>burst</em>; {bucket.refillPerSecond} per
         second is the <em>sustained</em> rate. They are different numbers, and an
         integration written against the first will meet the second in production.
@@ -143,12 +143,12 @@ function Comparison({ run, ignoring }: { run: ClientRun; ignoring: ClientRun }) 
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+      <span className="text-fg-muted text-caption tracking-widest uppercase">
         The same nine requests, two clients
       </span>
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+          <tr className="text-fg-muted text-caption tracking-widest uppercase">
             <th scope="col" className="py-1 font-normal">
               Client
             </th>
@@ -168,7 +168,7 @@ function Comparison({ run, ignoring }: { run: ClientRun; ignoring: ClientRun }) 
             <tr key={row.label} className="border-border/60 border-t align-top">
               <th scope="row" className="text-fg py-1.5 pr-2 font-normal">
                 {row.label}
-                <span className="text-fg-muted block text-[0.625rem] leading-snug">
+                <span className="text-fg-muted text-caption block leading-snug">
                   {row.note}
                 </span>
               </th>
@@ -226,16 +226,16 @@ export function RateLimitMeter(props: RateLimitMeterProps) {
         ) : null}
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+          <span className="text-fg-muted text-caption tracking-widest uppercase">
             What is actually specified
           </span>
-          <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+          <p className="text-fg-secondary text-caption leading-relaxed">
             {RATELIMIT_HEADER_STATUS}
           </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+          <span className="text-fg-muted text-caption tracking-widest uppercase">
             Other ways to count
           </span>
           <ul className="flex flex-col gap-1">
@@ -245,13 +245,13 @@ export function RateLimitMeter(props: RateLimitMeterProps) {
                 className="border-border/60 bg-surface rounded-lg border px-2.5 py-1.5"
               >
                 <p className="text-fg text-xs font-medium">{algorithm.name}</p>
-                <p className="text-fg-secondary mt-0.5 text-[0.6875rem] leading-relaxed">
+                <p className="text-fg-secondary text-caption mt-0.5 leading-relaxed">
                   {algorithm.how}
                 </p>
-                <p className="text-state-ok mt-0.5 text-[0.6875rem] leading-relaxed">
+                <p className="text-state-ok text-caption mt-0.5 leading-relaxed">
                   {algorithm.strength}
                 </p>
-                <p className="text-fg-muted mt-0.5 text-[0.6875rem] leading-relaxed">
+                <p className="text-fg-muted text-caption mt-0.5 leading-relaxed">
                   {algorithm.weakness}
                 </p>
               </li>

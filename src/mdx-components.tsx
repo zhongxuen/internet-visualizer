@@ -158,11 +158,14 @@ export const MDX_ELEMENTS: MDXComponents = {
   /*
    * Inline code only. A fenced block arrives wrapped in a `pre`, which is mapped
    * below and renders `CodeBlock` instead of reaching this.
+   *
+   * Relative to the text around it, but never under the 12px floor: 0.85em of a
+   * `text-xs` table header would be 10.2px.
    */
   code: ({ className, ...props }: Props<'code'>) => (
     <code
       className={cn(
-        'border-border bg-surface-raised text-fg rounded border px-1 py-0.5 font-mono text-[0.85em]',
+        'border-border bg-surface-raised text-fg rounded border px-1 py-0.5 font-mono text-[length:max(0.85em,var(--text-caption))]',
         className,
       )}
       {...props}

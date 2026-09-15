@@ -95,7 +95,7 @@ function Counter({
 }) {
   return (
     <div className="min-w-0">
-      <dt className="text-fg-muted text-[0.5625rem] tracking-wider uppercase">{label}</dt>
+      <dt className="text-fg-muted text-caption tracking-wider uppercase">{label}</dt>
       <dd
         className={cn(
           'font-mono text-sm tabular-nums',
@@ -108,7 +108,7 @@ function Counter({
       >
         {value}
       </dd>
-      {hint ? <dd className="text-fg-muted text-[0.5625rem]">{hint}</dd> : null}
+      {hint ? <dd className="text-fg-muted text-caption">{hint}</dd> : null}
     </div>
   );
 }
@@ -141,7 +141,7 @@ function Lane({
         {fastest ? <Badge tone="ok">lowest latency</Badge> : null}
       </div>
 
-      <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+      <p className="text-fg-muted text-caption leading-relaxed">
         {TRANSPORT_SUMMARIES[run.transport]}
       </p>
 
@@ -214,7 +214,7 @@ function Lane({
         ms.
       </p>
 
-      <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">{run.verdict}</p>
+      <p className="text-fg-secondary text-caption leading-relaxed">{run.verdict}</p>
     </li>
   );
 }
@@ -256,7 +256,7 @@ export function TransportComparison({
           {(Object.keys(EVENT_TONE) as WireEvent['kind'][]).map((kind) => (
             <li
               key={kind}
-              className="text-fg-muted flex items-center gap-1.5 text-[0.625rem]"
+              className="text-fg-muted text-caption flex items-center gap-1.5"
             >
               <span
                 className={cn('inline-block h-2 w-[3px] rounded-full', EVENT_TONE[kind])}
@@ -264,7 +264,7 @@ export function TransportComparison({
               {EVENT_LABEL[kind]}
             </li>
           ))}
-          <li className="text-fg-muted flex items-center gap-1.5 text-[0.625rem]">
+          <li className="text-fg-muted text-caption flex items-center gap-1.5">
             <span className="bg-state-ok ring-state-ok/30 inline-block h-2 w-[3px] rounded-full ring-2" />
             An update reaching the client
           </li>
@@ -276,7 +276,7 @@ export function TransportComparison({
           ))}
         </ul>
 
-        <p className="text-fg-muted text-[0.625rem] leading-relaxed">
+        <p className="text-fg-muted text-caption leading-relaxed">
           Counted over HTTP/1.1. Under HTTP/2, HPACK compresses a repeated header set down
           to a handful of bytes, so the polling byte count above is an upper bound — but
           the request count does not change, and neither does polling’s average delay of

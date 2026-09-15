@@ -127,14 +127,14 @@ export function NodeShell({ node, state, selected, children }: NodeShellProps) {
           >
             {node.label}
           </span>
-          <span className="text-fg-muted block text-[0.625rem] tracking-wider uppercase">
+          <span className="text-fg-muted text-caption block tracking-wider uppercase">
             {kind.roleLabel}
           </span>
         </span>
 
         <span
           className={cn(
-            'flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-px text-[0.625rem] font-medium',
+            'text-caption flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-px font-medium',
             status.chip,
           )}
         >

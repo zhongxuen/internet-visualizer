@@ -177,7 +177,7 @@ export function TargetInput({
             type="button"
             onClick={() => onValueChange(example)}
             className={cn(
-              'border-border bg-surface-raised text-fg-secondary hover:border-border-strong hover:text-fg rounded-md border px-2 py-0.5 font-mono text-[0.6875rem] transition-colors',
+              'border-border bg-surface-raised text-fg-secondary hover:border-border-strong hover:text-fg text-caption rounded-md border px-2 py-0.5 font-mono transition-colors',
               focusRing,
             )}
           >

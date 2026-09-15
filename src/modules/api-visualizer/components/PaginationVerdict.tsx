@@ -52,7 +52,7 @@ function Strip({ run, label }: { run: DriftRun<CollectionItem>; label: string })
               <span
                 title={repeat ? `${id} was already sent` : id}
                 className={cn(
-                  'inline-block rounded border px-1.5 py-0.5 font-mono text-[0.625rem]',
+                  'text-caption inline-block rounded border px-1.5 py-0.5 font-mono',
                   repeat
                     ? 'border-state-error/60 bg-state-error/15 text-state-error'
                     : 'border-border bg-surface text-fg-secondary',
@@ -66,7 +66,7 @@ function Strip({ run, label }: { run: DriftRun<CollectionItem>; label: string })
         })}
       </ol>
 
-      <dl className="flex flex-wrap gap-x-4 gap-y-0.5 text-[0.6875rem]">
+      <dl className="text-caption flex flex-wrap gap-x-4 gap-y-0.5">
         <div className="flex gap-1.5">
           <dt className="text-fg-muted">received</dt>
           <dd className="text-fg font-mono tabular-nums">{run.received.length}</dd>
@@ -120,7 +120,7 @@ export function PaginationVerdict({
         <Strip run={offset} label="Offset: ?offset=n&limit=5" />
         <Strip run={cursor} label="Cursor: ?after=<position>&limit=5" />
 
-        <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+        <p className="text-fg-muted text-caption leading-relaxed">
           A row that was inserted or deleted mid-run is excluded from &ldquo;never
           sent&rdquo; on purpose — whether a client sees one of those is genuinely a
           matter of timing. What is left is the damning set: rows that were in the
@@ -128,7 +128,7 @@ export function PaginationVerdict({
         </p>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+          <span className="text-fg-muted text-caption tracking-widest uppercase">
             What each one costs
           </span>
           <ul className="flex flex-col gap-1">
@@ -151,10 +151,10 @@ export function PaginationVerdict({
                     total: {tradeoff.totalCount}
                   </Badge>
                 </div>
-                <p className="text-fg-secondary mt-1 text-[0.6875rem] leading-relaxed">
+                <p className="text-fg-secondary text-caption mt-1 leading-relaxed">
                   Deep pages: {tradeoff.deepPageCost}
                 </p>
-                <p className="text-fg-muted mt-0.5 text-[0.6875rem] leading-relaxed">
+                <p className="text-fg-muted text-caption mt-0.5 leading-relaxed">
                   Use when: {tradeoff.useWhen}
                 </p>
               </li>

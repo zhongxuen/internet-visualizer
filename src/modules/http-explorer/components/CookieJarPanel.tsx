@@ -65,7 +65,7 @@ function Attribute({
     <span
       title={hint}
       className={cn(
-        'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[0.5625rem]',
+        'text-caption inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono',
         on
           ? tone === 'ok'
             ? 'border-state-ok/40 bg-state-ok/10 text-state-ok'
@@ -93,7 +93,7 @@ function CookieRow({ cookie }: { cookie: Cookie }) {
           <span className="text-fg-muted">=</span>
           <span className="text-fg-secondary">{cookie.value}</span>
         </span>
-        <span className="text-fg-muted font-mono text-[0.5625rem]">
+        <span className="text-fg-muted text-caption font-mono">
           {cookie.expiresAt === undefined ? 'session' : 'persistent'}
         </span>
       </div>
@@ -106,7 +106,7 @@ function CookieRow({ cookie }: { cookie: Cookie }) {
               : 'A Domain attribute was sent, which widened this cookie to every subdomain — including whichever one somebody else is running.'
           }
           className={cn(
-            'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[0.5625rem]',
+            'text-caption inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono',
             cookie.hostOnly
               ? 'border-state-ok/40 bg-state-ok/10 text-state-ok'
               : 'border-state-warn/40 bg-state-warn/10 text-state-warn',
@@ -117,7 +117,7 @@ function CookieRow({ cookie }: { cookie: Cookie }) {
 
         <span
           title="Path scopes where the cookie is sent. It is organisation, not isolation: same-origin script reads across paths anyway."
-          className="border-border text-fg-muted inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[0.5625rem]"
+          className="border-border text-fg-muted text-caption inline-flex items-center rounded border px-1.5 py-0.5 font-mono"
         >
           Path={cookie.path}
         </span>
@@ -135,7 +135,7 @@ function CookieRow({ cookie }: { cookie: Cookie }) {
         <span
           title={SAME_SITE_HINTS[cookie.sameSite] ?? ''}
           className={cn(
-            'inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[0.5625rem]',
+            'text-caption inline-flex items-center rounded border px-1.5 py-0.5 font-mono',
             cookie.sameSite === 'None'
               ? 'border-state-warn/40 bg-state-warn/10 text-state-warn'
               : 'border-state-ok/40 bg-state-ok/10 text-state-ok',
@@ -170,15 +170,13 @@ export function CookieJarPanel({ jar, exchanges, className }: CookieJarPanelProp
       title="Cookie jar"
       aside={
         <div className="flex items-center gap-2">
-          <span className="text-fg-muted text-[0.625rem]">
-            {jar.cookies.length} stored
-          </span>
+          <span className="text-fg-muted text-caption">{jar.cookies.length} stored</span>
           <button
             type="button"
             aria-expanded={showDefences}
             onClick={() => setShowDefences((open) => !open)}
             className={cn(
-              'border-border bg-surface text-fg-secondary hover:border-border-strong rounded-md border px-2 py-0.5 text-[0.625rem] transition-colors',
+              'border-border bg-surface text-fg-secondary hover:border-border-strong text-caption rounded-md border px-2 py-0.5 transition-colors',
               focusRing,
             )}
           >
@@ -195,20 +193,20 @@ export function CookieJarPanel({ jar, exchanges, className }: CookieJarPanelProp
             {COOKIE_DEFENCES.map((defence) => (
               <li key={defence.attribute} className="min-w-0">
                 <div className="flex flex-wrap items-baseline gap-2">
-                  <code className="text-accent font-mono text-[0.6875rem]">
+                  <code className="text-accent text-caption font-mono">
                     {defence.attribute}
                   </code>
-                  <span className="text-fg text-[0.6875rem] font-medium">
+                  <span className="text-fg text-caption font-medium">
                     stops: {defence.stops}
                   </span>
                 </div>
-                <p className="text-fg-secondary mt-0.5 text-[0.625rem] leading-snug">
+                <p className="text-fg-secondary text-caption mt-0.5 leading-snug">
                   {defence.how}
                 </p>
-                <p className="text-state-warn/90 mt-0.5 text-[0.625rem] leading-snug">
+                <p className="text-state-warn/90 text-caption mt-0.5 leading-snug">
                   Without it: {defence.withoutIt}
                 </p>
-                <p className="text-fg-muted mt-0.5 font-mono text-[0.5625rem]">
+                <p className="text-fg-muted text-caption mt-0.5 font-mono">
                   {defence.rfc}
                 </p>
               </li>
@@ -219,12 +217,12 @@ export function CookieJarPanel({ jar, exchanges, className }: CookieJarPanelProp
         <section aria-labelledby="jar-stored">
           <h3
             id="jar-stored"
-            className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+            className="text-fg-muted text-caption font-medium tracking-widest uppercase"
           >
             In the jar
           </h3>
           {jar.cookies.length === 0 ? (
-            <p className="text-fg-muted mt-1 text-[0.6875rem] leading-snug">
+            <p className="text-fg-muted text-caption mt-1 leading-snug">
               Empty. A fresh browser profile — nothing has asked the browser to remember
               anything yet.
             </p>
@@ -244,12 +242,12 @@ export function CookieJarPanel({ jar, exchanges, className }: CookieJarPanelProp
           <section aria-labelledby="jar-current">
             <h3
               id="jar-current"
-              className="text-fg-muted text-[0.625rem] font-medium tracking-widest uppercase"
+              className="text-fg-muted text-caption font-medium tracking-widest uppercase"
             >
               On {current.request.method} {current.request.target}
             </h3>
 
-            <p className="text-fg-secondary mt-1 text-[0.6875rem] leading-snug">
+            <p className="text-fg-secondary text-caption mt-1 leading-snug">
               {sent.length === 0
                 ? 'No cookies attached.'
                 : `Attached automatically: ${sent.map((cookie) => cookie.name).join(', ')}. The browser sent these because of where the request was going, not because of who caused it — which is the whole of CSRF.`}
@@ -262,10 +260,10 @@ export function CookieJarPanel({ jar, exchanges, className }: CookieJarPanelProp
                     key={`${exclusion.cookie.name}-${index}`}
                     className="border-state-warn/30 bg-state-warn/5 rounded border px-2 py-1"
                   >
-                    <span className="text-fg font-mono text-[0.625rem]">
+                    <span className="text-fg text-caption font-mono">
                       {exclusion.cookie.name}
                     </span>
-                    <span className="text-fg-secondary text-[0.625rem]">
+                    <span className="text-fg-secondary text-caption">
                       {' '}
                       held back — {exclusion.reason}
                     </span>
@@ -282,7 +280,7 @@ export function CookieJarPanel({ jar, exchanges, className }: CookieJarPanelProp
                     className="border-state-error/30 bg-state-error/5 rounded border px-2 py-1"
                   >
                     <Badge tone="error">Set-Cookie refused</Badge>
-                    <span className="text-fg-secondary ml-1.5 text-[0.625rem]">
+                    <span className="text-fg-secondary text-caption ml-1.5">
                       {result.reason}
                     </span>
                   </li>

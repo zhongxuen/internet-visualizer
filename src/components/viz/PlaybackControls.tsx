@@ -149,7 +149,7 @@ export function PlaybackControls({
               aria-pressed={active}
               title={`Speed ${option}x (${index + 1})`}
               className={cn(
-                'focus-visible:outline-focus rounded px-1.5 py-0.5 font-mono text-[0.6875rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-1',
+                'focus-visible:outline-focus text-caption rounded px-1.5 py-0.5 font-mono transition-colors focus-visible:outline-2 focus-visible:outline-offset-1',
                 active
                   ? 'bg-accent text-accent-ink'
                   : 'text-fg-muted hover:text-fg hover:bg-surface-overlay',

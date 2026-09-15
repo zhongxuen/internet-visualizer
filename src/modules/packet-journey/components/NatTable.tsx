@@ -60,7 +60,7 @@ export function NatTable({
     <Panel
       title="NAT translation table"
       aside={
-        <span className="text-fg-muted text-[0.6875rem]">
+        <span className="text-fg-muted text-caption">
           {routerLabel} · {table.publicIp}
         </span>
       }
@@ -69,13 +69,13 @@ export function NatTable({
     >
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left text-xs">
-          <caption className="text-fg-muted px-4 py-2 text-left text-[0.6875rem] leading-snug">
+          <caption className="text-fg-muted text-caption px-4 py-2 text-left leading-snug">
             Written by the packet on its way out and read backwards on the way in. Without
             the row, a reply arriving at {table.publicIp} could not be told which machine
             in the house had asked for it.
           </caption>
           <thead>
-            <tr className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+            <tr className="text-fg-muted text-caption tracking-wider uppercase">
               {HEADINGS.map((heading) => (
                 <th
                   key={heading}
@@ -93,7 +93,7 @@ export function NatTable({
               <tr>
                 <td
                   colSpan={HEADINGS.length}
-                  className="text-fg-muted px-3 py-3 text-[0.6875rem]"
+                  className="text-fg-muted text-caption px-3 py-3"
                 >
                   Empty. The first packet out of the house writes the first row.
                 </td>
@@ -136,9 +136,7 @@ export function NatTable({
                       {matchedAgain ? (
                         formatTimecode(binding.lastUsedAt, durationMs)
                       ) : (
-                        <span className="text-[0.6875rem]">
-                          only the packet that made it
-                        </span>
+                        <span className="text-caption">only the packet that made it</span>
                       )}
                     </td>
                   </tr>

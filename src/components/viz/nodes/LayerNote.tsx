@@ -20,7 +20,7 @@ export function LayerNote({ kind }: LayerNoteProps) {
   const token = nodeKindToken(kind);
 
   return (
-    <Badge layer={token.layer} className="w-fit px-1.5 py-0 text-[0.625rem]">
+    <Badge layer={token.layer} className="text-caption w-fit px-1.5 py-0">
       {token.layerAction}
     </Badge>
   );

@@ -15,9 +15,14 @@ const VARIANTS: Record<ButtonVariant, string> = {
   danger: 'bg-state-error text-accent-ink hover:brightness-110',
 };
 
+/*
+ * `md` is the primary control and is exactly `--target-min` (44px) tall; `sm` is 36px,
+ * for secondary actions that sit in dense panels, and still well above the 24px floor.
+ * Both are rem, so "Large text" grows them with their label.
+ */
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-8 gap-1.5 px-3 text-xs',
-  md: 'h-10 gap-2 px-4 text-sm',
+  sm: 'h-9 gap-1.5 px-3 text-caption',
+  md: 'h-target gap-2 px-4 text-small',
 };
 
 export interface ButtonStyleOptions {

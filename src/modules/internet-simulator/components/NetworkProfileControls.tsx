@@ -79,7 +79,7 @@ export function NetworkProfileControls({
                 >
                   {profile.label}
                 </span>
-                <span className="text-fg-muted block font-mono text-[0.625rem]">
+                <span className="text-fg-muted text-caption block font-mono">
                   {profile.rttMs} ms RTT
                 </span>
               </span>
@@ -109,7 +109,7 @@ export function NetworkProfileControls({
                   {load === undefined ? '--' : formatDuration(load)}
                 </span>
                 {multiple >= 1.05 ? (
-                  <span className="text-fg-muted block font-mono text-[0.625rem] tabular-nums">
+                  <span className="text-fg-muted text-caption block font-mono tabular-nums">
                     {multiple.toFixed(1)}x
                   </span>
                 ) : null}
@@ -123,7 +123,7 @@ export function NetworkProfileControls({
         <p className="text-fg-secondary mt-3 text-xs leading-relaxed">{active.note}</p>
       ) : null}
 
-      <p className="text-fg-muted mt-2 text-[0.6875rem] leading-relaxed">
+      <p className="text-fg-muted text-caption mt-2 leading-relaxed">
         Satellite carries more bandwidth than 3G and still loses badly. A page load is
         mostly round trips, and no amount of capacity shortens one -- which is the entire
         reason TLS 1.3, session resumption, HTTP/2, and connection reuse exist.

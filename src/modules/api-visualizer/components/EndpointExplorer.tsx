@@ -58,8 +58,8 @@ function VerbChip({
 
   const chip = (
     <span className="flex items-center gap-1.5">
-      <span className="font-mono text-[0.6875rem] font-semibold">{method}</span>
-      <span aria-hidden="true" className="flex items-center gap-0.5 text-[0.5625rem]">
+      <span className="text-caption font-mono font-semibold">{method}</span>
+      <span aria-hidden="true" className="text-caption flex items-center gap-0.5">
         <span
           className={
             semantics.safe ? 'text-state-ok' : 'text-fg-dim line-through decoration-1'
@@ -138,7 +138,7 @@ function PathRow({
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <code className="text-fg font-mono text-xs">{path}</code>
-        <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+        <span className="text-fg-muted text-caption tracking-widest uppercase">
           {label}
         </span>
       </div>
@@ -211,7 +211,7 @@ function ResourceCard({
         aria-expanded={showFields}
         onClick={() => setShowFields((open) => !open)}
         className={cn(
-          'text-fg-muted hover:text-fg self-start rounded text-[0.6875rem] transition-colors',
+          'text-fg-muted hover:text-fg text-caption self-start rounded transition-colors',
           focusRing,
         )}
       >
@@ -227,13 +227,11 @@ function ResourceCard({
             >
               <div className="flex flex-wrap items-baseline gap-2">
                 <code className="text-accent font-mono text-xs">{field.name}</code>
-                <span className="text-fg-muted font-mono text-[0.625rem]">
-                  {field.type}
-                </span>
+                <span className="text-fg-muted text-caption font-mono">{field.type}</span>
                 {field.required ? <Badge tone="neutral">required</Badge> : null}
                 {field.serverOwned ? <Badge tone="warn">server-owned</Badge> : null}
               </div>
-              <p className="text-fg-secondary mt-1 text-[0.6875rem] leading-relaxed">
+              <p className="text-fg-secondary text-caption mt-1 leading-relaxed">
                 {field.what}
               </p>
             </li>
@@ -265,7 +263,7 @@ export function EndpointExplorer({
           creates a member, and <code className="font-mono">POST</code> to a member means
           nothing.
         </p>
-        <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+        <p className="text-fg-muted text-caption leading-relaxed">
           On each chip, <span className="text-state-ok font-mono">S</span> marks a{' '}
           <em>safe</em> method — one that changes nothing, so a prefetcher, a crawler, or
           a browser restoring tabs may perform it unbidden — and{' '}

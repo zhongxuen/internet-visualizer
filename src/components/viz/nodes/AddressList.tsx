@@ -42,11 +42,9 @@ export function AddressList({ node, always = false, className }: AddressListProp
     <dl className={cn('grid grid-cols-[2.4rem_1fr] gap-x-2 gap-y-0.5', className)}>
       {rows.map(({ key, label }) => (
         <div key={key} className="contents">
-          <dt className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
-            {label}
-          </dt>
+          <dt className="text-fg-muted text-caption tracking-wider uppercase">{label}</dt>
           <dd
-            className="text-fg-secondary truncate font-mono text-[0.6875rem]"
+            className="text-fg-secondary text-caption truncate font-mono"
             title={node[key] as string}
           >
             {node[key] as string}

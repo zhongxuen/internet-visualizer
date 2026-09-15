@@ -50,11 +50,11 @@ export function HeaderTable({ fields, layer, caption, className }: HeaderTablePr
 
   return (
     <table className={cn('w-full border-collapse text-left text-xs', className)}>
-      <caption className="text-fg-muted pb-2 text-left text-[0.6875rem] leading-snug">
+      <caption className="text-fg-muted text-caption pb-2 text-left leading-snug">
         {caption ?? 'Fields in wire order — the order they appear in the packet.'}
       </caption>
       <thead>
-        <tr className="text-fg-muted text-[0.625rem] tracking-wider uppercase">
+        <tr className="text-fg-muted text-caption tracking-wider uppercase">
           <th scope="col" className="py-1 pr-3 font-medium">
             Field
           </th>
@@ -102,7 +102,7 @@ export function HeaderTable({ fields, layer, caption, className }: HeaderTablePr
                       }}
                     />
                   </span>
-                  <span className="text-fg-muted font-mono text-[0.625rem]">
+                  <span className="text-fg-muted text-caption font-mono">
                     {field.bits}
                     <span aria-hidden="true"> b</span>
                     <span className="sr-only"> bits</span>
@@ -114,10 +114,7 @@ export function HeaderTable({ fields, layer, caption, className }: HeaderTablePr
 
           {field.note ? (
             <tr>
-              <td
-                colSpan={3}
-                className="text-fg-muted pb-2 text-[0.6875rem] leading-snug"
-              >
+              <td colSpan={3} className="text-fg-muted text-caption pb-2 leading-snug">
                 {field.note}
               </td>
             </tr>

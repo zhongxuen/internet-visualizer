@@ -85,7 +85,7 @@ function Arrow({ record, reached }: { record: FrameRecord; reached: boolean }) {
       />
       <span
         className={cn(
-          'shrink-0 font-mono text-[0.625rem]',
+          'text-caption shrink-0 font-mono',
           record.delivered ? 'text-fg-muted' : 'text-state-error',
         )}
       >
@@ -135,7 +135,7 @@ export function MessageStream({
       <div className="flex min-w-0 flex-col gap-2">
         <div
           aria-hidden="true"
-          className="text-fg-muted grid grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)] gap-2 text-[0.625rem] tracking-wider uppercase"
+          className="text-fg-muted text-caption grid grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)] gap-2 tracking-wider uppercase"
         >
           <span>Time</span>
           <span>Client</span>
@@ -166,7 +166,7 @@ export function MessageStream({
                     !reached && !active && 'state-dim',
                   )}
                 >
-                  <span className="text-fg-muted font-mono text-[0.625rem] tabular-nums">
+                  <span className="text-fg-muted text-caption font-mono tabular-nums">
                     {reached ? null : <span className="sr-only">Not sent yet. </span>}
                     {formatTimecode(record.sentAt, durationMs)}
                   </span>
@@ -174,7 +174,7 @@ export function MessageStream({
                   <span className="min-w-0">
                     {fromClient ? (
                       <span className="flex min-w-0 flex-col items-start gap-0.5">
-                        <span className="text-fg truncate text-[0.6875rem] font-medium">
+                        <span className="text-fg text-caption truncate font-medium">
                           {record.title}
                         </span>
                         <Badge tone="accent">masked</Badge>
@@ -186,7 +186,7 @@ export function MessageStream({
                     <Arrow record={record} reached={reached} />
                     <span className="flex flex-wrap items-center justify-center gap-1">
                       <Badge tone={opcodeTone(record)}>{record.frame.opcode}</Badge>
-                      <span className="text-fg-muted font-mono text-[0.625rem] tabular-nums">
+                      <span className="text-fg-muted text-caption font-mono tabular-nums">
                         {record.wireBytes} B
                       </span>
                       {record.frame.fin ? null : <Badge tone="neutral">FIN 0</Badge>}
@@ -198,7 +198,7 @@ export function MessageStream({
                   <span className="min-w-0">
                     {fromClient ? null : (
                       <span className="flex min-w-0 flex-col items-end gap-0.5">
-                        <span className="text-fg truncate text-[0.6875rem] font-medium">
+                        <span className="text-fg text-caption truncate font-medium">
                           {record.title}
                         </span>
                         <Badge tone="neutral">unmasked</Badge>
@@ -208,11 +208,11 @@ export function MessageStream({
 
                   {active ? (
                     <span className="col-span-4 flex flex-col gap-1 pt-1">
-                      <span className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+                      <span className="text-fg-secondary text-caption leading-relaxed">
                         {record.why}
                       </span>
                       {record.message ? (
-                        <span className="text-fg-muted text-[0.6875rem] leading-relaxed">
+                        <span className="text-fg-muted text-caption leading-relaxed">
                           Delivered to the application as one {record.message.opcode}{' '}
                           message of {record.message.bytes} bytes
                           {record.message.frameCount > 1
@@ -224,7 +224,7 @@ export function MessageStream({
                         </span>
                       ) : null}
                       {record.close ? (
-                        <span className="text-state-warn text-[0.6875rem] leading-relaxed">
+                        <span className="text-state-warn text-caption leading-relaxed">
                           Close code{' '}
                           {record.close.code ?? '(none — reported locally as 1005)'}
                           {record.close.reason === '' ? '' : ` — ${record.close.reason}`}
@@ -233,7 +233,7 @@ export function MessageStream({
                       {record.notes.map((note) => (
                         <span
                           key={note}
-                          className="text-fg-muted text-[0.6875rem] leading-relaxed"
+                          className="text-fg-muted text-caption leading-relaxed"
                         >
                           {note}
                         </span>
@@ -246,7 +246,7 @@ export function MessageStream({
           })}
         </ol>
 
-        <p className="text-fg-muted text-[0.625rem] leading-relaxed">
+        <p className="text-fg-muted text-caption leading-relaxed">
           Both directions, ordered by the moment each frame left its sender — which is the
           only ordering the protocol has. After the handshake there is no request/response
           pairing at all: two independent streams sharing one TCP connection, and nothing

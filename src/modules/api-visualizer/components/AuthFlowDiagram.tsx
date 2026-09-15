@@ -91,8 +91,8 @@ function Segment({
 
   return (
     <div className={cn('min-w-0 rounded-lg border px-2 py-1.5', colours[tone])}>
-      <p className="text-[0.5625rem] tracking-widest uppercase opacity-80">{label}</p>
-      <p className="mt-0.5 font-mono text-[0.625rem] leading-snug break-all">
+      <p className="text-caption tracking-widest uppercase opacity-80">{label}</p>
+      <p className="text-caption mt-0.5 font-mono leading-snug break-all">
         {value === '' ? '(empty)' : value}
       </p>
     </div>
@@ -109,18 +109,18 @@ function ClaimRow({ name, value }: { name: string; value: unknown }) {
         <code className={cn('font-mono text-xs', registered ? 'text-accent' : 'text-fg')}>
           {name}
         </code>
-        <code className="text-fg-secondary min-w-0 flex-1 font-mono text-[0.6875rem] break-all">
+        <code className="text-fg-secondary text-caption min-w-0 flex-1 font-mono break-all">
           {typeof value === 'string' ? value : JSON.stringify(value)}
         </code>
         {registered ? null : <Badge tone="warn">private claim</Badge>}
       </div>
-      <p className="text-fg-secondary mt-1 text-[0.6875rem] leading-relaxed">
+      <p className="text-fg-secondary text-caption mt-1 leading-relaxed">
         {explanation
           ? `${explanation.label}. ${explanation.what}`
           : 'Not a registered claim. Anything here is readable by whoever holds the token — which is the case against putting an email address, an internal id, or an unreleased feature name in one.'}
       </p>
       {explanation?.detail ? (
-        <p className="text-fg-muted mt-0.5 text-[0.6875rem] leading-relaxed">
+        <p className="text-fg-muted text-caption mt-0.5 leading-relaxed">
           {explanation.detail}
         </p>
       ) : null}
@@ -142,7 +142,7 @@ export function JwtView({
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <div className="border-state-warn/40 bg-state-warn/8 rounded-lg border px-2.5 py-2">
-        <p className="text-state-warn text-[0.5625rem] tracking-widest uppercase">
+        <p className="text-state-warn text-caption tracking-widest uppercase">
           Encoded, not encrypted
         </p>
         <p className="text-fg-secondary mt-1 text-xs leading-relaxed">
@@ -156,7 +156,7 @@ export function JwtView({
         <Segment label="signature" value={decoded.segments.signature} tone="warn" />
       </div>
 
-      <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+      <p className="text-fg-muted text-caption leading-relaxed">
         The signature covers <code className="font-mono">header.payload</code>{' '}
         <em>as encoded text</em>, not as the JSON it decodes to — which is why a token
         cannot be re-serialised or pretty-printed and still verify.
@@ -170,13 +170,13 @@ export function JwtView({
       />
 
       {algorithm === 'none' ? (
-        <p className="text-state-error text-[0.6875rem] leading-relaxed">
+        <p className="text-state-error text-caption leading-relaxed">
           {JWT_ALG_NONE_WARNING}
         </p>
       ) : null}
 
       <div className="flex flex-col gap-1">
-        <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+        <span className="text-fg-muted text-caption tracking-widest uppercase">
           Claims, read without a key
         </span>
         <ul className="flex flex-col gap-1">
@@ -188,7 +188,7 @@ export function JwtView({
 
       {verification ? (
         <div className="flex flex-col gap-1">
-          <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+          <span className="text-fg-muted text-caption tracking-widest uppercase">
             What the verifier checked
           </span>
           <ul className="flex flex-col gap-1">
@@ -203,24 +203,24 @@ export function JwtView({
                 )}
               >
                 <div className="flex flex-wrap items-baseline gap-2">
-                  <span aria-hidden="true" className="font-mono text-[0.6875rem]">
+                  <span aria-hidden="true" className="text-caption font-mono">
                     {check.passed ? '✓' : '✕'}
                   </span>
                   <code className="text-fg font-mono text-xs">{check.name}</code>
                   <span className="sr-only">{check.passed ? 'passed' : 'failed'}</span>
                 </div>
-                <p className="text-fg-secondary mt-0.5 text-[0.6875rem] leading-relaxed">
+                <p className="text-fg-secondary text-caption mt-0.5 leading-relaxed">
                   {check.what}
                 </p>
                 {check.detail ? (
-                  <p className="text-fg-muted mt-0.5 font-mono text-[0.625rem] break-all">
+                  <p className="text-fg-muted text-caption mt-0.5 font-mono break-all">
                     {check.detail}
                   </p>
                 ) : null}
               </li>
             ))}
           </ul>
-          <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+          <p className="text-fg-muted text-caption leading-relaxed">
             {JWT_REVOCATION_NOTE}
           </p>
         </div>
@@ -252,23 +252,20 @@ function CredentialSummary({ auth }: { auth: ExchangeAuth }) {
             key in the {chosen}
           </Badge>
           {placement ? (
-            <code className="text-fg-muted font-mono text-[0.625rem]">
+            <code className="text-fg-muted text-caption font-mono">
               {placement.example}
             </code>
           ) : null}
         </div>
         {placement ? (
           <>
-            <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+            <p className="text-fg-secondary text-caption leading-relaxed">
               {placement.what}
             </p>
             {placement.verdict === 'avoid' ? (
               <ul className="flex flex-col gap-0.5">
                 {placement.leaks.map((leak) => (
-                  <li
-                    key={leak}
-                    className="text-state-warn text-[0.6875rem] leading-relaxed"
-                  >
+                  <li key={leak} className="text-state-warn text-caption leading-relaxed">
                     — {leak}
                   </li>
                 ))}
@@ -340,7 +337,7 @@ function CredentialList({
                 onSelect?.(exchange.id);
               }}
               className={cn(
-                'rounded-md border px-2 py-1 font-mono text-[0.625rem] transition-colors',
+                'text-caption rounded-md border px-2 py-1 font-mono transition-colors',
                 focusRing,
                 active
                   ? 'border-accent/60 bg-accent/12 text-fg'
@@ -418,14 +415,12 @@ function Rung({
             style={{ gridColumn: `${left + 1} / span ${span}` }}
           >
             {local ? (
-              <span className="border-border-strong text-fg-muted rounded border border-dashed px-1.5 py-0.5 text-[0.5625rem]">
+              <span className="border-border-strong text-fg-muted text-caption rounded border border-dashed px-1.5 py-0.5">
                 local
               </span>
             ) : (
               <>
-                {!rightwards ? (
-                  <span className="text-accent text-[0.625rem]">◀</span>
-                ) : null}
+                {!rightwards ? <span className="text-accent text-caption">◀</span> : null}
                 <span
                   className={cn(
                     'h-px flex-1',
@@ -434,47 +429,41 @@ function Rung({
                       : 'bg-border-strong [background-image:none]',
                   )}
                 />
-                {rightwards ? (
-                  <span className="text-accent text-[0.625rem]">▶</span>
-                ) : null}
+                {rightwards ? <span className="text-accent text-caption">▶</span> : null}
               </>
             )}
           </div>
         </div>
 
         <p className="text-fg mt-1 text-xs leading-snug">
-          <span className="text-fg-muted font-mono text-[0.625rem]">
-            {step.index + 1}.
-          </span>{' '}
+          <span className="text-fg-muted text-caption font-mono">{step.index + 1}.</span>{' '}
           {step.title}
         </p>
 
         {expanded ? (
           <div className="mt-1.5 flex flex-col gap-1.5">
-            <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">
-              {step.what}
-            </p>
+            <p className="text-fg-secondary text-caption leading-relaxed">{step.what}</p>
             {step.defends ? (
-              <p className="text-state-ok text-[0.6875rem] leading-relaxed">
+              <p className="text-state-ok text-caption leading-relaxed">
                 Defends against: {step.defends}
               </p>
             ) : null}
             {step.url ? (
-              <code className="text-fg-muted font-mono text-[0.625rem] break-all">
+              <code className="text-fg-muted text-caption font-mono break-all">
                 {step.url}
               </code>
             ) : null}
             {step.request?.body ? (
-              <code className="text-fg-muted font-mono text-[0.625rem] break-all">
+              <code className="text-fg-muted text-caption font-mono break-all">
                 {step.request.body}
               </code>
             ) : null}
             {step.response?.body ? (
-              <code className="text-fg-muted font-mono text-[0.625rem] break-all">
+              <code className="text-fg-muted text-caption font-mono break-all">
                 {step.response.body}
               </code>
             ) : null}
-            <span className="text-fg-muted font-mono text-[0.625rem]">
+            <span className="text-fg-muted text-caption font-mono">
               RFC {step.reference.rfc}
               {step.reference.section ? ` §${step.reference.section}` : ''}
             </span>
@@ -505,7 +494,7 @@ function Ladder({
             title={OAUTH_ACTORS[actor].what}
             className="border-border bg-surface-raised rounded-lg border px-1.5 py-1"
           >
-            <p className="text-fg text-[0.625rem] leading-tight font-medium">
+            <p className="text-fg text-caption leading-tight font-medium">
               {OAUTH_ACTORS[actor].label}
             </p>
           </div>
@@ -524,18 +513,16 @@ function Ladder({
       </ul>
 
       <div className="border-border bg-surface-raised flex flex-col gap-1 rounded-lg border px-2.5 py-2">
-        <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
-          PKCE
-        </span>
-        <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+        <span className="text-fg-muted text-caption tracking-widest uppercase">PKCE</span>
+        <p className="text-fg-secondary text-caption leading-relaxed">
           The verifier is the secret and never travels through the browser. The challenge
           is <code className="font-mono">BASE64URL(SHA256(verifier))</code>, committed in
           step 3 — before anyone has logged in and before any code exists.
         </p>
-        <code className="text-fg-muted font-mono text-[0.625rem] break-all">
+        <code className="text-fg-muted text-caption font-mono break-all">
           verifier {flow.pkce.verifier}
         </code>
-        <code className="text-accent font-mono text-[0.625rem] break-all">
+        <code className="text-accent text-caption font-mono break-all">
           challenge {flow.pkce.challenge} ({flow.pkce.method})
         </code>
       </div>
@@ -550,25 +537,25 @@ function Ladder({
           )}
         >
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+            <span className="text-fg-muted text-caption tracking-widest uppercase">
               The stolen code
             </span>
             <Badge tone={interception.refused ? 'ok' : 'error'}>
               {interception.response.status} {interception.response.reason}
             </Badge>
           </div>
-          <p className="text-fg-secondary text-[0.6875rem] leading-relaxed">
+          <p className="text-fg-secondary text-caption leading-relaxed">
             {interception.why}
           </p>
           <ul className="flex flex-col gap-0.5">
             {interception.attackerHeld.map((held) => (
-              <li key={held} className="text-fg-muted text-[0.6875rem] leading-relaxed">
+              <li key={held} className="text-fg-muted text-caption leading-relaxed">
                 — the attacker holds {held}
               </li>
             ))}
           </ul>
           {guessedInterception ? (
-            <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+            <p className="text-fg-muted text-caption leading-relaxed">
               Guessing instead: {guessedInterception.why}
             </p>
           ) : null}

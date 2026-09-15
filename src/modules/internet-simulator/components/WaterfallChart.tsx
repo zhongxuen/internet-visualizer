@@ -97,7 +97,7 @@ function Marker({
       />
       <span
         className={cn(
-          'absolute top-0 left-1 font-mono text-[0.5625rem] whitespace-nowrap',
+          'text-caption absolute top-0 left-1 font-mono whitespace-nowrap',
           tone === 'paint' ? 'text-state-ok' : 'text-layer-link',
         )}
       >
@@ -126,7 +126,7 @@ export function WaterfallChart({
     <Panel
       title="Network waterfall"
       aside={
-        <span className="text-fg-muted font-mono text-[0.625rem]">
+        <span className="text-fg-muted text-caption font-mono">
           {waterfall.rows.length} request{waterfall.rows.length === 1 ? '' : 's'} ·{' '}
           {formatDuration(total)}
         </span>
@@ -149,7 +149,7 @@ export function WaterfallChart({
                 timing segments.
               </caption>
               <thead>
-                <tr className="text-fg-muted text-[0.5625rem] tracking-widest uppercase">
+                <tr className="text-fg-muted text-caption tracking-widest uppercase">
                   <th scope="col" className="w-40 py-1 font-normal">
                     Name
                   </th>
@@ -181,7 +181,7 @@ export function WaterfallChart({
                       >
                         {row.label}
                       </button>
-                      <span className="text-fg-muted block text-[0.5625rem] tracking-wide uppercase">
+                      <span className="text-fg-muted text-caption block tracking-wide uppercase">
                         {row.kind}
                         {row.status ? ` · ${row.status}` : ''}
                       </span>
@@ -189,14 +189,14 @@ export function WaterfallChart({
 
                     <td
                       className={cn(
-                        'py-1.5 text-right font-mono text-[0.6875rem] tabular-nums',
+                        'text-caption py-1.5 text-right font-mono tabular-nums',
                         row.fromCache ? 'text-state-ok' : 'text-fg-secondary',
                       )}
                     >
                       {sizeLabel(row)}
                     </td>
 
-                    <td className="text-fg-secondary py-1.5 text-right font-mono text-[0.6875rem] tabular-nums">
+                    <td className="text-fg-secondary text-caption py-1.5 text-right font-mono tabular-nums">
                       {formatDuration(row.durationMs)}
                     </td>
 
@@ -256,7 +256,7 @@ export function WaterfallChart({
             <li
               key={name}
               title={SEGMENT_NOTES[name]}
-              className="text-fg-secondary flex items-center gap-1.5 text-[0.625rem]"
+              className="text-fg-secondary text-caption flex items-center gap-1.5"
             >
               <span
                 aria-hidden="true"
@@ -268,7 +268,7 @@ export function WaterfallChart({
           ))}
         </ul>
 
-        <p className="text-fg-muted text-[0.6875rem] leading-relaxed">
+        <p className="text-fg-muted text-caption leading-relaxed">
           These are Chrome&rsquo;s own segment names. Subresource rows carry no{' '}
           <span className="text-fg-secondary">DNS Lookup</span>,{' '}
           <span className="text-fg-secondary">Initial connection</span> or{' '}
