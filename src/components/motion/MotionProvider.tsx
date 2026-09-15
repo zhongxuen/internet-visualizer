@@ -9,6 +9,13 @@ import {
   type ReactNode,
 } from 'react';
 
+import type { MotionSetting } from '@/components/prefs/preferences';
+import {
+  usePreferencesStore,
+  useStorePreference,
+} from '@/components/prefs/PreferencesProvider';
+import { createMemoryPreferencesStore } from '@/components/prefs/store';
+
 /**
  * Reduced-motion policy for the whole product
  * (docs/implementation/02-design-system-and-shell.md, step 3).
@@ -18,13 +25,16 @@ import {
  * lands on its end state immediately and the module leans on its step label instead of
  * the movement between states. Nothing here may be used to skip or hide content.
  *
- * The source of truth is the OS `prefers-reduced-motion` setting, overridable per
- * session from the UI: some users want the animation for one sitting without editing
- * their system preferences, and some want it gone without having set the OS flag.
+ * The source of truth is the OS `prefers-reduced-motion` setting, overridable from the
+ * UI: some users want the animation without editing their system preferences, and some
+ * want it gone without having set the OS flag. The override is the `motion` field of the
+ * viewer's preferences (`@/components/prefs`, uiux.md §5.7), so it lasts across visits
+ * and follows the viewer between tabs. It used to be per tab, in `sessionStorage`; the
+ * preferences store migrates that value once and never reads it again.
  */
 
-/** `system` follows the OS; the other two are the explicit session override. */
-export type MotionPreference = 'system' | 'full' | 'reduced';
+/** `system` follows the OS; the other two are the explicit override. */
+export type MotionPreference = MotionSetting;
 
 export interface MotionContextValue {
   /** Tweening is off. Read this before animating anything. */
@@ -35,7 +45,7 @@ export interface MotionContextValue {
    * a CSS transition, or a timeline must pass through here.
    */
   scale: (ms: number) => number;
-  /** The session setting, including whether it is currently deferring to the OS. */
+  /** The stored setting, including whether it is currently deferring to the OS. */
   preference: MotionPreference;
   setPreference: (preference: MotionPreference) => void;
   /** What the OS asks for, regardless of the override. Lets the UI say "follows OS". */
@@ -45,9 +55,6 @@ export interface MotionContextValue {
 export const MotionContext = createContext<MotionContextValue | null>(null);
 
 const MEDIA_QUERY = '(prefers-reduced-motion: reduce)';
-
-/** Session-scoped on purpose: an override lasts for the sitting, not forever. */
-const STORAGE_KEY = 'iv:motion-preference';
 
 function subscribeToSystem(onStoreChange: () => void): () => void {
   if (typeof window === 'undefined' || !window.matchMedia) return () => {};
@@ -88,102 +95,54 @@ export function scaleDuration(reduced: boolean, ms: number): number {
   return reduced ? 0 : ms;
 }
 
-function isMotionPreference(value: unknown): value is MotionPreference {
-  return value === 'system' || value === 'full' || value === 'reduced';
-}
-
-function readStoredPreference(): MotionPreference | null {
-  try {
-    const stored = window.sessionStorage.getItem(STORAGE_KEY);
-    return isMotionPreference(stored) ? stored : null;
-  } catch {
-    // Storage can throw (private mode, blocked cookies). The override is a nicety;
-    // losing it must never break the app.
-    return null;
-  }
-}
-
-function writeStoredPreference(preference: MotionPreference): void {
-  try {
-    window.sessionStorage.setItem(STORAGE_KEY, preference);
-  } catch {
-    /* see readStoredPreference */
-  }
-}
-
-/**
- * The session override is an external store rather than plain state, for one reason:
- * the server cannot see `sessionStorage`, so the stored value must not reach the
- * hydration render. `useSyncExternalStore` renders `getServerSnapshot()` while
- * hydrating and then re-renders with the real value — which reading storage in a
- * `useState` initialiser (hydration mismatch) or in an effect (cascading render)
- * would not.
- *
- * One store per provider, resolved lazily so storage is only ever touched on the
- * client.
- */
-function createPreferenceStore(initial: MotionPreference) {
-  const listeners = new Set<() => void>();
-  let value: MotionPreference | null = null;
-
-  return {
-    subscribe(listener: () => void) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    getSnapshot(): MotionPreference {
-      value ??= readStoredPreference() ?? initial;
-      return value;
-    },
-    getServerSnapshot(): MotionPreference {
-      return initial;
-    },
-    set(next: MotionPreference) {
-      value = next;
-      writeStoredPreference(next);
-      for (const listener of listeners) listener();
-    },
-  };
-}
-
 export interface MotionProviderProps {
   children: ReactNode;
-  /** Starting point before any stored session override is read. */
+  /**
+   * Pin the starting preference instead of reading the viewer's.
+   *
+   * For tests and isolated demos: the provider then keeps its own in-memory setting,
+   * starting here, and never reads or writes the stored preferences. Leave it out --
+   * as the root layout does -- to follow the viewer's stored setting.
+   */
   defaultPreference?: MotionPreference;
 }
 
-export function MotionProvider({
-  children,
-  defaultPreference = 'system',
-}: MotionProviderProps) {
+export function MotionProvider({ children, defaultPreference }: MotionProviderProps) {
   const systemReduced = useSystemReducedMotion();
-  const [store] = useState(() => createPreferenceStore(defaultPreference));
-  const preference = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    store.getServerSnapshot,
+  const viewer = usePreferencesStore();
+  const [pinned] = useState(() =>
+    defaultPreference === undefined
+      ? null
+      : createMemoryPreferencesStore({ motion: defaultPreference }),
   );
+  const store = pinned ?? viewer;
+  const [preference, setPreference] = useStorePreference(store, 'motion');
 
   const reduced = resolveReduced(preference, systemReduced);
 
-  // Mirror onto <html> so `globals.css` can collapse transitions that no component
-  // owns — hover states, focus rings, anything styled purely in CSS. Without this the
-  // manual override would only reach JS-driven animation.
+  /*
+   * Mirror onto <html> so `globals.css` can collapse transitions that no component
+   * owns — hover states, focus rings, anything styled purely in CSS. Without this the
+   * manual override would only reach JS-driven animation.
+   *
+   * Resolved from the live snapshot, not from `reduced`: during hydration `reduced` is
+   * still the server's answer (full motion), and writing it would briefly undo what the
+   * pre-paint script set from the stored preference.
+   */
   useEffect(() => {
-    document.documentElement.dataset.motion = reduced ? 'reduced' : 'full';
-  }, [reduced]);
+    const live = resolveReduced(store.getSnapshot().motion, getSystemSnapshot());
+    document.documentElement.dataset.motion = live ? 'reduced' : 'full';
+  }, [reduced, store]);
 
   const value = useMemo<MotionContextValue>(
     () => ({
       reduced,
       systemReduced,
       preference,
-      setPreference: store.set,
+      setPreference,
       scale: (ms: number) => scaleDuration(reduced, ms),
     }),
-    [reduced, systemReduced, preference, store],
+    [reduced, systemReduced, preference, setPreference],
   );
 
   return <MotionContext value={value}>{children}</MotionContext>;

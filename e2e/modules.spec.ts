@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { SIMULATING_MODULES, watchConsole } from './routes';
+import { playUntilEnded, SIMULATING_MODULES, watchConsole } from './routes';
 
 /**
  * The interaction contract every simulating module shares.
@@ -32,16 +32,14 @@ async function playToEnd(page: Page): Promise<void> {
   await fastest.click();
   await expect(fastest).toHaveAttribute('aria-pressed', 'true');
 
-  await page.getByRole('button', { name: 'Play', exact: true }).click();
-
   /*
    * `Play again` is `playbackAction('ended')` -- the toggle only reads that way once the
    * store has run the timeline out. Asserting on the button rather than on the clock is
    * what makes this a test of playback finishing rather than of a number being written.
+   * A fresh browser is in Simple, which pauses after each step; `playUntilEnded` presses
+   * Play at each pause, as a viewer would.
    */
-  await expect(page.getByRole('button', { name: 'Play again' })).toBeVisible({
-    timeout: 60_000,
-  });
+  await playUntilEnded(page);
 }
 
 /** The timeline's position, in virtual milliseconds. */

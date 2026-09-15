@@ -3,6 +3,11 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MotionProvider } from '@/components/motion';
+import {
+  createMemoryPreferencesStore,
+  PreferencesProvider,
+  type PreferencesStore,
+} from '@/components/prefs';
 import { buildToyRun } from '@/core/sim/toyRun';
 
 import { createPlaybackStore, usePlayback } from './usePlayback';
@@ -16,6 +21,13 @@ const FRAME_MS = 16;
 
 function reducedMotion({ children }: { children: ReactNode }) {
   return <MotionProvider defaultPreference="reduced">{children}</MotionProvider>;
+}
+
+/** A wrapper that puts `store`'s preferences in force for the hook under test. */
+function withPreferences(store: PreferencesStore) {
+  return function Preferences({ children }: { children: ReactNode }) {
+    return <PreferencesProvider store={store}>{children}</PreferencesProvider>;
+  };
 }
 
 describe('the playback store', () => {
@@ -119,7 +131,9 @@ describe('the animation loop', () => {
   });
 
   it('covers the run faster at a higher speed, and stops at the end', () => {
-    const { result } = renderHook(() => usePlayback({ result: RUN }));
+    const { result } = renderHook(() =>
+      usePlayback({ result: RUN, pauseAtPhaseEnd: false }),
+    );
     const store = result.current;
 
     act(() => {
@@ -137,7 +151,9 @@ describe('the animation loop', () => {
   });
 
   it('stops scheduling frames once the run has ended', () => {
-    const { result } = renderHook(() => usePlayback({ result: RUN }));
+    const { result } = renderHook(() =>
+      usePlayback({ result: RUN, pauseAtPhaseEnd: false }),
+    );
     const store = result.current;
 
     act(() => {
@@ -193,5 +209,102 @@ describe('the animation loop', () => {
       result.current.getState().stepPhase(1);
     });
     expect(result.current.getState().virtualTime).toBe(10);
+  });
+});
+
+describe('pausing after each step', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Press Play and let the loop run for long enough to finish the whole run. */
+  function playOut(store: ReturnType<typeof createPlaybackStore>) {
+    act(() => {
+      store.getState().play();
+    });
+    act(() => {
+      vi.advanceTimersByTime(RUN.durationMs * 4);
+    });
+  }
+
+  it('is on for a new visitor, in Simple: the run waits at the first step', () => {
+    const { result } = renderHook(() => usePlayback({ result: RUN }));
+    const store = result.current;
+
+    expect(store.getState().pauseAtPhaseEnd).toBe(true);
+    act(() => {
+      store.getState().setSpeed(4);
+    });
+    playOut(store);
+    expect(store.getState()).toMatchObject({ status: 'paused', virtualTime: 10 });
+
+    // Play continues from the step, to the next one, and then to the end.
+    playOut(store);
+    expect(store.getState()).toMatchObject({ status: 'paused', virtualTime: 60 });
+    playOut(store);
+    expect(store.getState()).toMatchObject({ status: 'ended', virtualTime: 120 });
+  });
+
+  it('is off in Full detail, so the run plays straight through', () => {
+    const { result } = renderHook(() => usePlayback({ result: RUN }), {
+      wrapper: withPreferences(createMemoryPreferencesStore({ detail: 'full' })),
+    });
+
+    expect(result.current.getState().pauseAtPhaseEnd).toBe(false);
+    playOut(result.current);
+    expect(result.current.getState().status).toBe('ended');
+  });
+
+  it('follows an explicit choice over the detail level', () => {
+    const { result } = renderHook(() => usePlayback({ result: RUN }), {
+      wrapper: withPreferences(
+        createMemoryPreferencesStore({ detail: 'full', pauseAtSteps: true }),
+      ),
+    });
+
+    playOut(result.current);
+    expect(result.current.getState()).toMatchObject({
+      status: 'paused',
+      virtualTime: 10,
+    });
+  });
+
+  it('lets the view override the viewer', () => {
+    const { result } = renderHook(
+      () => usePlayback({ result: RUN, pauseAtPhaseEnd: false }),
+      { wrapper: withPreferences(createMemoryPreferencesStore({ pauseAtSteps: true })) },
+    );
+
+    playOut(result.current);
+    expect(result.current.getState().status).toBe('ended');
+  });
+
+  it('picks up a change to the preference while the view is open', () => {
+    const preferences = createMemoryPreferencesStore();
+    const { result } = renderHook(() => usePlayback({ result: RUN }), {
+      wrapper: withPreferences(preferences),
+    });
+
+    playOut(result.current);
+    expect(result.current.getState()).toMatchObject({
+      status: 'paused',
+      virtualTime: 10,
+    });
+
+    act(() => {
+      preferences.set({ pauseAtSteps: false });
+    });
+    expect(result.current.getState().pauseAtPhaseEnd).toBe(false);
+
+    playOut(result.current);
+    expect(result.current.getState()).toMatchObject({
+      status: 'ended',
+      virtualTime: 120,
+    });
   });
 });
