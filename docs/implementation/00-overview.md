@@ -33,6 +33,7 @@ the same shape:
 | 12  | [Module: Network Diagnostics (real vs simulated)](./12-module-network-diagnostics.md)  | 02         |
 | 13  | [Module: Learning Center](./13-module-learning-center.md)                              | 04         |
 | 14  | [Quality, a11y, performance & deployment](./14-quality-and-deployment.md)              | all        |
+| UX  | [UI/UX restructure — beginner-first](./uiux.md) ([design reference](./uiux-spec.md))  | 01–14      |
 
 Phases 05–13 are **independent of each other** by design. After phase 04 you can build
 them in any order, or in parallel, without touching unrelated modules.
