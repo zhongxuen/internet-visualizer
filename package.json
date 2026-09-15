@@ -20,6 +20,7 @@
     "test:e2e": "playwright test",
     "perf:bundles": "node perf/bundles.mjs",
     "perf:vitals": "node perf/vitals.mjs",
+    "uiux:screens": "node scripts/uiux-screens.mjs",
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
