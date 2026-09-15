@@ -455,3 +455,7 @@ Planned core modules (each an independent module per the philosophy above): Netw
 ## UI philosophy
 
 Highly interactive, animated, dark mode, modern, easy to explore — prefer visual explanations over long blocks of text throughout the product (this applies to in-app content, not to code comments or commit messages).
+
+- **Beginner-first.** The primary reader is a complete beginner (`docs/implementation/uiux-spec.md` §2); Full detail keeps everything practitioners rely on today.
+- **Two voices.** Plain first, precise underneath, never one replacing the other: plain words go in the `plain` fields, and technical text is never shortened for them (`docs/CONTENT-STYLE.md`).
+- **A restructure is in progress:** `docs/implementation/uiux.md` is the run sheet and prompts, `uiux-spec.md` the design reference. Read both before changing the UI.

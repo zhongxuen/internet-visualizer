@@ -1,6 +1,7 @@
 # Writing for Internet Visualizer
 
-How to write an annotation, a log line, a phase description, and a lesson.
+How to write an annotation, a log line, a phase description, and a lesson, and the plain
+voice that sits beside each of them.
 
 Almost all of this product's words are written in four places, and they are not
 interchangeable. Getting the wrong kind of sentence into the wrong slot is the most
@@ -15,11 +16,58 @@ common way a screen ends up unreadable, so this file starts there.
 | **Annotation**                    | `{ kind: 'annotate', text, reference? }`  | 40–90 words     | Teach. Why the thing on screen is the way it is.        |
 | **Lesson prose**                  | `content/lessons/*.mdx`                   | ≤150 words per run | Connect. What all of this is for.                    |
 | **Scenario `summary` / `teaches`**| a scenario file                            | one sentence / short phrases | Let a reader choose this run over another.  |
+| **Plain story**                   | `plain`, `plainLabel`, `plainRole`, `story`, `question`, `plainSummary` — beside the technical slot on the same object | phase ≤ 30 words, annotation ≤ 40, packet ≤ 6, scenario title ≤ 6 | Tell a beginner what is happening now, in their words. Sits on top of the technical slot, never in place of it. |
 
 The annotation is where the teaching happens, and it is the one to get right. Measured
 across the note and log text already written into the modules, the median is 61 words,
 the ninetieth percentile is 85, and nothing is over 145 — so two to four sentences. If
 yours is longer than that, it is doing a lesson's job in an annotation's slot.
+
+## The plain voice
+
+The product speaks in two voices, and every surface that has a technical slot gets a
+**plain** one beside it. Plain comes first on screen; the technical text is one click
+underneath, and is what **Full detail** shows. Neither replaces the other: the technical
+slot stays exactly as precise as it is, keeps its RFC citation, and is never shortened to
+make room. Plain words go in the plain field.
+
+| Surface      | Technical slot                    | Plain slot                                      | Plain rules                                   |
+| ------------ | --------------------------------- | ----------------------------------------------- | --------------------------------------------- |
+| Phase        | `title`, `description`            | `plain`                                         | ≤ 30 words, one idea, present tense           |
+| Annotation   | `text` + `reference`              | `plain` (optional)                              | ≤ 40 words                                    |
+| Packet (PDU) | `summary` ("TCP SYN 49152 -> 443") | `plainLabel`                                   | ≤ 6 words, what the packet is *for*           |
+| Machine      | the kind's `description`          | `plainRole` (per node, or per kind by default)  | one line, plus an optional analogy            |
+| Scenario     | `title`, `summary`, `teaches`     | `story: { plainTitle, question, level }`        | title ≤ 6 words; the question ends in "?"     |
+| Module       | `summary`, `topics`               | `question`, `plainSummary`, `level`             | `plainSummary` ≤ 30 words                     |
+
+Rules for the plain voice:
+
+- **Keep the real word, and gloss it on first use.** Write "your computer asks a helper
+  called a *resolver*", not "your computer asks the phone book". The reader should leave
+  knowing the word they will meet everywhere else, and the word links to its glossary
+  entry.
+- **An analogy is marked as one and is never a name.** See [Analogies](#analogies).
+- **One idea per sentence, sentences under 20 words, no unexplained capitals.** Every
+  acronym in plain text must resolve to a glossary entry; a test checks this
+  (`docs/implementation/uiux-spec.md` §5.8).
+- **Everything else in this file still holds.** No "simply" or "just". No colour or
+  position. No "as you can see". No exclamation marks. Never soften a refusal. Never imply
+  that a simulated surface is live.
+
+Before and after:
+
+| Where                     | Technical (today)                                                                 | Plain                                                                                                                      |
+| ------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| DNS Explorer summary      | "Walk a domain lookup from stub resolver to root, TLD, and authoritative server." | "Websites have names, but computers need numbers. Watch your computer ask a chain of servers until one knows the number." |
+| Packet Journey phase      | "SYN, SYN-ACK, ACK. Each end tells the other where its sequence numbers start…"   | "Before any data moves, your laptop and the server greet each other three times, so each knows the other is listening."   |
+| DNS phase                 | "Nothing is cached, so this costs the full walk from the root. The stub resolver … sends one query with RD set…" | "Your computer has never looked up this name, so it asks a helper, the resolver, to find it from scratch." |
+| Packet label              | "TCP SYN 49152 -> 443"                                                            | "Hello? (start a connection)"                                                                                              |
+| Router                    | "Forwards packets between networks by IP address and decrements TTL."             | "Router: passes messages from one network to the next, like a sorting office."                                             |
+| Packet Journey control    | "Link MTU — As authored — 1500 bytes"                                             | "Biggest packet this road allows (MTU): 1500 bytes, the story's setting"                                                  |
+| DNS scenario              | "NXDOMAIN"                                                                        | "A name that doesn't exist"                                                                                                |
+
+The technical column is not wrong, and it does not go away. It is what a reader sees after
+switching on Full detail or opening "Technical details".
 
 ## Tone
 
@@ -27,17 +75,26 @@ yours is longer than that, it is doing a lesson's job in an annotation's slot.
 this name and is not pretending to be" is the shape. State the fact you can point at on
 screen, then the consequence a learner could not have derived.
 
-**Write to someone competent who has not seen this before.** Not to a beginner who needs
-reassurance, and not to a peer who needs no explanation. No "simply", "just", "of course",
-"obviously" — each one tells a reader who did not find it obvious that they are the
-problem.
+**Write first for a complete beginner, and never down to them.** The primary reader is 14
+or older, uses the web, apps and Wi-Fi every day, and has never been shown what the
+Internet is made of. They have heard "IP address" and "Wi-Fi"; they have not heard "DNS",
+"TCP", "packet", "TTL" or "TLS". They are often on a phone or a school Chromebook, may be
+reading English as a second language, and give a page about ten seconds before leaving.
+They learn by watching and poking, not by reading. New is not the same as slow: give them
+the real words, one at a time, and trust them with the idea. The developer who switches on
+Full detail and the practitioner who came for the header fields are still readers; the
+technical slots are written for them and stay exactly as precise (see [The plain
+voice](#the-plain-voice)). No "simply", "just", "of course", "obviously" — each one tells a
+reader who did not find it obvious that they are the problem.
 
 **Second person for what the reader does; third person for what the protocol does.** "Press
 play to watch the resolver ask the root" — the reader presses, the resolver asks. Never
 "we send a query": nobody in this product sends anything.
 
 **No exclamation marks, no rhetorical questions, no jokes at the reader's expense.** A
-learner who has just failed a quiz should not be met with cheerfulness.
+learner who has just failed a quiz should not be met with cheerfulness. A module's or a
+story's `question` is not rhetorical: it is the real question the run answers, and the
+run answers it.
 
 **Never refer to position or colour.** "The node on the left" is wrong on a narrow screen
 and meaningless to a screen reader; "the amber link" is meaningless in greyscale. Name the
@@ -63,6 +120,51 @@ connect plus an HTTP `HEAD`. It is *like* ping, and it is not ping, so it is lab
 _Reachability (TCP + HTTP timing)_ everywhere it appears. A learner who leaves believing
 they ran a ping has been taught something false, which is worse than having been taught
 nothing.
+
+## Analogies
+
+The Internet cannot be seen, so a beginner needs a picture to hold. An analogy gives them
+one — on two conditions. **It is marked with "like", and it is always paired with the real
+term.** "A router passes messages between networks, *like* a sorting office" teaches the
+word *router* and hands the reader a picture for it.
+
+That is the opposite of naming a thing after what it resembles, which stays forbidden (see
+[Naming things](#naming-things)). "The sorting office forwards your message" puts the
+resemblance where the name should be: the reader leaves with a word that appears nowhere
+else, and believes the router *is* a sorting office, broken parts included. The analogy
+sits beside the name and says "like"; the forbidden version replaces the name and says
+"is". Labelling the reachability check "ping" fails for the same reason.
+
+**These are the only analogies**, one per concept. Ten modules are written in parallel, and
+ten sets of private metaphors would teach ten incompatible pictures. Drop an analogy the
+moment a sentence leans on the part where it breaks — that column is for the author, not
+the reader. A new row is added here on purpose, in its own change, never inside a module's
+copy.
+
+| Concept                 | Analogy                                                                                   | Where it breaks                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Packet                  | a parcel or envelope with an address label                                                | real packets are copied, not handed over; many can be lost          |
+| Encapsulation           | envelopes inside envelopes                                                                | each "envelope" is opened and replaced at every hop (L2)            |
+| IP address              | a street address                                                                          | addresses can be shared (NAT) or change (DHCP)                      |
+| Port                    | a flat or apartment number at that address                                                | –                                                                   |
+| Router                  | a sorting office passing parcels on                                                       | it forwards one hop at a time and never sees the whole route        |
+| Switch                  | a building's internal mail room                                                           | –                                                                   |
+| DNS resolver            | a helper who looks up numbers for you                                                     | it asks several others; it isn't one directory                      |
+| DNS cache / any cache   | writing the answer down to reuse it                                                       | answers expire (TTL)                                                |
+| TTL (IP)                | a hop counter that runs out                                                               | –                                                                   |
+| TCP                     | recorded delivery: every piece is signed for                                              | –                                                                   |
+| UDP                     | a postcard: sent, not tracked                                                             | –                                                                   |
+| TLS / HTTPS             | a sealed envelope only the recipient can open                                             | the address on the outside stays readable (Observer view)           |
+| Certificate             | an ID card signed by someone both sides trust                                             | –                                                                   |
+| HTTP request / response | a written order and its reply                                                             | –                                                                   |
+| Status code             | the stamp on the reply ("done", "moved", "not found")                                     | –                                                                   |
+| CDN                     | a nearby warehouse holding copies                                                         | –                                                                   |
+| Load balancer           | a receptionist sending you to a free desk                                                 | –                                                                   |
+| NAT                     | one street address for a whole building, with a front desk that remembers who ordered what | –                                                                 |
+| MTU                     | the height limit of a tunnel                                                              | –                                                                   |
+| Firewall                | a guard at the door with a list of who may pass                                           | –                                                                   |
+| API                     | a menu and a waiter                                                                       | –                                                                   |
+| WebSocket vs HTTP       | a phone call left open vs posting letters                                                 | –                                                                   |
 
 ## When to cite an RFC
 
@@ -169,6 +271,8 @@ reader has already read.
 ## Before you commit
 
 - [ ] The sentence works with the animation switched off.
+- [ ] The plain slot is filled wherever the technical one is.
+- [ ] Every acronym in the plain slot is glossed, and resolves to a glossary entry.
 - [ ] No colour, position, or "as you can see".
 - [ ] Every term is the protocol's own, and matches the glossary.
 - [ ] Every assertion is either cited, arithmetic, or explicitly "in practice".
