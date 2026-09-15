@@ -54,3 +54,6 @@ next-env.d.ts
 
 # playwright MCP scratch output
 .playwright-mcp/
+
+# UI/UX restructure screenshots and metrics (scripts/uiux-screens.mjs)
+.uiux/
