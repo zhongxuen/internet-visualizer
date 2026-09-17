@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { GLOSSARY } from '@/core/glossary';
 import { getModule } from '@/modules/registry';
 
-import { GLOSSARY, lookupTerm, sortedGlossary } from './glossary';
 import { getLesson, LESSONS } from './lessons';
 import { lessonSlugsWithContent } from './load';
 import {
@@ -141,37 +141,13 @@ describe('navigation', () => {
   });
 });
 
+/**
+ * The glossary lives in `src/core/glossary/` now, and its own rules -- unique spellings
+ * across the base and every module's extras, the lookup, the popover length, the
+ * alphabetical listing -- are asserted there. What stays here is the half only this
+ * module can check: that every entry's links land on a real lesson.
+ */
 describe('the glossary', () => {
-  it('has unique ids and no two entries answering to the same word', () => {
-    expect(new Set(GLOSSARY.map((t) => t.id)).size).toBe(GLOSSARY.length);
-
-    // Within one entry the id and the term are usually the same word, which is fine.
-    // What must not happen is two *different* entries answering to one spelling:
-    // `lookupTerm` returns the first match, so the loser would silently never appear.
-    const claimedBy = new Map<string, string>();
-    for (const entry of GLOSSARY) {
-      const spellings = new Set(
-        [entry.id, entry.term, ...(entry.aliases ?? [])].map((s) => s.toLowerCase()),
-      );
-      for (const spelling of spellings) {
-        const owner = claimedBy.get(spelling);
-        expect(
-          owner,
-          `"${spelling}" is claimed by both ${owner} and ${entry.id}`,
-        ).toBeUndefined();
-        claimedBy.set(spelling, entry.id);
-      }
-    }
-  });
-
-  it('finds a term by id, by spelling, and by alias, in any case', () => {
-    expect(lookupTerm('ip-address')?.id).toBe('ip-address');
-    expect(lookupTerm('IP Address')?.id).toBe('ip-address');
-    expect(lookupTerm('  PACKETS ')?.id).toBe('packet');
-    expect(lookupTerm('nonsense')).toBeUndefined();
-    expect(lookupTerm('')).toBeUndefined();
-  });
-
   it('points only at lessons and modules that exist', () => {
     for (const entry of GLOSSARY) {
       for (const slug of entry.lessons ?? []) {
@@ -181,27 +157,5 @@ describe('the glossary', () => {
         expect(getModule(id), `${entry.id} -> unknown module "${id}"`).toBeDefined();
       }
     }
-  });
-
-  /** A popover is one sentence. Anything longer belongs in `definition`. */
-  it('keeps the popover short and the entry longer', () => {
-    for (const entry of GLOSSARY) {
-      expect(entry.short.length, `${entry.id}: short`).toBeLessThanOrEqual(200);
-      expect(entry.definition.length, `${entry.id}: definition`).toBeGreaterThan(
-        entry.short.length,
-      );
-    }
-  });
-
-  it('lists terms alphabetically without reordering the source', () => {
-    const before = GLOSSARY.map((t) => t.id);
-    const sorted = sortedGlossary();
-
-    expect(sorted.map((t) => t.term)).toEqual(
-      [...GLOSSARY.map((t) => t.term)].sort((a, b) => a.localeCompare(b)),
-    );
-    // `GLOSSARY` is the authoring order and several other things read it; an in-place
-    // `.sort()` here would quietly reorder all of them.
-    expect(GLOSSARY.map((t) => t.id)).toEqual(before);
   });
 });

@@ -100,4 +100,10 @@ export interface PDU {
    * This is the label on the animated packet and the row text in the event log.
    */
   summary: string;
+  /**
+   * What the packet is *for*, in at most six plain words, e.g.
+   * `'Hello? (start a connection)'`. The Simple detail level labels the packet with this
+   * instead of `summary`, which stays the technical label (docs/implementation/uiux.md §5.1).
+   */
+  plainLabel?: string;
 }

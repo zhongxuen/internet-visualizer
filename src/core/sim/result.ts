@@ -40,6 +40,8 @@ export interface PhaseSummary {
    * `[startMs, endMs)` everywhere, so exactly one phase is current at any time.
    */
   endMs: number;
+  /** The `phase` event's `plain` sentence, when the scenario wrote one. */
+  plain?: string;
 }
 
 /**
@@ -67,6 +69,10 @@ export interface SimResult {
  * ends where the next begins, and the last ends at `durationMs` (or at its own start, if
  * the run is shorter than its final phase -- an empty phase is preferable to a negative
  * one).
+ *
+ * `plain` is copied only when the event has one. A summary never carries
+ * `plain: undefined`: the determinism guard compares runs with `toStrictEqual`, and a
+ * key that is present-but-undefined is a difference a consumer can see.
  */
 export function summarizePhases(
   events: readonly SimEvent[],
@@ -85,6 +91,7 @@ export function summarizePhases(
       description: event.description,
       startMs: event.at,
       endMs,
+      ...(event.plain === undefined ? {} : { plain: event.plain }),
     };
   });
 }

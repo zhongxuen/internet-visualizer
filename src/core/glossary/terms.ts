@@ -1,11 +1,14 @@
 /**
- * One term list for the whole product.
+ * The base term list: the sixty-two entries the Learning Center's lessons were written
+ * against, moved here from `learning-center/content/glossary.ts` so that every module and
+ * every shared component can define a word without importing another module
+ * (docs/implementation/uiux.md §5.6). `./index.ts` merges these with the ten
+ * `./extra/<module-id>.ts` files into `GLOSSARY`; nothing should read `TERMS` directly.
  *
- * Both surfaces read this file and there is no second copy: `<Term>` shows `short` in
- * a popover wherever a lesson wraps a word, and `/learn/glossary` shows `definition`
- * plus the links. That is the point of a glossary -- a reader who meets "MTU" in three
- * lessons must meet the same sentence three times, or the definition is not a
- * definition.
+ * There is still one sentence per term across the whole product: `<Term>` in a lesson,
+ * a popover on a module screen and `/learn/glossary` all read the merged list. That is
+ * the point of a glossary -- a reader who meets "MTU" in three places must meet the same
+ * sentence three times, or the definition is not a definition.
  *
  * Writing rules, so the popover stays a popover:
  *
@@ -14,10 +17,11 @@
  *    get back to the sentence they were reading has been interrupted, not helped.
  *  - `definition` is two or three sentences and may assume the reader came looking.
  *  - `aliases` exist so a lesson can write `<Term>packets</Term>` in the natural
- *    plural, or `<Term>MTU</Term>` where the entry is spelled out.
- *  - `modules` are registry ids, `lessons` are slugs. Both are checked by the content
- *    test, so a renamed module or a deleted lesson fails the suite rather than
- *    rendering a dead link on the glossary page.
+ *    plural, or `<Term>MTU</Term>` where the entry is spelled out. No spelling may be
+ *    claimed by two entries, across this file and every extra (`__tests__/glossary.test.ts`).
+ *  - `modules` are registry ids, `lessons` are slugs. Both are checked by the Learning
+ *    Center's content test, so a renamed module or a deleted lesson fails the suite
+ *    rather than rendering a dead link on the glossary page.
  */
 
 export interface GlossaryTerm {
@@ -37,7 +41,7 @@ export interface GlossaryTerm {
   lessons?: readonly string[];
 }
 
-export const GLOSSARY: readonly GlossaryTerm[] = [
+export const TERMS: readonly GlossaryTerm[] = [
   {
     id: 'protocol',
     term: 'protocol',
@@ -718,27 +722,3 @@ export const GLOSSARY: readonly GlossaryTerm[] = [
     lessons: ['status-codes-and-redirects'],
   },
 ];
-
-/**
- * Find a term by id, by its display spelling, or by an alias.
- *
- * Case-insensitive, because a lesson writes a term in whatever case the sentence
- * needs. `undefined` rather than a throw: an unrecognised term must degrade to plain
- * text, never take a lesson down.
- */
-export function lookupTerm(key: string): GlossaryTerm | undefined {
-  const needle = key.trim().toLowerCase();
-  if (!needle) return undefined;
-
-  return GLOSSARY.find(
-    (entry) =>
-      entry.id.toLowerCase() === needle ||
-      entry.term.toLowerCase() === needle ||
-      entry.aliases?.some((alias) => alias.toLowerCase() === needle),
-  );
-}
-
-/** The glossary in alphabetical order, which is the only order a glossary may be in. */
-export function sortedGlossary(): GlossaryTerm[] {
-  return [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term));
-}

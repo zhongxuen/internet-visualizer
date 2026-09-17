@@ -13,6 +13,9 @@ Rules:
 
 - `result.ts` — `SimResult` and `summarizePhases`: the contract the kernel will produce
   and the renderer already consumes.
+- `topology.ts` — `topologyProblems(topology)`: the `Topology` invariant (links name real
+  nodes, nodes name real zones, ids unique) as one check. `tests/topologies.test.ts` runs
+  it over every topology in the codebase.
 - `project.ts` — `projectAt(result, t)` turns a `SimResult` into the `VisualState` on
   screen at virtual time `t`. A pure function of `t` with no accumulated animation state,
   which is what makes scrubbing backwards exact. Components render its output; they never
