@@ -1,0 +1,63 @@
+{/* First steps, lesson 5. Written for a reader who has never heard any of these words. */}
+{/* Every term is wrapped in <Term> on its first use in this file, and the only analogies are the shared ones in docs/CONTENT-STYLE.md. */}
+
+# Asking for the page
+
+What does your <Term>browser</Term> actually say to a website?
+
+Once your browser has the site's number and a connection, it can ask for the page.
+It asks in <Term>HTTP</Term>, the set of rules browsers and websites share. An HTTP
+message is plain text that a person can read.
+
+The browser sends an <Term>HTTP request</Term>, which works like a written order. It says
+three things:
+
+- what to do: `GET` means "send me this";
+- which page: `/index.html`;
+- which site: `example.com`, because one <Term>server</Term> can hold many sites.
+
+The server sends back an <Term>HTTP response</Term>, like the reply to that order. It starts
+with a <Term>status code</Term>, which is like the stamp on the reply. `200 OK` means "done,
+here it is". The page itself comes after that.
+
+Press play to read one request and its response, line by line.
+
+<EmbeddedSim module="http-explorer" scenario="simple-get" />
+
+Other status codes are other stamps. `404 Not Found` means the site has no such page.
+`301 Moved Permanently` means the page lives somewhere else now, and the browser goes there
+instead.
+
+This run used plain HTTP, so every line of it travelled in the open. Anyone on the way
+could read it too. The last lesson in this track shows how <Term>HTTPS</Term> fixes that.
+
+<Quiz
+  id="missing-page"
+  question="A browser asks a site for /missing.html, and the site has no such page. How does the response start?"
+  options={[
+    {
+      id: 'silence',
+      label: 'It doesn’t: the server sends nothing back',
+      why: 'A working server always sends a response, even when the page is missing. The status code is how it says what went wrong.',
+    },
+    {
+      id: '200',
+      label: 'With 200 OK, followed by an empty page',
+      why: '200 OK means the request worked and the page follows. Saying that about a missing page would be untrue, so the server uses a different code.',
+    },
+    {
+      id: '404',
+      label: 'With the status code 404 Not Found',
+      correct: true,
+      why: 'Right. The server still answers, and it stamps the reply 404 Not Found. The browser then shows that the page doesn’t exist.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'Browsers and websites talk in HTTP: the browser sends a request, and the server sends a response.',
+    'A request names what to do, which page and which site. GET means “send me this”.',
+    'Every response starts with a status code, such as 200 for done or 404 for not found.',
+  ]}
+/>

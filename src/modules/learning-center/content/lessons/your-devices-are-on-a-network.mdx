@@ -1,0 +1,66 @@
+{/* First steps, lesson 2. Written for a reader who has never heard any of these words. */}
+{/* Every term is wrapped in <Term> on its first use in this file, and the only analogies are the shared ones in docs/CONTENT-STYLE.md. */}
+
+# Your devices are on a network
+
+What joins your laptop and your phone to each other, and to the rest of the world?
+
+Your laptop, your phone and your TV are already on a <Term>network</Term>. A network is
+devices joined together so they can send each other messages. Some join by cable. Others
+join by <Term>Wi-Fi</Term>, which carries the same messages by radio.
+
+Your laptop and your phone each have an <Term>IP address</Term>, a number that says where
+they are. It works like a street address: messages are sent to it.
+
+Three kinds of box hold the network together.
+
+- An <Term>access point</Term> sends and receives the Wi-Fi.
+- A <Term>switch</Term> passes messages between the devices plugged into it, like a
+  building's internal mail room.
+- A <Term>router</Term> passes messages from your network on to the next one, like a
+  sorting office passing parcels on.
+
+Press play for a tour of one home.
+
+<EmbeddedSim module="network-map" scenario="home-lan" />
+
+Only one device in the house sends messages on to another network: the router. The laptop
+and the phone never need to know the way out. Anything meant for the outside world, they
+hand to the router.
+
+Past the router, the messages leave the house. The next router belongs
+to your <Term>internet service provider</Term>, the company you pay for your connection.
+
+From there, messages cross networks run by other companies. All of those networks, joined
+together, are the <Term>internet</Term>.
+
+<Quiz
+  id="way-out"
+  question="Your phone, on Wi-Fi, sends a message to a website. Which device in the home passes it on to your internet service provider?"
+  options={[
+    {
+      id: 'switch',
+      label: 'The switch',
+      why: 'A switch only delivers between devices inside one network, like a building’s internal mail room. It never sends anything on to another network. That is the router’s job.',
+    },
+    {
+      id: 'access-point',
+      label: 'The access point',
+      why: 'The access point takes the phone’s radio signal and hands the message on inside the house. It doesn’t decide where the message goes after that. The router does.',
+    },
+    {
+      id: 'router',
+      label: 'The router',
+      correct: true,
+      why: 'Right. The router is the one device at home that passes messages from one network to the next. Everything meant for the internet leaves the house through it.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'A network is devices joined together, by cable or by Wi-Fi, so they can send each other messages.',
+    'Switches and access points connect devices inside one network. A router connects one network to the next.',
+    'The internet is many networks joined together. Your home router is where your network meets it, through your internet service provider.',
+  ]}
+/>

@@ -1,0 +1,65 @@
+{/* First steps, lesson 1. Written for a reader who has never heard any of these words. */}
+{/* Every term is wrapped in <Term> on its first use in this file, and the only analogies are the shared ones in docs/CONTENT-STYLE.md. */}
+
+# What happens when you open a website?
+
+What happens between pressing Enter and seeing the page?
+
+You type a <Term>web address</Term>, such as www.example.com. Your <Term>browser</Term>, the
+app you open websites with, now has work to do. The page lives on a <Term>server</Term>: a
+computer somewhere else that answers when asked.
+
+Before the browser can ask, four things happen, in order.
+
+1. **Find the server.** The name is for people. Computers send messages to a number, so the
+   browser looks up the site's <Term>IP address</Term>.
+2. **Connect.** The browser opens a connection, so both ends know the other is listening.
+3. **Lock the connection.** With <Term>HTTPS</Term>, the browser checks the site's ID and
+   agrees a secret with it.
+4. **Ask for the page.** Only now does the browser send its <Term>request</Term>. The page
+   comes back, and the browser draws it.
+
+Press play to watch all four for a site this browser has never visited.
+
+<EmbeddedSim module="internet-simulator" scenario="first-visit-https" />
+
+The page itself arrives only near the end of the run. Everything before it is the work of
+getting ready to ask. That is why a site is slowest the first time you visit it: nothing
+has been looked up yet.
+
+The page is rarely the last thing, either. The browser reads it and finds that it
+needs pictures and styles too. It asks for each of those in the same way.
+
+<Quiz
+  id="first-step"
+  question="You open a website you have never visited before. What does your browser do first?"
+  options={[
+    {
+      id: 'ask',
+      label: 'Asks the server for the page',
+      why: 'It can’t yet. The browser only has the site’s name, and a request needs somewhere to go. Asking for the page is the fourth step, once the server has been found and the connection is ready.',
+    },
+    {
+      id: 'look-up',
+      label: 'Looks up the number that belongs to the site’s name',
+      correct: true,
+      why: 'Right. Computers send messages to numbers, called IP addresses, not to names. Until the browser knows the number, it has nowhere to send anything.',
+    },
+    {
+      id: 'draw',
+      label: 'Draws the page on the screen',
+      why: 'Drawing comes after everything else, because there is nothing to draw until the page has arrived. In the run it is the very last step.',
+    },
+  ]}
+/>
+
+The rest of this track takes these steps one at a time. It starts with the devices in your own
+home.
+
+<KeyTakeaways
+  items={[
+    'A website lives on a server. Your browser has to find it, connect to it and ask it for each page.',
+    'First the browser looks up the site’s IP address. Then it opens a connection and, for HTTPS, locks it.',
+    'Most of a first visit is spent getting ready to ask, not receiving the page.',
+  ]}
+/>

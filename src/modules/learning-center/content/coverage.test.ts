@@ -80,10 +80,11 @@ describe('curriculum coverage', () => {
   /**
    * Coverage is necessary and not sufficient. A curriculum that put all fourteen
    * topics on one enormous lesson would pass every assertion above, so the shape the
-   * phase doc specifies -- seven tracks of four to eight lessons -- is asserted too.
+   * phase doc specifies -- seven tracks of four to eight lessons, plus the First steps
+   * track UI/UX step 2.6 put in front of them -- is asserted too.
    */
   it('keeps every track inside the 4-8 lesson budget', () => {
-    expect(TRACKS).toHaveLength(7);
+    expect(TRACKS).toHaveLength(8);
 
     for (const track of TRACKS) {
       expect(

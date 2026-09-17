@@ -1,0 +1,65 @@
+{/* First steps, lesson 6. Written for a reader who has never heard any of these words. */}
+{/* Every term is wrapped in <Term> on its first use in this file, and the only analogies are the shared ones in docs/CONTENT-STYLE.md. */}
+
+# Keeping it private with HTTPS
+
+How does the padlock keep what you send private?
+
+Your <Term>packets</Term> cross many <Term>networks</Term>, and whoever runs one can copy what
+passes through. With plain <Term>HTTP</Term>, the copy is readable.
+
+The fix is <Term>HTTPS</Term>: HTTP sent inside <Term>TLS</Term>, which works like a sealed
+envelope only the recipient can open.
+
+First, your <Term>browser</Term> and the site have a short opening exchange, a <Term>handshake</Term>.
+It does two jobs.
+
+1. **They agree a secret.** Each side sends some numbers, and both work out the same secret
+   from them. Someone who sees every number still can't work it out.
+2. **The browser checks the site's ID.** The site sends a <Term>certificate</Term>, like an
+   ID card signed by someone both sides trust.
+
+After that, everything is <Term>encrypted</Term>: scrambled so only the two ends can read it.
+
+Press play. The run also shows what an observer on the path can read.
+
+<EmbeddedSim module="https-explorer" scenario="tls13-fresh" />
+
+HTTPS doesn't hide everything. An observer still sees the site's name and
+its <Term>IP address</Term>, because the packets need them to be delivered. They also see
+when you visited, and roughly how much was sent. What stays hidden is which page you asked for,
+and anything you typed into it.
+
+The padlock beside the site's name means two things: the connection is encrypted, and the
+certificate passed its checks. It doesn't mean the site itself is honest.
+
+<Quiz
+  id="what-they-see"
+  question="You log in to a site over HTTPS on a network you share with strangers. What can one of them see?"
+  options={[
+    {
+      id: 'password',
+      label: 'Your password, because the network is shared',
+      why: 'Sharing a network lets someone copy your packets, but over HTTPS what they copy is encrypted. Without the secret agreed in the handshake, your password stays scrambled.',
+    },
+    {
+      id: 'nothing',
+      label: 'Nothing at all: HTTPS hides everything',
+      why: 'HTTPS hides what you send, not where it goes. The site’s name and IP address stay readable, or the packets could not be delivered.',
+    },
+    {
+      id: 'site',
+      label: 'Which site you visited, but not your password',
+      correct: true,
+      why: 'Right. The site’s name and IP address stay readable, because the packets need them. Your password is inside the encrypted part, and only the site can read it.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'HTTPS is HTTP inside TLS: everything sent after the handshake is encrypted.',
+    'In the handshake, the browser and the site agree a secret, and the browser checks the site’s certificate.',
+    'HTTPS hides what you send, not which site you visit.',
+  ]}
+/>

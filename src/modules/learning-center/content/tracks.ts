@@ -1,5 +1,5 @@
 /**
- * The seven learning paths, in the order a beginner should walk them.
+ * The eight learning paths, in the order a beginner should walk them.
  *
  * A track is an **ordered list of lesson slugs**, and that ordering is the single
  * source of truth for "what comes next": `LessonNav` reads it, `TrackList` reads it,
@@ -16,11 +16,18 @@
  * Phase 13.1 shipped the framework and one lesson; phase 13.3 filled the rest of these
  * arrays, and nothing else about this file had to change when it did.
  *
+ * UI/UX step 2.6 put **First steps** in front of the original seven: six short lessons for
+ * a reader who has never heard any of the words, each embedding one module's own run. It
+ * is the path `/start` sends a newcomer down, so it is listed first, and it is the only
+ * track that declares a `level` so far.
+ *
  * The order within a track is a teaching order, not a difficulty ranking: each lesson
  * assumes the ones above it in the same track, and assumes nothing from any other
  * track. That is what lets a reader start at track 4 because they came for cookies,
  * and still follow it.
  */
+
+import type { Level } from '@/core/types/story';
 
 export interface Track {
   /** URL segment, and the key progress is stored under. */
@@ -28,6 +35,8 @@ export interface Track {
   title: string;
   /** One line, shown on the track card. */
   summary: string;
+  /** Who the track is written for. Optional: only First steps declares one so far. */
+  level?: Level;
   /**
    * Lesson slugs, in teaching order. Every slug must exist in `LESSONS`; the
    * consistency test in `content.test.ts` is what keeps that true.
@@ -36,6 +45,21 @@ export interface Track {
 }
 
 export const TRACKS: readonly Track[] = [
+  {
+    id: 'first-steps',
+    title: 'First steps',
+    summary:
+      'Six short lessons for a complete beginner: what happens, one step at a time, when you open a website.',
+    level: 'beginner',
+    lessons: [
+      'what-happens-when-you-open-a-website',
+      'your-devices-are-on-a-network',
+      'messages-travel-in-packets',
+      'finding-a-websites-address',
+      'asking-for-the-page',
+      'keeping-it-private',
+    ],
+  },
   {
     id: 'internet-foundations',
     title: 'Internet Foundations',
