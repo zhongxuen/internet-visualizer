@@ -90,11 +90,15 @@ export function SafetyBadge({
       // the `live` warning gets read by someone not using a mouse.
       tabIndex={interactive ? 0 : undefined}
       data-variant={variant}
-      aria-label={compact ? spec.label : undefined}
       className={cn('cursor-default', spec.className, className)}
       icon={<Icon aria-hidden="true" className="size-3.5" strokeWidth={2.25} />}
     >
-      {compact ? null : spec.label}
+      {/*
+        Compact keeps the word as visually hidden text, not `aria-label`: the badge is a
+        role-less `<span>`, where `aria-label` is prohibited (axe, aria-prohibited-attr)
+        and ignored by some screen readers.
+      */}
+      {compact ? <span className="sr-only">{spec.label}</span> : spec.label}
     </Badge>
   );
 

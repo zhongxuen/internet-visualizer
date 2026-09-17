@@ -38,8 +38,10 @@ describe('SafetyBadge', () => {
   it('keeps its label available when compacted to the icon alone', () => {
     render(<SafetyBadge variant="live" compact />);
 
-    expect(screen.getByLabelText('Live network')).toBeInTheDocument();
-    expect(screen.queryByText('Live network')).not.toBeInTheDocument();
+    // Visually hidden text rather than `aria-label`, which a role-less span may not carry.
+    const label = screen.getByText('Live network');
+    expect(label).toHaveClass('sr-only');
+    expect(label.closest('[data-variant]')).not.toHaveAttribute('aria-label');
   });
 
   /**
@@ -51,7 +53,9 @@ describe('SafetyBadge', () => {
     const user = userEvent.setup();
     render(<SafetyBadge variant="live" compact interactive={false} />);
 
-    const badge = screen.getByLabelText('Live network');
+    const badge = screen
+      .getByText('Live network')
+      .closest('[data-variant]') as HTMLElement;
     expect(badge).not.toHaveAttribute('tabindex');
     // Same three signals as ever: hue, icon, and the word, none of them lost.
     expect(badge).toHaveClass('text-state-warn');

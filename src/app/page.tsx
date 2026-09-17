@@ -1,24 +1,30 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { Play } from 'lucide-react';
 
-import { ModuleGrid, SafetyBadge } from '@/components/shell';
+import { HeroJourney, ModuleGrid, QuickStart } from '@/components/shell';
+import { FIRST_STEPS_PATH } from '@/components/shell/StartPathSteps';
 import { buttonClasses } from '@/components/ui';
 import { focusRing } from '@/components/ui/styles';
 import { cn } from '@/lib/cn';
-import { MODULES, getModule } from '@/modules/registry';
+import { lessonHref } from '@/modules/learning-center/content/navigation';
+import { MODULE_CHAPTERS, MODULES } from '@/modules/registry';
 
-/** The flagship experience the hero points at: type a URL, watch everything happen. */
-const FLAGSHIP_ID = 'internet-simulator';
+import { StartPathProgress } from './_home/StartPathProgress';
+
+/** `/start` redirects to the first lesson of First steps (UX-2.1). */
+const START_HREF = '/start';
 
 /**
- * Home — the module explorer.
+ * Home — a page that starts somewhere (docs/implementation/uiux-spec.md §5.5).
  *
- * One hero line, one primary call to action, then every module in the registry as a
- * card. The grid reads `MODULES` itself, so a new registry entry shows up here with no
- * edit to this file.
+ * Top to bottom it answers the beginner's ten seconds: the question the product answers
+ * as the `h1`, one primary button, a picture of the journey, the six-step path with
+ * ticks for what is done, then every module grouped by the question it answers.
+ *
+ * Everything is a server component except two small islands: `QuickStart`'s form and
+ * `StartPathProgress`, which reads progress from `localStorage`. The hero is CSS.
  */
 export default function Home() {
-  const flagship = getModule(FLAGSHIP_ID);
   /*
    * Found rather than named. `tests/registry.test.ts` asserts there is exactly one, and
    * looking it up here means the sentence below cannot end up pointing at the wrong
@@ -26,76 +32,108 @@ export default function Home() {
    */
   const live = MODULES.find((module) => module.usesRealNetwork);
 
+  const { trackId, minutes, steps } = FIRST_STEPS_PATH;
+  const pathSteps = steps.map((step) => ({
+    ...step,
+    href: lessonHref(trackId, step.slug),
+  }));
+
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
+    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
       <section className="max-w-3xl">
-        <p className="text-accent font-mono text-xs tracking-widest uppercase">
-          See how the Internet works
-        </p>
-        <h1 className="text-fg mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-          Watch a request cross the Internet, one layer at a time.
+        <h1 className="text-fg text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+          How does the internet actually work?
         </h1>
-        <p className="text-fg-secondary mt-5 text-lg leading-relaxed text-pretty">
-          DNS, TCP, TLS and HTTP are usually explained in paragraphs. Here they are
-          animated, steppable, and yours to take apart.
+        <p className="text-fg-secondary text-lead mt-4 text-pretty">
+          Watch your message leave your laptop, cross the world, and come back.
         </p>
 
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          {flagship ? (
-            <Link href={flagship.route} className={buttonClasses()}>
-              Start with the {flagship.title}
-              <ArrowRight aria-hidden="true" className="ml-2 size-4" />
+        <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-8">
+          <div className="flex flex-col items-start gap-2">
+            <Link
+              href={START_HREF}
+              aria-describedby="start-here-length"
+              className={buttonClasses({ className: 'px-6' })}
+            >
+              <Play aria-hidden="true" className="size-4" />
+              Start here
             </Link>
-          ) : null}
-          <Link
-            href="#modules"
-            className={buttonClasses({ variant: 'secondary', size: 'md' })}
-          >
-            Browse all {MODULES.length} modules
-          </Link>
-        </div>
+            <p id="start-here-length" className="text-fg-muted text-sm">
+              {steps.length} short steps &middot; about {minutes} minutes
+            </p>
+          </div>
 
-        {/*
-          Stated once, up front, rather than left for the user to infer: the safety
-          posture of the whole product. Each card repeats it for its own module, and the
-          one card that wears the other badge is named here rather than left to be
-          discovered -- "everything is simulated" with an unmentioned exception is worse
-          than no claim at all.
-        */}
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <SafetyBadge variant="simulated" />
-          <p className="text-fg-muted text-sm">
-            Everything below runs in your browser. Only{' '}
-            {live ? (
-              <Link
-                href={live.route}
-                className={cn(
-                  'text-fg-secondary hover:text-fg underline underline-offset-2',
-                  focusRing,
-                )}
-              >
-                {live.title}
-              </Link>
-            ) : null}{' '}
-            can reach a real network, and only after you ask it to.
-          </p>
+          <QuickStart />
         </div>
       </section>
 
-      {/* `scroll-mt` clears the sticky header when the hero's second CTA jumps here. */}
+      <HeroJourney className="mt-10 sm:mt-12" />
+
+      <section aria-labelledby="path-heading" className="mt-14">
+        <h2 id="path-heading" className="text-fg text-xl font-semibold tracking-tight">
+          Your path
+        </h2>
+        <StartPathProgress steps={pathSteps} className="mt-4" />
+      </section>
+
+      {/* `scroll-mt` clears the sticky header when a link lands on `/#explore`. */}
       <section
-        id="modules"
-        aria-labelledby="modules-heading"
+        aria-labelledby="explore-heading"
+        id="explore"
         className="mt-16 scroll-mt-20"
       >
-        <h2
-          id="modules-heading"
-          className="text-fg-muted text-xs font-medium tracking-widest uppercase"
-        >
-          Modules
+        <h2 id="explore-heading" className="text-fg text-xl font-semibold tracking-tight">
+          Explore by question
         </h2>
-        <ModuleGrid className="mt-5" />
+
+        <div className="mt-6 flex flex-col gap-10">
+          {MODULE_CHAPTERS.map((chapter) => (
+            <section
+              key={chapter.key}
+              aria-labelledby={`chapter-${chapter.key}`}
+              className="lg:grid lg:grid-cols-[16rem_1fr] lg:gap-8"
+            >
+              <h3
+                id={`chapter-${chapter.key}`}
+                className="text-fg-secondary text-lead font-medium text-balance"
+              >
+                {chapter.question}
+              </h3>
+              <ModuleGrid
+                chapter={chapter.key}
+                headingLevel={4}
+                className="mt-4 lg:mt-0"
+              />
+            </section>
+          ))}
+        </div>
       </section>
+
+      {/*
+        The safety posture of the whole product, stated once and exactly: "everything is
+        simulated" with an unmentioned exception is worse than no claim at all, so the one
+        module that can go live is named here, and each card wears its own badge.
+      */}
+      <p className="text-fg-muted border-border mt-16 border-t pt-6 text-sm">
+        Everything here runs in your browser
+        {live ? (
+          <>
+            , except{' '}
+            <Link
+              href={live.route}
+              className={cn(
+                'text-fg-secondary hover:text-fg underline underline-offset-2',
+                focusRing,
+              )}
+            >
+              {live.title}
+            </Link>
+            &rsquo; Live mode, which only runs when you switch it on.
+          </>
+        ) : (
+          '.'
+        )}
+      </p>
     </div>
   );
 }

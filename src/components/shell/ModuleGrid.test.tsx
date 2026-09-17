@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { MODULES } from '@/modules/registry';
+import { getModule, MODULE_CHAPTERS, MODULES } from '@/modules/registry';
 
 import { ModuleGrid } from './ModuleGrid';
 
@@ -30,5 +30,17 @@ describe('ModuleGrid', () => {
     render(<ModuleGrid modules={subset} />);
 
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
+  });
+
+  it('shows one chapter, in the chapter reading order', () => {
+    for (const chapter of MODULE_CHAPTERS) {
+      const { unmount } = render(<ModuleGrid chapter={chapter.key} />);
+
+      const titles = screen
+        .getAllByRole('heading', { level: 3 })
+        .map((heading) => heading.textContent);
+      expect(titles).toEqual(chapter.moduleIds.map((id) => getModule(id)?.title));
+      unmount();
+    }
   });
 });

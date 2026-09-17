@@ -91,3 +91,95 @@
     }
   }
 }
+
+/*
+ * The home page's journey (`HeroJourney`): one envelope, out to the website and back,
+ * on a twelve-second loop. Out takes 8%-45%, it rests at the data centre until 55%, and
+ * back takes 55%-92%. Linear between, because the six places are evenly spaced and the
+ * envelope should pass each one on time; the ease is in the rests.
+ *
+ * `translate(100%)` is the whole track: the animated box is exactly as long as the
+ * track on its own axis (see the component), so this stays a composited transform.
+ *
+ * Unlike the idle loops above, this one has a reduced-motion form of its own rather
+ * than a resting frame: the `still:` variant below removes the envelope and shows the
+ * places' numbers instead. The glows' last frame is invisible, so the global collapse to
+ * a single 0.01ms pass leaves nothing lit.
+ */
+@theme {
+  --animate-hero-travel-x: hero-travel-x 12s linear infinite;
+  --animate-hero-travel-y: hero-travel-y 12s linear infinite;
+  --animate-hero-arrive: hero-arrive 12s var(--ease-out) infinite;
+  --animate-hero-return: hero-return 12s var(--ease-out) infinite;
+
+  @keyframes hero-travel-x {
+    0%,
+    8%,
+    92%,
+    100% {
+      transform: translateX(0);
+    }
+    45%,
+    55% {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes hero-travel-y {
+    0%,
+    8%,
+    92%,
+    100% {
+      transform: translateY(0);
+    }
+    45%,
+    55% {
+      transform: translateY(100%);
+    }
+  }
+
+  /* The data centre lights up while the envelope rests there. */
+  @keyframes hero-arrive {
+    0%,
+    43%,
+    60%,
+    100% {
+      opacity: 0;
+    }
+    47%,
+    53% {
+      opacity: 1;
+    }
+  }
+
+  /* And "You" when the reply gets home. */
+  @keyframes hero-return {
+    0%,
+    90% {
+      opacity: 0;
+    }
+    94% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+}
+
+/*
+ * `still:` -- whenever motion is reduced, by the OS or by the in-app setting, with the
+ * same precedence as the global rule in globals.css: `data-motion="full"` overrides the
+ * OS, and `data-motion="reduced"` applies whatever the OS says. For components that
+ * swap an animation for a static form rather than merely stopping it.
+ */
+@custom-variant still {
+  @media (prefers-reduced-motion: reduce) {
+    :root:not([data-motion='full']) & {
+      @slot;
+    }
+  }
+  :root[data-motion='reduced'] & {
+    @slot;
+  }
+}
