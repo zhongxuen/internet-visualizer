@@ -2,10 +2,11 @@
 
 import { memo } from 'react';
 
-import { ChevronRight } from 'lucide-react';
-
-import { Badge } from '@/components/ui';
+import { useDetail } from '@/components/prefs';
+import { Badge, Disclosure } from '@/components/ui';
 import { focusRing } from '@/components/ui/styles';
+import { describeDuration } from '@/core/text/humanScale';
+import { plainRoleOf } from '@/core/text/kinds';
 import type { NodeState } from '@/core/types/events';
 import type { SimLink, SimNode, Topology } from '@/core/types/topology';
 import { cn } from '@/lib/cn';
@@ -41,13 +42,21 @@ import { isSameSelection, type CanvasSelection } from './types';
  * rendered, and every address the scenario gave it; every link with both endpoints, the
  * medium, and what the hop costs.
  *
- * ## Why a `<details>`
+ * ## Why a `Disclosure`
  *
  * Closed by default, because the product's answer to "what does this network look like"
  * is the diagram, and two full copies of it stacked on every module route would be worse
  * for everyone, including the people this is for. A `<summary>` is a real tab stop with a
  * real accessible name, so the list is one `Enter` away on any keyboard, and the count in
- * the summary says what is inside before you open it.
+ * the summary says what is inside before you open it. `lazy`, like the event log: the
+ * rows are mounted only while the list is open, because the size of the document is what
+ * costs frames during playback (CLAUDE.md, "Performance").
+ *
+ * ## Two voices
+ *
+ * In Simple detail a machine row says what the machine is for (`plainRoleOf`) and which
+ * place it sits in (its zone), and a link row gives the delay a human scale. Full detail
+ * adds the role badge and every address, as the list has always shown.
  *
  * The heading lives *inside* the summary so the sections below it can be `h3` without the
  * page stepping `h2` to `h4`; `TopologyLegend` does the same thing for the same reason.
@@ -75,11 +84,16 @@ function toggle(
 function NodeRow({
   node,
   state,
+  zone,
+  full,
   selected,
   onSelect,
 }: {
   node: SimNode;
   state: NodeState;
+  /** The label of the place the machine sits in, when the topology has zones. */
+  zone?: string;
+  full: boolean;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -107,10 +121,12 @@ function NodeRow({
             node card.
           */}
           <status.icon aria-hidden="true" className="size-3.5 shrink-0" />
-          <span className="text-fg text-xs font-medium">{node.label}</span>
-          <Badge layer={kind.layer} className="text-caption px-1.5 py-0">
-            {kind.roleLabel}
-          </Badge>
+          <span className="text-fg text-small font-medium">{node.label}</span>
+          {full ? (
+            <Badge layer={kind.layer} className="text-caption px-1.5 py-0">
+              {kind.roleLabel}
+            </Badge>
+          ) : null}
           {/*
             The state as a word, not as a colour and not as an outline: this is the view
             that has room to simply say it.
@@ -120,7 +136,12 @@ function NodeRow({
           </span>
         </span>
 
-        <AddressList node={node} always />
+        <span className="text-fg-secondary text-small leading-snug">
+          {plainRoleOf(node)}
+          {zone ? <span className="text-fg-muted">. In: {zone}</span> : null}
+        </span>
+
+        {full ? <AddressList node={node} always /> : null}
       </button>
     </li>
   );
@@ -129,11 +150,13 @@ function NodeRow({
 function LinkRow({
   link,
   label,
+  full,
   selected,
   onSelect,
 }: {
   link: SimLink;
   label: (id: string) => string;
+  full: boolean;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -153,7 +176,7 @@ function LinkRow({
             : 'border-border bg-surface hover:border-border-strong',
         )}
       >
-        <span className="text-fg min-w-0 flex-1 text-xs">
+        <span className="text-fg text-small min-w-0 flex-1">
           {label(link.from)} <span className="text-fg-muted">to</span> {label(link.to)}
         </span>
         {medium ? (
@@ -163,7 +186,11 @@ function LinkRow({
         ) : null}
         <span className="text-fg-secondary text-caption font-mono tabular-nums">
           {link.latencyMs} ms
-          {link.bandwidthMbps === undefined ? '' : ` · ${link.bandwidthMbps} Mbps`}
+          {full
+            ? link.bandwidthMbps === undefined
+              ? ''
+              : ` · ${link.bandwidthMbps} Mbps`
+            : ` (${describeDuration(link.latencyMs)})`}
         </span>
       </button>
     </li>
@@ -183,77 +210,74 @@ export const TopologyList = memo(function TopologyList({
   onSelect,
   className,
 }: TopologyListProps) {
+  const full = useDetail() === 'full';
   const labelOf = (id: string) =>
     topology.nodes.find((node) => node.id === id)?.label ?? id;
+  const zoneOf = (node: SimNode) =>
+    node.zone ? topology.zones?.find((zone) => zone.id === node.zone)?.label : undefined;
 
   return (
-    <details
-      className={cn('border-border bg-surface-raised group rounded-xl border', className)}
-    >
-      <summary
-        className={cn(
-          'text-fg-secondary hover:text-fg flex cursor-pointer list-none items-center gap-2 rounded-xl px-4 py-2.5 transition-colors',
-          focusRing,
-        )}
-      >
-        <ChevronRight
-          aria-hidden="true"
-          className="size-3.5 shrink-0 transition-transform group-open:rotate-90"
-        />
-        <h2 className="text-xs font-medium tracking-widest uppercase">
-          Topology as a list
-        </h2>
-        <span className="text-fg-muted text-xs">
-          {topology.nodes.length} {topology.nodes.length === 1 ? 'machine' : 'machines'},{' '}
-          {topology.links.length} {topology.links.length === 1 ? 'link' : 'links'}
+    <Disclosure
+      summary={
+        <span className="flex flex-wrap items-baseline gap-x-2">
+          <h2 className="text-base font-medium">The map as a list</h2>
+          <span className="text-fg-muted text-small font-normal">
+            {topology.nodes.length} {topology.nodes.length === 1 ? 'machine' : 'machines'}
+            , {topology.links.length} {topology.links.length === 1 ? 'link' : 'links'}
+          </span>
         </span>
-      </summary>
+      }
+      lazy
+      className={cn('bg-surface-raised rounded-xl', className)}
+      summaryClassName="rounded-xl px-4"
+      contentClassName="border-border grid gap-x-6 gap-y-4 border-t px-4 py-3 lg:grid-cols-2"
+    >
+      <section className="flex min-w-0 flex-col gap-2">
+        <h3 className="text-fg-muted text-caption font-medium tracking-widest uppercase">
+          Machines
+        </h3>
+        <ul className="flex flex-col gap-1.5">
+          {topology.nodes.map((node) => (
+            <NodeRow
+              key={node.id}
+              node={node}
+              state={nodeStates?.[node.id] ?? 'idle'}
+              zone={zoneOf(node)}
+              full={full}
+              selected={selection?.type === 'node' && selection.id === node.id}
+              onSelect={() =>
+                onSelect?.(toggle(selection, { type: 'node', id: node.id }))
+              }
+            />
+          ))}
+        </ul>
+      </section>
 
-      <div className="border-border grid gap-x-6 gap-y-4 border-t px-4 py-3 lg:grid-cols-2">
-        <section className="flex min-w-0 flex-col gap-2">
-          <h3 className="text-fg-muted text-caption font-medium tracking-widest uppercase">
-            Machines
-          </h3>
+      <section className="flex min-w-0 flex-col gap-2">
+        <h3 className="text-fg-muted text-caption font-medium tracking-widest uppercase">
+          Links
+        </h3>
+        {topology.links.length === 0 ? (
+          <p className="text-fg-muted text-small">
+            This scenario has no links: every machine stands alone.
+          </p>
+        ) : (
           <ul className="flex flex-col gap-1.5">
-            {topology.nodes.map((node) => (
-              <NodeRow
-                key={node.id}
-                node={node}
-                state={nodeStates?.[node.id] ?? 'idle'}
-                selected={selection?.type === 'node' && selection.id === node.id}
+            {topology.links.map((link) => (
+              <LinkRow
+                key={link.id}
+                link={link}
+                label={labelOf}
+                full={full}
+                selected={selection?.type === 'link' && selection.id === link.id}
                 onSelect={() =>
-                  onSelect?.(toggle(selection, { type: 'node', id: node.id }))
+                  onSelect?.(toggle(selection, { type: 'link', id: link.id }))
                 }
               />
             ))}
           </ul>
-        </section>
-
-        <section className="flex min-w-0 flex-col gap-2">
-          <h3 className="text-fg-muted text-caption font-medium tracking-widest uppercase">
-            Links
-          </h3>
-          {topology.links.length === 0 ? (
-            <p className="text-fg-muted text-xs">
-              This scenario has no links: every machine stands alone.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-1.5">
-              {topology.links.map((link) => (
-                <LinkRow
-                  key={link.id}
-                  link={link}
-                  label={labelOf}
-                  selected={selection?.type === 'link' && selection.id === link.id}
-                  onSelect={() =>
-                    onSelect?.(toggle(selection, { type: 'link', id: link.id }))
-                  }
-                />
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-    </details>
+        )}
+      </section>
+    </Disclosure>
   );
 });

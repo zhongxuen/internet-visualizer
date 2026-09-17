@@ -1,5 +1,8 @@
+'use client';
+
 import type { ReactNode } from 'react';
 
+import { useDetail } from '@/components/prefs';
 import type { HeaderField } from '@/core/types/pdu';
 import { cn } from '@/lib/cn';
 import { layerColor, type LayerKey } from '@/lib/theme';
@@ -19,6 +22,11 @@ import { layerColor, type LayerKey } from '@/lib/theme';
  * out for screen readers.
  *
  * A field whose width the scenario does not state prints an em dash rather than a guess.
+ *
+ * Two voices (docs/implementation/uiux-spec.md §5.2): each field's note is printed as a
+ * "What it's for" line in both detail levels, because it is the plain half of the row.
+ * The width column -- bits, and the bar -- is Full detail only; a beginner meets the
+ * field and its purpose before its size.
  */
 
 export interface HeaderTableProps {
@@ -37,9 +45,11 @@ function widthPercent(bits: number, widest: number): number {
 }
 
 export function HeaderTable({ fields, layer, caption, className }: HeaderTableProps) {
+  const full = useDetail() === 'full';
+
   if (fields.length === 0) {
     return (
-      <p className={cn('text-fg-muted text-xs', className)}>
+      <p className={cn('text-fg-muted text-small', className)}>
         This header has no fields in the scenario.
       </p>
     );
@@ -49,7 +59,7 @@ export function HeaderTable({ fields, layer, caption, className }: HeaderTablePr
   const barColor = layer ? layerColor(layer) : 'var(--border-strong)';
 
   return (
-    <table className={cn('w-full border-collapse text-left text-xs', className)}>
+    <table className={cn('text-small w-full border-collapse text-left', className)}>
       <caption className="text-fg-muted text-caption pb-2 text-left leading-snug">
         {caption ?? 'Fields in wire order — the order they appear in the packet.'}
       </caption>
@@ -61,9 +71,11 @@ export function HeaderTable({ fields, layer, caption, className }: HeaderTablePr
           <th scope="col" className="py-1 pr-3 font-medium">
             Value
           </th>
-          <th scope="col" className="py-1 font-medium">
-            Width
-          </th>
+          {full ? (
+            <th scope="col" className="py-1 font-medium">
+              Width
+            </th>
+          ) : null}
         </tr>
       </thead>
 
@@ -83,38 +95,49 @@ export function HeaderTable({ fields, layer, caption, className }: HeaderTablePr
               {field.name}
             </th>
             <td className="text-fg py-1.5 pr-3 font-mono break-all">{field.value}</td>
-            <td className="py-1.5 whitespace-nowrap">
-              {field.bits === undefined ? (
-                <span className="text-fg-muted" title="Width not stated by the scenario">
-                  &mdash;
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5">
+            {full ? (
+              <td className="py-1.5 whitespace-nowrap">
+                {field.bits === undefined ? (
                   <span
-                    aria-hidden="true"
-                    className="bg-border/40 block h-1.5 w-10 shrink-0 overflow-hidden rounded-full"
+                    className="text-fg-muted"
+                    title="Width not stated by the scenario"
                   >
+                    &mdash;
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5">
                     <span
-                      className="block h-full rounded-full"
-                      style={{
-                        width: `${widthPercent(field.bits, widest)}%`,
-                        backgroundColor: barColor,
-                      }}
-                    />
+                      aria-hidden="true"
+                      className="bg-border/40 block h-1.5 w-10 shrink-0 overflow-hidden rounded-full"
+                    >
+                      <span
+                        className="block h-full rounded-full"
+                        style={{
+                          width: `${widthPercent(field.bits, widest)}%`,
+                          backgroundColor: barColor,
+                        }}
+                      />
+                    </span>
+                    <span className="text-fg-muted text-caption font-mono">
+                      {field.bits}
+                      <span aria-hidden="true"> b</span>
+                      <span className="sr-only"> bits</span>
+                    </span>
                   </span>
-                  <span className="text-fg-muted text-caption font-mono">
-                    {field.bits}
-                    <span aria-hidden="true"> b</span>
-                    <span className="sr-only"> bits</span>
-                  </span>
-                </span>
-              )}
-            </td>
+                )}
+              </td>
+            ) : null}
           </tr>
 
           {field.note ? (
             <tr>
-              <td colSpan={3} className="text-fg-muted text-caption pb-2 leading-snug">
+              <td
+                colSpan={full ? 3 : 2}
+                className="text-fg-muted text-small pb-2 leading-snug"
+              >
+                <span className="text-fg-secondary font-medium">
+                  What it&rsquo;s for:{' '}
+                </span>
                 {field.note}
               </td>
             </tr>

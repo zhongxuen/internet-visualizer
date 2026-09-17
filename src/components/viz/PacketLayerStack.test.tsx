@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
+import { renderWithPreferences } from '@/components/prefs/testing';
 import type { PDU } from '@/core/types/pdu';
 
 import { PacketLayerStack } from './PacketLayerStack';
@@ -138,6 +139,26 @@ describe('PacketLayerStack', () => {
 
     expect(toggle('Ethernet II')).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('calls each box an envelope in Simple, outermost first, and keeps the protocol', () => {
+    render(<PacketLayerStack pdu={PDU_FIXTURE} defaultExpanded={[]} />);
+
+    const boxes = PDU_FIXTURE.layers.map((layer) => toggle(layer.protocol));
+    boxes.forEach((box, index) => {
+      expect(box).toHaveTextContent(`Envelope ${index + 1}`);
+      expect(box).toHaveTextContent(PDU_FIXTURE.layers[index]!.protocol);
+    });
+    expect(
+      screen.getByText(/^Envelopes inside envelopes, outermost first/),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps the technical wording in Full detail', () => {
+    renderWithPreferences(<PacketLayerStack pdu={PDU_FIXTURE} />, { detail: 'full' });
+
+    expect(toggle('Ethernet II')).not.toHaveTextContent('Envelope');
+    expect(screen.getByText(/^Outermost header first/)).toBeInTheDocument();
   });
 
   it('says so plainly when a PDU carries no layers', () => {

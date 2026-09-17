@@ -3,12 +3,16 @@
 import { MousePointerClick } from 'lucide-react';
 import { memo, type ReactNode } from 'react';
 
-import { Badge, EmptyState, Panel } from '@/components/ui';
+import { TermText } from '@/components/glossary';
+import { useDetail } from '@/components/prefs';
+import { Badge, Disclosure, EmptyState, Panel } from '@/components/ui';
 import { focusRing } from '@/components/ui/styles';
 import type { Annotation } from '@/core/sim/project';
-import type { NodeState } from '@/core/types/events';
+import { describeDuration, describeSize, fibreDistanceKm } from '@/core/text/humanScale';
+import { PLAIN_KINDS } from '@/core/text/kinds';
+import type { NodeState, SimEvent } from '@/core/types/events';
 import type { PDU } from '@/core/types/pdu';
-import type { SimLink, SimNode, Topology } from '@/core/types/topology';
+import type { LinkMedium, SimLink, SimNode, Topology } from '@/core/types/topology';
 import { cn } from '@/lib/cn';
 
 import { linkMediumToken } from './edges/media';
@@ -19,20 +23,28 @@ import { PacketLayerStack } from './PacketLayerStack';
 import type { CanvasSelection } from './types';
 
 /**
- * The right-hand panel: everything about the one thing the user has clicked.
+ * "Details": everything about the one thing the user has clicked.
  *
  * The canvas can only ever say so much — a node card has room for a label, a role, and an
- * address or two, and a packet chip has room for a protocol name. The inspector is where
+ * address or two, and a packet chip has room for a protocol name. This panel is where
  * the rest lives, and it is deliberately the *only* place that grows as scenarios get
  * richer, so the diagram stays readable no matter how much detail a module carries.
  *
  * Three things can be selected, and each answers a different question:
  *
- *   - a **node** — what is this machine, what layer does it work at, what addresses does
- *     it answer to, what is it doing right now, and what is it connected to
- *   - a **link** — what kind of hop is this and what does it cost (its latency is the
- *     reason a packet on the canvas moves at the speed it does)
- *   - a **PDU** — the encapsulation stack, expandable down to individual header fields
+ *   - a **node** — what is this machine, what is it doing right now, and what is it
+ *     connected to (and, technically: its layer, its addresses, the scenario's detail)
+ *   - a **link** — what kind of road is this and how long does a message take on it
+ *   - a **PDU** — what the message is for, who sent it to whom, how big it is, and its
+ *     envelopes, expandable down to individual header fields
+ *
+ * ## Two voices
+ *
+ * The top of the panel is plain (docs/implementation/uiux-spec.md §5.1): a role in one
+ * line, a delay as a human scale, a packet by what it is for. Everything the panel showed
+ * before the restructure sits unchanged beneath it, in a "Technical details" disclosure
+ * that is open by default in Full detail and closed -- and unmounted -- in Simple.
+ * Nothing technical was shortened to make room; it moved.
  *
  * Everything shown is read from the domain model by value. Nothing is inferred and nothing
  * is invented: a field the scenario did not set simply does not appear.
@@ -52,6 +64,11 @@ export interface InspectorProps {
   nodeStates?: Readonly<Record<string, NodeState>>;
   /** Teaching notes currently pinned; only those targeting the selection are shown. */
   annotations?: readonly Annotation[];
+  /**
+   * Every event in the run -- `SimResult.events`. Read only to say where a selected
+   * packet travels from and to; without it, that sentence is left out.
+   */
+  events?: readonly SimEvent[];
   /** Move the selection — wired to the same setter the canvas uses. */
   onSelect?: (selection: CanvasSelection | null) => void;
   title?: ReactNode;
@@ -59,6 +76,13 @@ export interface InspectorProps {
   children?: ReactNode;
   className?: string;
 }
+
+/**
+ * A pinned note, with the plain sentence its event may carry. `projectAt` does not copy
+ * `plain` onto `Annotation` yet; reading it optionally here means the panel shows it the
+ * moment it does, and the technical text until then.
+ */
+type PinnedNote = Annotation & { plain?: string };
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -81,7 +105,7 @@ function Facts({ facts }: { facts: readonly Fact[] }) {
   if (facts.length === 0) return null;
 
   return (
-    <dl className="grid grid-cols-[minmax(4.5rem,auto)_1fr] gap-x-3 gap-y-1 text-xs">
+    <dl className="text-small grid grid-cols-[minmax(4.5rem,auto)_1fr] gap-x-3 gap-y-1">
       {facts.map((fact) => (
         <div key={fact.label} className="contents">
           <dt className="text-fg-muted">{fact.label}</dt>
@@ -105,12 +129,39 @@ function SelectButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'border-border bg-surface hover:border-border-strong hover:bg-surface-overlay flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
+        'border-border bg-surface hover:border-border-strong hover:bg-surface-overlay text-small min-h-target-floor flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors',
         focusRing,
       )}
     >
       {children}
     </button>
+  );
+}
+
+/** A plain sentence, glossary words linked. */
+function Plain({ text, className }: { text: string; className?: string }) {
+  return (
+    <p className={cn('text-fg-secondary text-small leading-snug', className)}>
+      <TermText text={text} />
+    </p>
+  );
+}
+
+/** The plain half of the notes: the `plain` sentence where there is one. */
+function PlainNotes({ annotations }: { annotations: readonly PinnedNote[] }) {
+  if (annotations.length === 0) return null;
+
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {annotations.map((annotation) => (
+        <li
+          key={annotation.id}
+          className="border-accent/50 bg-surface text-fg-secondary text-small rounded-md border-l-2 px-2 py-1.5 leading-snug"
+        >
+          <TermText text={annotation.plain ?? annotation.text} />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -120,7 +171,7 @@ function SelectButton({
  * The reference is what turns "the router decremented TTL" into something a learner can
  * check for themselves, so it is printed rather than tucked into a tooltip.
  */
-function Notes({ annotations }: { annotations: readonly Annotation[] }) {
+function Notes({ annotations }: { annotations: readonly PinnedNote[] }) {
   if (annotations.length === 0) return null;
 
   return (
@@ -129,7 +180,7 @@ function Notes({ annotations }: { annotations: readonly Annotation[] }) {
         {annotations.map((annotation) => (
           <li
             key={annotation.id}
-            className="border-accent/50 bg-surface text-fg-secondary rounded-md border-l-2 px-2 py-1.5 text-xs leading-snug"
+            className="border-accent/50 bg-surface text-fg-secondary text-small rounded-md border-l-2 px-2 py-1.5 leading-snug"
           >
             {annotation.text}
             {annotation.reference ? (
@@ -147,7 +198,30 @@ function Notes({ annotations }: { annotations: readonly Annotation[] }) {
   );
 }
 
-function NodeDetail({
+/** What a machine in each state is doing, following the chip's own word. */
+const DOING: Record<NodeState, string> = {
+  idle: 'nothing to do at this moment.',
+  processing: 'busy with a lookup, a check or a decision.',
+  active: 'this is where the story is happening now.',
+  error: 'something failed here.',
+};
+
+/** Each road, in plain words. The technical label and description stay in the disclosure. */
+const PLAIN_MEDIUM: Record<LinkMedium, string> = {
+  ethernet: 'A copper cable (Ethernet), the usual wire inside a building.',
+  wifi: 'Wi-Fi: radio waves through the air, with no cable.',
+  fiber: 'A fibre-optic cable, carrying pulses of light through glass.',
+  cellular: 'A mobile phone signal (cellular) to a nearby mast.',
+};
+
+function roleLine(node: SimNode): string {
+  const kind = PLAIN_KINDS[node.kind];
+  const role = node.plainRole ?? kind.plainRole;
+  // A node's own role was written for that node; the kind's analogy may not fit it.
+  return !node.plainRole && kind.analogy ? `${role}, like ${kind.analogy}.` : `${role}.`;
+}
+
+function PlainNode({
   node,
   state,
   topology,
@@ -168,24 +242,84 @@ function NodeDetail({
     (link) => link.from === node.id || link.to === node.id,
   );
 
+  return (
+    <>
+      <header className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="bg-surface-overlay text-fg-secondary border-border flex size-12 shrink-0 items-center justify-center rounded-lg border"
+        >
+          <KindIcon className="size-7" strokeWidth={1.5} />
+        </span>
+        <span className="text-fg min-w-0 flex-1 text-base font-medium break-words">
+          {node.label}
+        </span>
+      </header>
+
+      <Plain text={roleLine(node)} />
+
+      <p className="text-fg-secondary text-small flex items-start gap-1.5 leading-snug">
+        <span
+          className={cn(
+            'text-caption flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 font-medium',
+            status.chip,
+          )}
+        >
+          <StatusIcon aria-hidden="true" className="size-3" strokeWidth={2.25} />
+          {status.label}
+        </span>
+        <span>
+          <span className="sr-only">Right now: </span>
+          {DOING[state]}
+        </span>
+      </p>
+
+      {links.length > 0 ? (
+        <ul className="flex flex-col gap-1">
+          {links.map((link) => {
+            const otherId = link.from === node.id ? link.to : link.from;
+            return (
+              <li key={link.id}>
+                <SelectButton onClick={() => onSelect?.({ type: 'link', id: link.id })}>
+                  <span className="text-fg-secondary min-w-0 flex-1">
+                    Connected to {labels.get(otherId) ?? otherId}, about {link.latencyMs}{' '}
+                    ms away ({describeDuration(link.latencyMs)})
+                  </span>
+                </SelectButton>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </>
+  );
+}
+
+function NodeDetail({
+  node,
+  state,
+  topology,
+}: {
+  node: SimNode;
+  state: NodeState;
+  topology: Topology;
+}) {
+  const kind = nodeKindToken(node.kind);
+  const status = nodeStateToken(state);
+  const StatusIcon = status.icon;
+
+  const labels = new Map(topology.nodes.map((entry) => [entry.id, entry.label]));
+  const links = topology.links.filter(
+    (link) => link.from === node.id || link.to === node.id,
+  );
+
   const details = Object.entries(node.detail ?? {});
 
   return (
     <>
       <header className="flex items-start gap-2">
-        <span
-          aria-hidden="true"
-          className="bg-surface-overlay text-fg-secondary border-border flex size-8 shrink-0 items-center justify-center rounded-md border"
-        >
-          <KindIcon className="size-4" strokeWidth={1.75} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="text-fg block text-sm font-medium break-words">
-            {node.label}
-          </span>
-          <span className="text-fg-muted text-caption block tracking-wider uppercase">
-            {kind.roleLabel}
-          </span>
+        <span className="text-fg-muted text-caption min-w-0 flex-1 tracking-wider uppercase">
+          {kind.roleLabel}
         </span>
         <span
           className={cn(
@@ -198,7 +332,7 @@ function NodeDetail({
         </span>
       </header>
 
-      <p className="text-fg-secondary text-xs leading-snug">{kind.description}</p>
+      <p className="text-fg-secondary text-small leading-snug">{kind.description}</p>
 
       <Badge layer={kind.layer} className="text-caption w-fit px-1.5 py-0">
         {kind.layerAction}
@@ -209,9 +343,9 @@ function NodeDetail({
           // `always`: a view may have hidden addressing on the canvas to keep the diagram
           // readable, but the inspector is one machine, opened deliberately -- it is not
           // what causes the overload that toggle exists to remove.
-          <AddressList node={node} always className="text-xs" />
+          <AddressList node={node} always className="text-small" />
         ) : (
-          <p className="text-fg-muted text-xs">
+          <p className="text-fg-muted text-small">
             The scenario gives this machine no addresses.
           </p>
         )}
@@ -232,18 +366,19 @@ function NodeDetail({
               const MediumIcon = medium?.icon;
 
               return (
-                <li key={link.id}>
-                  <SelectButton onClick={() => onSelect?.({ type: 'link', id: link.id })}>
-                    {MediumIcon ? (
-                      <MediumIcon aria-hidden="true" className="size-3.5 shrink-0" />
-                    ) : null}
-                    <span className="text-fg-secondary min-w-0 flex-1 truncate">
-                      {labels.get(otherId) ?? otherId}
-                    </span>
-                    <span className="text-fg-muted text-caption shrink-0 font-mono">
-                      {link.latencyMs} ms
-                    </span>
-                  </SelectButton>
+                <li
+                  key={link.id}
+                  className="text-small flex items-center gap-2 px-2 py-0.5"
+                >
+                  {MediumIcon ? (
+                    <MediumIcon aria-hidden="true" className="size-3.5 shrink-0" />
+                  ) : null}
+                  <span className="text-fg-secondary min-w-0 flex-1 truncate">
+                    {labels.get(otherId) ?? otherId}
+                  </span>
+                  <span className="text-fg-muted text-caption shrink-0 font-mono">
+                    {link.latencyMs} ms
+                  </span>
                 </li>
               );
             })}
@@ -254,7 +389,7 @@ function NodeDetail({
   );
 }
 
-function LinkDetail({
+function PlainLink({
   link,
   topology,
   onSelect,
@@ -264,25 +399,62 @@ function LinkDetail({
   onSelect?: (selection: CanvasSelection | null) => void;
 }) {
   const labels = new Map(topology.nodes.map((entry) => [entry.id, entry.label]));
-  const medium = linkMediumToken(link.medium);
-  const fromLabel = labels.get(link.from) ?? link.from;
-  const toLabel = labels.get(link.to) ?? link.to;
+  const ends = [
+    { id: link.from, label: labels.get(link.from) ?? link.from },
+    { id: link.to, label: labels.get(link.to) ?? link.to },
+  ];
 
   return (
     <>
-      <header className="flex flex-col gap-1">
-        <span className="text-fg text-sm font-medium break-words">
-          {fromLabel} &harr; {toLabel}
-        </span>
-        <span className="text-fg-muted text-caption tracking-wider uppercase">
-          {medium ? medium.label : 'Link'}
-        </span>
+      <header className="text-fg text-base font-medium break-words">
+        {ends[0]!.label} &harr; {ends[1]!.label}
       </header>
 
+      <Plain
+        text={
+          link.medium
+            ? PLAIN_MEDIUM[link.medium]
+            : "The story doesn't say what kind of connection this is."
+        }
+      />
+
+      <p className="text-fg-secondary text-small leading-snug">
+        A message takes {link.latencyMs} ms to cross it:{' '}
+        {describeDuration(link.latencyMs)}.
+        {link.medium === 'fiber' ? (
+          <> That much delay stands for {fibreDistanceKm(link.latencyMs)}.</>
+        ) : null}
+      </p>
+
+      <ul className="flex flex-col gap-1">
+        {ends.map((end) => (
+          <li key={end.id}>
+            <SelectButton onClick={() => onSelect?.({ type: 'node', id: end.id })}>
+              <span className="text-fg-secondary min-w-0 flex-1 truncate">
+                {end.label}
+              </span>
+            </SelectButton>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function LinkDetail({ link, topology }: { link: SimLink; topology: Topology }) {
+  const labels = new Map(topology.nodes.map((entry) => [entry.id, entry.label]));
+  const medium = linkMediumToken(link.medium);
+
+  return (
+    <>
+      <span className="text-fg-muted text-caption tracking-wider uppercase">
+        {medium ? medium.label : 'Link'}
+      </span>
+
       {medium ? (
-        <p className="text-fg-secondary text-xs leading-snug">{medium.description}</p>
+        <p className="text-fg-secondary text-small leading-snug">{medium.description}</p>
       ) : (
-        <p className="text-fg-muted text-xs leading-snug">
+        <p className="text-fg-muted text-small leading-snug">
           The scenario does not say what this hop physically is.
         </p>
       )}
@@ -305,21 +477,65 @@ function LinkDetail({
       </Section>
 
       <Section title="Endpoints">
-        <ul className="flex flex-col gap-1">
-          {[
-            { id: link.from, label: fromLabel },
-            { id: link.to, label: toLabel },
-          ].map((end) => (
-            <li key={end.id}>
-              <SelectButton onClick={() => onSelect?.({ type: 'node', id: end.id })}>
-                <span className="text-fg-secondary min-w-0 flex-1 truncate">
-                  {end.label}
-                </span>
-              </SelectButton>
-            </li>
-          ))}
-        </ul>
+        <Facts
+          facts={[
+            { label: 'From', value: labels.get(link.from) ?? link.from },
+            { label: 'To', value: labels.get(link.to) ?? link.to },
+          ]}
+        />
       </Section>
+    </>
+  );
+}
+
+/** Where a packet starts and ends, by name: its first hop's sender, its last hop's receiver. */
+function routeOf(
+  pduId: string,
+  events: readonly SimEvent[] | undefined,
+  topology: Topology,
+): { from: string; to: string } | null {
+  if (!events) return null;
+  let from: string | undefined;
+  let to: string | undefined;
+  for (const event of events) {
+    if (event.kind !== 'transmit' || event.pduId !== pduId) continue;
+    from ??= event.from;
+    to = event.to;
+  }
+  if (from === undefined || to === undefined) return null;
+  const label = (id: string) =>
+    topology.nodes.find((node) => node.id === id)?.label ?? id;
+  return { from: label(from), to: label(to) };
+}
+
+function PlainPdu({
+  pdu,
+  events,
+  topology,
+}: {
+  pdu: PDU;
+  events?: readonly SimEvent[];
+  topology: Topology;
+}) {
+  const route = routeOf(pdu.id, events, topology);
+
+  return (
+    <>
+      <header className="text-fg text-base font-medium break-words">
+        {pdu.plainLabel ?? pdu.summary}
+      </header>
+
+      {route ? (
+        <p className="text-fg-secondary text-small leading-snug">
+          From {route.from} to {route.to}.
+        </p>
+      ) : null}
+
+      <p className="text-fg-secondary text-small leading-snug">
+        Size: {describeSize(pdu.sizeBytes)}.
+      </p>
+
+      <PacketLayerStack pdu={pdu} defaultExpanded={[]} />
     </>
   );
 }
@@ -331,7 +547,7 @@ function PduDetail({ pdu }: { pdu: PDU }) {
   return (
     <>
       <header className="flex flex-col gap-1">
-        <span className="text-fg font-mono text-sm break-words">{pdu.summary}</span>
+        <span className="text-fg text-small font-mono break-words">{pdu.summary}</span>
         <span className="text-fg-muted text-caption tracking-wider uppercase">
           {outer && inner
             ? `${outer.protocol} carrying ${inner.protocol}`
@@ -375,11 +591,14 @@ export const Inspector = memo(function Inspector({
   pdus,
   nodeStates,
   annotations,
+  events,
   onSelect,
-  title = 'Inspector',
+  title = 'Details',
   children,
   className,
 }: InspectorProps) {
+  const detail = useDetail();
+
   const node =
     selection?.type === 'node'
       ? topology.nodes.find((entry) => entry.id === selection.id)
@@ -391,9 +610,10 @@ export const Inspector = memo(function Inspector({
   const pdu = selection?.type === 'pdu' ? pdus?.[selection.id] : undefined;
 
   const found = node ?? link ?? pdu;
-  const pinned = found
+  const pinned: readonly PinnedNote[] = found
     ? (annotations ?? []).filter((note) => note.targetId === selection?.id)
     : [];
+  const state = node ? (nodeStates?.[node.id] ?? 'idle') : 'idle';
 
   return (
     <Panel
@@ -410,31 +630,51 @@ export const Inspector = memo(function Inspector({
         <EmptyState
           icon={<MousePointerClick className="size-6" />}
           title="Nothing selected"
-          description="Choose a machine, a link, or a packet on the diagram — click it, or tab to it and press Enter."
+          description="Click anything on the map (a device, a cable, or a moving message) to see what it is."
           className="border-0 px-2 py-8"
         />
       ) : !found ? (
         <EmptyState
-          title="No longer on the diagram"
-          description="Whatever was selected is not part of this scenario any more."
+          title="No longer on the map"
+          description="Whatever was selected is not part of this story any more."
           className="border-0 px-2 py-8"
         />
       ) : (
         <div className="flex flex-col gap-3">
           {node ? (
-            <NodeDetail
+            <PlainNode
               node={node}
-              state={nodeStates?.[node.id] ?? 'idle'}
+              state={state}
               topology={topology}
               onSelect={onSelect}
             />
           ) : null}
           {link ? (
-            <LinkDetail link={link} topology={topology} onSelect={onSelect} />
+            <PlainLink link={link} topology={topology} onSelect={onSelect} />
           ) : null}
-          {pdu ? <PduDetail pdu={pdu} /> : null}
+          {pdu ? <PlainPdu pdu={pdu} events={events} topology={topology} /> : null}
 
-          <Notes annotations={pinned} />
+          <PlainNotes annotations={pinned} />
+
+          {/*
+            Keyed on the detail level so switching it re-applies the default: open in
+            Full detail, closed in Simple. `lazy`, because Simple unmounts what it hides
+            (uiux-spec.md §5.2).
+          */}
+          <Disclosure
+            key={detail}
+            summary="Technical details"
+            defaultOpen={detail === 'full'}
+            lazy
+            summaryClassName="text-small"
+            contentClassName="flex flex-col gap-3"
+          >
+            {node ? <NodeDetail node={node} state={state} topology={topology} /> : null}
+            {link ? <LinkDetail link={link} topology={topology} /> : null}
+            {pdu ? <PduDetail pdu={pdu} /> : null}
+
+            <Notes annotations={pinned} />
+          </Disclosure>
 
           {children}
         </div>

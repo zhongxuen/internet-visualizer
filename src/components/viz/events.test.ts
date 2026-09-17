@@ -4,6 +4,7 @@ import { buildToyRun, TOY_TOPOLOGY } from '@/core/sim/toyRun';
 import type { SimEvent } from '@/core/types/events';
 
 import { describeEvent, labelsFor } from './events';
+import { nodeStateToken } from './nodes/state';
 
 const RUN = buildToyRun();
 const CONTEXT = { labels: labelsFor(TOY_TOPOLOGY), pdus: RUN.pdus };
@@ -26,7 +27,7 @@ describe('labelsFor', () => {
 
 describe('describeEvent', () => {
   it('resolves ids to labels wherever an event names a machine', () => {
-    expect(describeKind('node-state').text).toMatch(/^Laptop /);
+    expect(describeKind('node-state').text).toMatch(/^Laptop: /);
     expect(describeKind('pdu-created').text).toMatch(/^Laptop /);
     expect(describeKind('pdu-transform').text).toMatch(/^Home router /);
     expect(describeKind('annotate').text).toMatch(/^Laptop: /);
@@ -49,7 +50,7 @@ describe('describeEvent', () => {
     );
   });
 
-  it('carries the note a state change came with', () => {
+  it('names a state with the word the node chip prints, and carries its note', () => {
     const line = describeEvent(
       {
         kind: 'node-state',
@@ -60,7 +61,15 @@ describe('describeEvent', () => {
       },
       CONTEXT,
     );
-    expect(line.text).toBe('Home router is processing (cache miss)');
+    expect(line.text).toBe(
+      `Home router: ${nodeStateToken('processing').label} (cache miss)`,
+    );
+    expect(line.text).not.toContain('processing');
+  });
+
+  it('tells a teaching note apart from a phase, by tone as well as by colour', () => {
+    expect(describeKind('annotate').tone).toBe('note');
+    expect(describeKind('phase').tone).not.toBe(describeKind('annotate').tone);
   });
 
   it('tones a phase, a rewrite, and a drop apart from ordinary traffic', () => {
@@ -88,6 +97,59 @@ describe('describeEvent', () => {
       expect(line.tone).toBe(level);
       expect(line.text).toBe('something');
     }
+  });
+
+  describe('in Simple detail', () => {
+    const SIMPLE = { ...CONTEXT, detail: 'simple' as const };
+    const withPlain = {
+      ...RUN.pdus,
+      'echo-request': { ...RUN.pdus['echo-request']!, plainLabel: 'Are you there?' },
+    };
+
+    it('names a packet by what it is for, where the scenario wrote that', () => {
+      const transmit = RUN.events.find((event) => event.kind === 'transmit')!;
+
+      expect(describeEvent(transmit, { ...SIMPLE, pdus: withPlain }).text).toBe(
+        'Laptop to Home router: Are you there?',
+      );
+    });
+
+    it('falls back to the technical summary when there is no plain label', () => {
+      expect(
+        describeEvent(
+          RUN.events.find((e) => e.kind === 'transmit')!,
+          SIMPLE,
+        ).text,
+      ).toBe('Laptop to Home router: ICMP echo request 192.168.1.24 -> 198.51.100.42');
+    });
+
+    it("shows a note's plain sentence when it has one", () => {
+      const line = describeEvent(
+        {
+          kind: 'annotate',
+          at: 0,
+          targetId: 'router',
+          text: 'TTL 64 -> 63.',
+          plain: 'One hop used.',
+        },
+        SIMPLE,
+      );
+      expect(line.text).toBe('Home router: One hop used.');
+    });
+
+    it('leaves Full detail as the technical line', () => {
+      const line = describeEvent(
+        {
+          kind: 'annotate',
+          at: 0,
+          targetId: 'router',
+          text: 'TTL 64 -> 63.',
+          plain: 'One hop used.',
+        },
+        { ...CONTEXT, pdus: withPlain },
+      );
+      expect(line.text).toBe('Home router: TTL 64 -> 63.');
+    });
   });
 
   it('keeps each line pinned to the instant it happened', () => {
