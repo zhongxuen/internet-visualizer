@@ -89,8 +89,9 @@ describe('NetworkMapModule', () => {
   });
 
   it('takes the addresses off the diagram without taking them out of the product', async () => {
-    // Full detail: the addresses are in the Details panel's technical half, which is
-    // open there and one click away in Simple.
+    // Full detail: addresses are drawn on the canvas cards only there (Simple never
+    // draws them), and they sit in the Details panel's technical half, open there and
+    // one click away in Simple.
     renderWithPreferences(<NetworkMapModule />, { detail: 'full' });
 
     expect(canvas().getAllByText('192.168.1.1')[0]).toBeInTheDocument();

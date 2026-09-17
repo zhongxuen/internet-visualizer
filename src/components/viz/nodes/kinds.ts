@@ -30,6 +30,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { PLAIN_KINDS } from '@/core/text/kinds';
 import type { NodeKind } from '@/core/types/topology';
 import type { LayerKey } from '@/lib/theme';
 
@@ -41,6 +42,15 @@ export interface NodeKindToken {
   family: NodeFamily;
   /** Printed on the node under its label — the non-colour signal of what this is. */
   roleLabel: string;
+  /**
+   * What a machine of this kind does, in one plain line -- the Simple detail level's
+   * subtitle. Read from `src/core/text/kinds.ts`, never written here, so the canvas, the
+   * key and the details panel cannot teach three different sentences. A node's own
+   * `plainRole` overrides it (`plainRoleOf`).
+   */
+  plainRole: string;
+  /** The kind's one agreed analogy (uiux-spec.md §5.1.1), where it has one. */
+  analogy?: string;
   /** One line for the tooltip, the legend, and later the inspector. */
   description: string;
   icon: LucideIcon;
@@ -57,6 +67,8 @@ export interface NodeKindToken {
 export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   client: {
     kind: 'client',
+    plainRole: PLAIN_KINDS.client.plainRole,
+    analogy: PLAIN_KINDS.client.analogy,
     family: 'device',
     roleLabel: 'Client',
     description: "An end user's machine — the browser or CLI that starts the request.",
@@ -66,6 +78,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   router: {
     kind: 'router',
+    plainRole: PLAIN_KINDS.router.plainRole,
+    analogy: PLAIN_KINDS.router.analogy,
     family: 'router',
     roleLabel: 'Router',
     description: 'Forwards packets between networks by IP address and decrements TTL.',
@@ -75,6 +89,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   switch: {
     kind: 'switch',
+    plainRole: PLAIN_KINDS.switch.plainRole,
+    analogy: PLAIN_KINDS.switch.analogy,
     family: 'router',
     roleLabel: 'Switch',
     description: 'Moves frames within one segment by MAC address; invisible at layer 3.',
@@ -84,6 +100,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   nat: {
     kind: 'nat',
+    plainRole: PLAIN_KINDS.nat.plainRole,
+    analogy: PLAIN_KINDS.nat.analogy,
     family: 'router',
     roleLabel: 'NAT',
     description: 'Rewrites private source addresses and ports to one public address.',
@@ -93,6 +111,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   server: {
     kind: 'server',
+    plainRole: PLAIN_KINDS.server.plainRole,
+    analogy: PLAIN_KINDS.server.analogy,
     family: 'server',
     roleLabel: 'Server',
     description: 'The origin that terminates the application protocol and answers.',
@@ -102,6 +122,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   'cdn-edge': {
     kind: 'cdn-edge',
+    plainRole: PLAIN_KINDS['cdn-edge'].plainRole,
+    analogy: PLAIN_KINDS['cdn-edge'].analogy,
     family: 'server',
     roleLabel: 'CDN edge',
     description: 'A point of presence serving cached content close to the client.',
@@ -111,6 +133,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   'dns-resolver': {
     kind: 'dns-resolver',
+    plainRole: PLAIN_KINDS['dns-resolver'].plainRole,
+    analogy: PLAIN_KINDS['dns-resolver'].analogy,
     family: 'dns',
     roleLabel: 'Resolver',
     description: 'The recursive, caching resolver a client is configured to ask.',
@@ -120,6 +144,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   'dns-root': {
     kind: 'dns-root',
+    plainRole: PLAIN_KINDS['dns-root'].plainRole,
+    analogy: PLAIN_KINDS['dns-root'].analogy,
     family: 'dns',
     roleLabel: 'Root server',
     description: 'Top of the DNS hierarchy: answers with referrals to TLD servers.',
@@ -129,6 +155,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   'dns-tld': {
     kind: 'dns-tld',
+    plainRole: PLAIN_KINDS['dns-tld'].plainRole,
+    analogy: PLAIN_KINDS['dns-tld'].analogy,
     family: 'dns',
     roleLabel: 'TLD server',
     description: 'Owns a top-level domain and refers down to the authoritative server.',
@@ -138,6 +166,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   'dns-authoritative': {
     kind: 'dns-authoritative',
+    plainRole: PLAIN_KINDS['dns-authoritative'].plainRole,
+    analogy: PLAIN_KINDS['dns-authoritative'].analogy,
     family: 'dns',
     roleLabel: 'Authoritative',
     description: 'Holds the zone itself — the final, non-referral answer for a name.',
@@ -147,6 +177,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   'load-balancer': {
     kind: 'load-balancer',
+    plainRole: PLAIN_KINDS['load-balancer'].plainRole,
+    analogy: PLAIN_KINDS['load-balancer'].analogy,
     family: 'middlebox',
     roleLabel: 'Load balancer',
     description: 'Spreads connections across a pool of backends.',
@@ -156,6 +188,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   proxy: {
     kind: 'proxy',
+    plainRole: PLAIN_KINDS.proxy.plainRole,
+    analogy: PLAIN_KINDS.proxy.analogy,
     family: 'middlebox',
     roleLabel: 'Proxy',
     description: "Terminates the request and re-issues it on the client's behalf.",
@@ -165,6 +199,8 @@ export const NODE_KINDS: Record<NodeKind, NodeKindToken> = {
   },
   firewall: {
     kind: 'firewall',
+    plainRole: PLAIN_KINDS.firewall.plainRole,
+    analogy: PLAIN_KINDS.firewall.analogy,
     family: 'middlebox',
     roleLabel: 'Firewall',
     description: 'Applies a traffic policy: permit, drop, or reset the flow.',

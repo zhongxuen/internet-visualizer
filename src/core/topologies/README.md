@@ -11,6 +11,19 @@ document that defines the behaviour.
 | `ispPath.ts`      | `isp-path`     | Autonomous systems, peering vs transit, distance    |
 | `datacenter.ts`   | `datacenter`   | CDN caching, load balancing, tiers, TLS termination |
 
+## Places and plain roles
+
+Every topology here declares `zones` -- the places its machines sit in ("Your home",
+"Internet provider (ISP)", "The internet", "The website's data centre") -- and every node
+names one. The canvas lays the diagram out place by place, in the order `zones` lists them,
+and draws each as a labelled backdrop (`src/components/viz/layout.ts`). A node's
+`plainRole` is the one plain line the Simple detail level prints under its name; leave it
+out where the kind's default in `src/core/text/kinds.ts` already fits. Packet Journey builds
+its network out of `HOME_LAN` and `ISP_PATH` and carries their zones over, so renaming a
+zone id here is a change to that module too. `__tests__/topologies.test.ts` checks that
+every machine is in a place, every place holds a machine, and the plain words pass
+`checkPlainStory`.
+
 ## Why these live in `core` and not in a module
 
 `src/modules/<a>` may not import from `src/modules/<b>` (`eslint.config.mjs`), and these

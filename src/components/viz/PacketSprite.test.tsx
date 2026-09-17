@@ -7,6 +7,7 @@ import type { InFlightPacket } from '@/core/sim/project';
 import type { PDU } from '@/core/types/pdu';
 import type { Topology } from '@/core/types/topology';
 
+import { DetailContext } from './display';
 import { FrameClockContext, type FrameClock } from './frameClock';
 import { PacketSprite } from './PacketSprite';
 import { SimulationCanvas } from './SimulationCanvas';
@@ -115,8 +116,12 @@ describe('PacketSprite', () => {
     expect(transformOf(screen.getByRole('button'))).toContain('translate(20px, 40px)');
   });
 
-  it('names its outermost layer with a short label as well as a colour', () => {
-    render(<PacketSprite pdu={QUERY} progress={0.5} path={FLAT} from={FROM} to={TO} />);
+  it('names its outermost layer with a short label as well as a colour, in Full detail', () => {
+    render(
+      <DetailContext value="full">
+        <PacketSprite pdu={QUERY} progress={0.5} path={FLAT} from={FROM} to={TO} />
+      </DetailContext>,
+    );
 
     const sprite = screen.getByRole('button');
     expect(sprite).toHaveTextContent('L3');
@@ -124,13 +129,71 @@ describe('PacketSprite', () => {
   });
 
   it('says what it is carrying, and how big it is, to a screen reader', () => {
-    render(<PacketSprite pdu={QUERY} progress={0.5} path={FLAT} from={FROM} to={TO} />);
+    render(
+      <DetailContext value="full">
+        <PacketSprite pdu={QUERY} progress={0.5} path={FLAT} from={FROM} to={TO} />
+      </DetailContext>,
+    );
 
     expect(
       screen.getByRole('button', {
         name: 'DNS A? example.com. Network layer, IPv4. 74 bytes',
       }),
     ).toBeInTheDocument();
+  });
+
+  describe('in Simple detail', () => {
+    const LABELLED: PDU = { ...QUERY, plainLabel: 'Where is example.com?' };
+
+    it('is an envelope labelled with what the packet is for', () => {
+      render(
+        <PacketSprite pdu={LABELLED} progress={0.5} path={FLAT} from={FROM} to={TO} />,
+      );
+
+      const sprite = screen.getByRole('button');
+      expect(sprite).toHaveTextContent('Where is example.com?');
+      expect(sprite).not.toHaveTextContent('IPv4');
+      // Arrow, envelope: two glyphs.
+      expect(sprite.querySelectorAll('svg')).toHaveLength(2);
+    });
+
+    it('falls back to the innermost layer, never the outermost', () => {
+      render(<PacketSprite pdu={QUERY} progress={0.5} path={FLAT} from={FROM} to={TO} />);
+
+      const sprite = screen.getByRole('button');
+      expect(sprite).toHaveTextContent('DNS');
+      expect(sprite).not.toHaveTextContent('IPv4');
+      // The layer's short label travels with its colour, from the same layer as the words.
+      expect(sprite).toHaveTextContent('L7');
+    });
+
+    it('starts its accessible name with the label on screen, then says everything else', () => {
+      render(
+        <PacketSprite pdu={LABELLED} progress={0.5} path={FLAT} from={FROM} to={TO} />,
+      );
+
+      expect(
+        screen.getByRole('button', {
+          name: 'Where is example.com? DNS A? example.com. Application layer, DNS. 74 bytes',
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it('keeps the arrow that says which way it is going', () => {
+      render(
+        <PacketSprite
+          pdu={LABELLED}
+          progress={0.5}
+          path={FLAT}
+          from={FROM}
+          to={TO}
+          reversed
+        />,
+      );
+
+      const arrow = screen.getByRole('button').querySelector('svg');
+      expect(arrow?.getAttribute('style')).toContain('rotate(180deg)');
+    });
   });
 
   it('reports its selection state, and hands its id over when activated', async () => {

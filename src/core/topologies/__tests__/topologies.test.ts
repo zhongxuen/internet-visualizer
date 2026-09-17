@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 
 import { cidr, cidrContains, classifyIp, ip, parseMac } from '../../net/address';
 import { topologyProblems } from '../../sim/topology';
+import { checkPlainStory } from '../../text/plain';
 import { DATACENTER } from '../datacenter';
 import { HOME_LAN } from '../homeLan';
 import { getScenarioTopology, SCENARIO_TOPOLOGIES } from '../index';
@@ -114,6 +115,31 @@ describe.each(SCENARIOS.map((scenario) => [scenario.id, scenario] as const))(
         if (link.bandwidthMbps !== undefined) {
           expect(link.bandwidthMbps, `${link.id}`).toBeGreaterThan(0);
         }
+      }
+    });
+
+    it('puts every machine in a place, and every place to use', () => {
+      const zones = topology.zones ?? [];
+      expect(zones.length, `${scenario.id} has no zones`).toBeGreaterThan(0);
+      for (const node of topology.nodes) {
+        expect(node.zone, `${node.id} is in no place`).toBeDefined();
+      }
+      for (const zone of zones) {
+        expect(
+          topology.nodes.some((node) => node.zone === zone.id),
+          `zone "${zone.id}" holds no machine`,
+        ).toBe(true);
+      }
+    });
+
+    it('writes every plain role and place in plain words', () => {
+      for (const node of topology.nodes) {
+        if (node.plainRole === undefined) continue;
+        expect(checkPlainStory(node.plainRole, { maxWords: 15 }), node.id).toEqual([]);
+      }
+      for (const zone of topology.zones ?? []) {
+        if (zone.plain === undefined) continue;
+        expect(checkPlainStory(zone.plain, { maxWords: 15 }), zone.id).toEqual([]);
       }
     });
 

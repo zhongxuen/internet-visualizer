@@ -109,6 +109,26 @@ describe('accessible descriptions', () => {
     );
   });
 
+  it('says where a machine is when its topology names the place', () => {
+    expect(describeNode(TOPOLOGY.nodes[1], 'idle', { label: 'Your home' })).toBe(
+      'Router: Home router, in Your home. Idle. IPv4 192.0.2.1',
+    );
+
+    const zoned: Topology = {
+      ...TOPOLOGY,
+      zones: [{ id: 'home', label: 'Your home', kind: 'home' }],
+      nodes: [{ ...TOPOLOGY.nodes[1], zone: 'home' }, TOPOLOGY.nodes[0]],
+    };
+    const [router, laptop] = toFlowNodes(zoned, POSITIONS);
+    expect(router.ariaLabel).toBe(
+      'Router: Home router, in Your home. Idle. IPv4 192.0.2.1',
+    );
+    // A machine with no zone is named exactly as before.
+    expect(laptop.ariaLabel).toBe(
+      'Client: Laptop. Idle. IPv4 192.0.2.10. MAC 02:00:5e:10:00:01',
+    );
+  });
+
   it('omits addresses the scenario did not set', () => {
     expect(describeNode(TOPOLOGY.nodes[1], 'idle')).toBe(
       'Router: Home router. Idle. IPv4 192.0.2.1',

@@ -360,6 +360,27 @@ takes is a path through an authored topology rather than the output of a routing
 BGP is named in the Network Map as the thing that chooses between autonomous systems, and is
 not simulated.
 
+### Human scale, cable distance, and places on the map
+
+Beginner-facing text puts numbers next to something a reader can picture
+(`src/core/text/humanScale.ts`), and the canvas draws machines inside places. All three are
+comparisons, not measurements:
+
+- **Durations** are banded against a blink (roughly 100–400 ms): "12 ms — much quicker than
+  a blink". The band is a rough human figure, and the exact number is always shown beside
+  it.
+- **Sizes** are banded against text, pictures and video, again beside the exact byte count.
+  "About a page of text" assumes one byte per character of plain English.
+- **Fibre distance** is `delay × 200 km/ms` — light in glass travels at roughly two thirds
+  of its speed in a vacuum — and is always worded "roughly … km of cable". It ignores the
+  time routers and switches add, and real cables do not run in straight lines, so it is an
+  upper bound on the straight-line distance rather than a figure for any real route. It is
+  only meaningful for a one-way delay on a fibre link.
+- **Places** ("Your home", "Internet provider (ISP)", "The website's data centre") group
+  machines by who runs them and roughly where they are. They are drawn to make the path
+  imaginable, not to scale, and they have no effect on any simulation: no timing or routing
+  reads them.
+
 ---
 
 ## Adding a claim

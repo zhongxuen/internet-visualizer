@@ -26,11 +26,27 @@ const GATEWAY = '192.168.1.1';
 const DHCP_POOL = '192.168.1.100 - 192.168.1.199';
 
 const topology: Topology = {
+  // The places on the map, in the order the diagram lays them out, left to right.
+  zones: [
+    {
+      id: 'home',
+      label: 'Your home',
+      kind: 'home',
+      plain: 'Every device in the house, and the boxes that join them.',
+    },
+    {
+      id: 'isp',
+      label: 'Internet provider (ISP)',
+      kind: 'isp',
+      plain: 'The company your home pays for its connection.',
+    },
+  ],
   nodes: [
     {
       id: 'laptop',
       kind: 'client',
       label: 'Laptop',
+      zone: 'home',
       ipv4: '192.168.1.112',
       ipv6: '2001:db8:1a2b:cd00:200:5eff:fe00:5301',
       mac: '00:00:5e:00:53:01',
@@ -46,6 +62,8 @@ const topology: Topology = {
       id: 'phone',
       kind: 'client',
       label: 'Phone',
+      plainRole: 'Another device in the house, sharing the same connection',
+      zone: 'home',
       ipv4: '192.168.1.140',
       mac: '00:00:5e:00:53:02',
       detail: {
@@ -59,6 +77,8 @@ const topology: Topology = {
       id: 'desktop',
       kind: 'client',
       label: 'Desktop PC',
+      plainRole: 'A computer joined to the network with a cable',
+      zone: 'home',
       ipv4: '192.168.1.101',
       mac: '00:00:5e:00:53:03',
       detail: {
@@ -72,6 +92,8 @@ const topology: Topology = {
       id: 'ap',
       kind: 'switch',
       label: 'Wi-Fi access point',
+      plainRole: 'Joins wireless devices to the wired network in the house',
+      zone: 'home',
       ipv4: '192.168.1.2',
       mac: '00:00:5e:00:53:04',
       detail: {
@@ -84,6 +106,7 @@ const topology: Topology = {
       id: 'lan-switch',
       kind: 'switch',
       label: 'LAN switch',
+      zone: 'home',
       mac: '00:00:5e:00:53:05',
       detail: {
         'Forwards by': 'Destination MAC address',
@@ -96,6 +119,8 @@ const topology: Topology = {
       id: 'router',
       kind: 'router',
       label: 'Home router (NAPT)',
+      plainRole: 'Joins your home to the internet, and shares one public address',
+      zone: 'home',
       ipv4: GATEWAY,
       ipv6: '2001:db8:1a2b:cd00::1',
       mac: '00:00:5e:00:53:06',
@@ -111,6 +136,8 @@ const topology: Topology = {
       id: 'modem',
       kind: 'switch',
       label: 'Fibre terminal (ONT)',
+      plainRole: 'Turns light in the fibre cable into signals the router understands',
+      zone: 'home',
       mac: '00:00:5e:00:53:07',
       detail: {
         Converts: 'GPON optical frames to and from Ethernet',
@@ -122,6 +149,8 @@ const topology: Topology = {
       id: 'isp-gateway',
       kind: 'router',
       label: 'ISP access router',
+      plainRole: "Your provider's first machine, outside your home",
+      zone: 'isp',
       ipv4: '203.0.113.1',
       detail: {
         Role: 'The first hop outside the house: the ISP edge',
