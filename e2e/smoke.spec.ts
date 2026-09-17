@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-import { NOT_FOUND_ROUTES, ROUTES, watchConsole } from './routes';
+import { START_HERE_DESTINATION } from '@/app/start/destination';
+
+import { NOT_FOUND_ROUTES, ROUTES, SIMULATING_MODULES, watchConsole } from './routes';
 
 /**
  * Every route in the registry loads, and none of them logs an error.
@@ -74,3 +76,49 @@ for (const route of NOT_FOUND_ROUTES) {
     expect(unexpected, `${route.path} logged browser errors`).toEqual([]);
   });
 }
+
+/**
+ * `/start` is a redirect, not a page, so it is not in `ROUTES` (whose test asserts a 200)
+ * and not in the sitemap. What it has to do is send "Start here" to the first lesson of
+ * the First steps track, and say so with a redirect status rather than a page that
+ * happens to link there.
+ *
+ * Asserted on the response itself, with redirects not followed, so the check is about
+ * where `/start` points and not about whether the lesson it points at has been written
+ * yet.
+ */
+test('/start redirects to the first lesson of First steps', async ({ request }) => {
+  const response = await request.get('/start', { maxRedirects: 0 });
+
+  expect([307, 308]).toContain(response.status());
+  expect(new URL(response.headers().location ?? '', 'http://x').pathname).toBe(
+    START_HERE_DESTINATION,
+  );
+});
+
+/**
+ * The module header -- breadcrumb, title, question, level, safety badge and the words
+ * the page uses -- is at most 140px tall on a 1366px-wide screen, so the simulation starts
+ * above the fold on a common laptop (uiux-spec.md §4, "one obvious next action").
+ */
+test.describe('module header', () => {
+  test.use({ viewport: { width: 1366, height: 768 } });
+
+  for (const meta of SIMULATING_MODULES) {
+    test(`${meta.id} fits in 140px at 1366 wide`, async ({ page }) => {
+      await page.goto(meta.route);
+      await page.waitForLoadState('networkidle');
+
+      const header = page.locator('[data-module-header]');
+      await expect(header).toBeVisible();
+      const box = await header.boundingBox();
+      // From the bottom of the navigation bar, so the chrome's own top padding counts.
+      const nav = await page.locator('body > header, header').first().boundingBox();
+      const top = (nav?.y ?? 0) + (nav?.height ?? 0);
+      expect(
+        box!.y + box!.height - top,
+        `${meta.route} header height`,
+      ).toBeLessThanOrEqual(140);
+    });
+  }
+});

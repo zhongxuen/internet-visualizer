@@ -18,12 +18,11 @@ export default function AppError({
 }) {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6">
-      <RouteError error={error} reset={reset} title="This page did not finish rendering">
+      <RouteError error={error} reset={reset} title="This page didn’t load properly">
         <p>
-          Whatever this was, it was local: every module in this product is a deterministic
-          simulation that runs in your browser, and none of it can reach a network by
-          failing. Try again, and if it fails the same way twice the message below is the
-          thing worth quoting.
+          Press Try again &mdash; it usually works the second time. If it breaks the same
+          way twice, go to the home page. An error like this can&rsquo;t send anything
+          over the network.
         </p>
       </RouteError>
     </div>

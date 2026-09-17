@@ -14,6 +14,9 @@ import './globals.css';
  * to the system stack, because the font variables were declared in the layout that is
  * not here.
  *
+ * It follows `RouteError`'s order by hand: a plain headline, the next step, then what
+ * the browser reported, visible rather than folded away.
+ *
  * In practice this should never be seen: the root layout is static markup. It exists so
  * that if it ever is, it is this page rather than the framework's bare default.
  */
@@ -29,24 +32,36 @@ export default function GlobalError({
       <body className="bg-surface text-fg flex min-h-full items-center justify-center p-6">
         <main className="border-border bg-surface-raised w-full max-w-lg rounded-xl border px-6 py-8">
           <h1 className="text-fg text-2xl font-semibold tracking-tight">
-            Internet Visualizer could not start
+            Internet Visualizer couldn&rsquo;t start
           </h1>
-          <p className="text-fg-secondary mt-3 text-sm leading-relaxed">
-            The application shell failed to render, which is a fault in this app and not
-            in your connection. Nothing was sent anywhere.
+          <p className="text-fg-secondary mt-3 text-base leading-relaxed">
+            Press Try again. This is a fault in the app, not in your connection, and
+            nothing was sent anywhere.
           </p>
-          {error.digest ? (
-            <p className="text-fg-muted mt-4 font-mono text-xs break-all">
-              Digest: {error.digest}
-            </p>
-          ) : null}
           <button
             type="button"
             onClick={reset}
-            className="bg-accent text-accent-ink hover:bg-accent-strong mt-6 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors"
+            className="bg-accent text-accent-ink hover:bg-accent-strong mt-6 inline-flex h-11 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors"
           >
             Try again
           </button>
+          {error.message || error.digest ? (
+            <section className="border-border bg-surface mt-6 rounded-lg border px-4 py-3">
+              <h2 className="text-fg-muted text-sm font-medium">
+                What the browser reported
+              </h2>
+              {error.message ? (
+                <p className="text-fg-secondary mt-2 font-mono text-xs break-words">
+                  {error.message}
+                </p>
+              ) : null}
+              {error.digest ? (
+                <p className="text-fg-muted mt-2 font-mono text-xs break-all">
+                  Digest: {error.digest}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
         </main>
       </body>
     </html>

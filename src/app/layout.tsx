@@ -1,9 +1,11 @@
 import { Geist, Geist_Mono } from 'next/font/google';
+import Link from 'next/link';
 
 import { MotionProvider } from '@/components/motion';
 import { PRE_PAINT_SCRIPT, PreferencesProvider } from '@/components/prefs';
 import { MAIN_CONTENT_ID, SkipLink, TopNav } from '@/components/shell';
 import { rootMetadata } from '@/lib/metadata';
+import { getModule } from '@/modules/registry';
 
 import './globals.css';
 
@@ -40,6 +42,17 @@ const geistMono = Geist_Mono({
  * image nobody outside this machine can fetch.
  */
 export const metadata = rootMetadata();
+
+/** The footer's links: the beginner path first, then the one module that can go live. */
+const FOOTER_LINKS = [
+  { href: '/start', label: 'Start here' },
+  { href: '/learn', label: 'Lessons' },
+  { href: '/learn/glossary', label: 'Glossary' },
+  {
+    href: getModule('network-diagnostics')?.route ?? '/network-diagnostics',
+    label: 'Network Diagnostics',
+  },
+] as const;
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
@@ -86,19 +99,31 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
             </main>
 
             <footer className="border-border text-fg-muted mt-16 border-t">
-              <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-6 text-xs sm:px-6">
+              <div className="text-small mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 md:flex-row md:items-center md:justify-between">
                 {/*
-                  The product's safety posture in one line, on every page. It has to be
-                  exactly true rather than reassuringly true: Network Diagnostics can
-                  reach a real network, so a footer claiming nothing here does would be
-                  the sort of ambiguity the safety badges exist to remove.
+                  The product's safety posture in one plain line, on every page. It has
+                  to be exactly true rather than reassuringly true: Network Diagnostics
+                  can reach a real network, so a footer claiming nothing here does would
+                  be the sort of ambiguity the safety badges exist to remove.
                 */}
-                <p>
-                  Every module is a deterministic client-side simulation, except Network
-                  Diagnostics&rsquo; Live mode &mdash; which is off until you turn it on,
-                  and says so while it runs.
+                <p className="max-w-prose">
+                  Everything here runs in your browser, except Network Diagnostics&rsquo;
+                  Live mode, which only runs when you switch it on.
                 </p>
-                <p className="font-mono tracking-wide">Internet Visualizer</p>
+                <nav aria-label="Footer">
+                  <ul className="flex flex-wrap items-center gap-x-1 gap-y-1">
+                    {FOOTER_LINKS.map((link) => (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          className="hover:text-fg focus-visible:outline-focus min-h-target-floor inline-flex items-center rounded-sm px-2 underline-offset-4 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
               </div>
             </footer>
           </MotionProvider>

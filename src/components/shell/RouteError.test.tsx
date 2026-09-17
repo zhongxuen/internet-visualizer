@@ -6,9 +6,10 @@ import { RouteError } from './RouteError';
 
 /**
  * An error page has one job beyond being legible: the recovery it offers has to be the
- * one that works. So the assertions here are about the two things a boundary controls --
- * that `reset` is actually wired to the button, and that whatever the runtime managed to
- * say is on screen rather than replaced by a euphemism.
+ * one that works. So the assertions here are about what a boundary controls -- that
+ * `reset` is actually wired to the button, that the plain headline and the next step
+ * come first, and that whatever the runtime managed to say is still on screen below
+ * them rather than replaced by a euphemism or folded away.
  *
  * The heading level is asserted because it is a phase-14 acceptance criterion rather
  * than a style choice: under `(modules)` the layout has already drawn the page's `h1`,
@@ -30,15 +31,39 @@ describe('RouteError', () => {
     expect(reset).toHaveBeenCalledOnce();
   });
 
-  it('shows the runtime’s own message and digest', () => {
+  it('shows the runtime’s own message and digest, visible, under what the browser reported', () => {
     const error = Object.assign(new Error('Loading chunk 42 failed'), {
       digest: '2381729387',
     });
 
     render(<RouteError {...boilerplate} error={error} reset={vi.fn()} />);
 
-    expect(screen.getByText('Loading chunk 42 failed')).toBeInTheDocument();
-    expect(screen.getByText('2381729387')).toBeInTheDocument();
+    const detail = screen.getByRole('heading', { name: 'What the browser reported' });
+    expect(detail).toBeVisible();
+    expect(screen.getByText('Loading chunk 42 failed')).toBeVisible();
+    expect(screen.getByText('2381729387')).toBeVisible();
+    // Not behind a disclosure: nothing here is collapsed.
+    expect(detail.closest('details')).toBeNull();
+    expect(screen.queryByRole('button', { expanded: false })).toBeNull();
+  });
+
+  it('puts the headline and the next step before what the browser reported', () => {
+    const error = Object.assign(new Error('boom'), { digest: 'd1' });
+    render(<RouteError {...boilerplate} error={error} reset={vi.fn()} />);
+
+    const order = [
+      screen.getByRole('heading', { name: 'It broke' }),
+      screen.getByText('Some explanation.'),
+      screen.getByRole('button', { name: /try again/i }),
+      screen.getByRole('heading', { name: 'What the browser reported' }),
+      screen.getByText('boom'),
+    ];
+    for (let i = 1; i < order.length; i += 1) {
+      expect(
+        order[i - 1]!.compareDocumentPosition(order[i]!) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
   });
 
   /**
@@ -49,40 +74,43 @@ describe('RouteError', () => {
   it('renders no detail block when the error carries neither message nor digest', () => {
     render(<RouteError {...boilerplate} error={new Error('')} reset={vi.fn()} />);
 
-    expect(screen.queryByText(/What the runtime said/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/What the browser reported/)).not.toBeInTheDocument();
     expect(screen.queryByText('Digest')).not.toBeInTheDocument();
   });
 
-  it('takes the heading level from the frame it renders inside', () => {
+  it('takes the heading level from the frame it renders inside, skipping none', () => {
     const { rerender } = render(
       <RouteError {...boilerplate} error={new Error('x')} reset={vi.fn()} />,
     );
     expect(screen.getByRole('heading', { level: 1, name: 'It broke' })).toBeVisible();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'What the browser reported' }),
+    ).toBeVisible();
 
     rerender(
       <RouteError {...boilerplate} level={2} error={new Error('x')} reset={vi.fn()} />,
     );
     expect(screen.getByRole('heading', { level: 2, name: 'It broke' })).toBeVisible();
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'What the browser reported' }),
+    ).toBeVisible();
   });
 
-  it('offers the module explorer as the way out by default', () => {
+  it('offers the home page as the way out by default', () => {
     const { rerender } = render(
       <RouteError {...boilerplate} error={new Error('x')} reset={vi.fn()} />,
     );
-    expect(screen.getByRole('link', { name: /all modules/i })).toHaveAttribute(
-      'href',
-      '/',
-    );
+    expect(screen.getByRole('link', { name: /home page/i })).toHaveAttribute('href', '/');
 
     rerender(
       <RouteError
         {...boilerplate}
         error={new Error('x')}
         reset={vi.fn()}
-        escape={{ href: '/learn', label: 'Back to the Learning Center' }}
+        escape={{ href: '/learn', label: 'Back to the lessons' }}
       />,
     );
-    expect(screen.getByRole('link', { name: /Learning Center/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /lessons/ })).toHaveAttribute(
       'href',
       '/learn',
     );

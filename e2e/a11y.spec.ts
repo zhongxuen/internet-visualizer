@@ -179,3 +179,46 @@ test('a module in a played, selected state stays clean', async ({ page }) => {
 
   await scan(page, `${meta!.route} (played, node selected)`);
 });
+
+/**
+ * The navigation's three overlays, open.
+ *
+ * Each one renders nothing until it is opened -- the Explore menu, the Settings popover,
+ * and the phone drawer -- so the route scans above never see them. They are on every
+ * page, which makes them the one place a contrast or naming regression reaches every
+ * route at once.
+ */
+test('the Explore menu and Settings, open, stay clean', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+
+  await page.getByRole('button', { name: 'Explore' }).click();
+  await expect(page.getByRole('menu', { name: 'Explore' })).toBeVisible();
+  await scan(page, '/ (Explore menu open)');
+  await page.keyboard.press('Escape');
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+  await scan(page, '/ (Settings open)');
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('the menu drawer, open, stays clean', async ({ page }) => {
+    await page.goto('/network-map');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden();
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Menu' });
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByRole('link', { name: 'Start here' })).toBeVisible();
+
+    await scan(page, '/network-map (menu drawer open)');
+
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeFocused();
+  });
+});

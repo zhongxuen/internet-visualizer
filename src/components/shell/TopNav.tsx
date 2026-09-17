@@ -12,50 +12,41 @@ import {
 } from 'react';
 import { ChevronDown, Network } from 'lucide-react';
 
-import { Badge } from '@/components/ui/Badge';
 import { focusRing } from '@/components/ui/styles';
 import { cn } from '@/lib/cn';
-import {
-  MODULE_GROUPS,
-  modulesInGroup,
-  type ModuleGroupMeta,
-  type ModuleMeta,
-  type ModuleStatus,
-} from '@/modules/registry';
+import { MODULE_CHAPTERS, modulesInChapter } from '@/modules/registry';
 
-import { MotionToggle } from './MotionToggle';
+import { MobileNav } from './MobileNav';
+import { LEVEL_LABEL, NAV_LINKS, isActiveRoute } from './navItems';
 import { SafetyBadge } from './SafetyBadge';
+import { SettingsMenu } from './SettingsMenu';
 
-const STATUS_LABEL: Record<ModuleStatus, string> = {
-  planned: 'Planned',
-  'in-progress': 'In progress',
-  ready: 'Ready',
-};
+/**
+ * Every chapter with its modules, and where each chapter's items start in the flat
+ * order the arrow keys walk. The registry is static, so this is worked out once.
+ */
+const CHAPTERS = MODULE_CHAPTERS.map((chapter) => ({
+  chapter,
+  modules: modulesInChapter(chapter.key),
+}));
+const CHAPTER_OFFSETS = CHAPTERS.map((_, i) =>
+  CHAPTERS.slice(0, i).reduce((sum, { modules }) => sum + modules.length, 0),
+);
 
-const STATUS_TONE = {
-  planned: 'pending',
-  'in-progress': 'warn',
-  ready: 'ok',
-} as const;
-
-function isActiveRoute(pathname: string, route: string): boolean {
-  return pathname === route || pathname.startsWith(`${route}/`);
-}
-
-interface NavMenuProps {
-  group: ModuleGroupMeta;
-  modules: readonly ModuleMeta[];
+interface ExploreMenuProps {
   pathname: string;
 }
 
 /**
- * One nav group as a disclosure menu.
+ * Explore: every module, grouped by the beginner's question it answers
+ * (docs/implementation/uiux-spec.md §5.5).
  *
- * Not a modal, so focus is never trapped (step 7): Tab walks straight out of the panel
- * and the menu closes behind it, Escape closes it and hands focus back to the button,
- * and arrows move between items for people who expect menu semantics.
+ * A disclosure menu, not a modal, so focus is never trapped: Tab walks straight out of
+ * the panel and the menu closes behind it, Escape closes it and hands focus back to the
+ * button, and the arrow keys move through every item, across chapters, for people who
+ * expect menu semantics.
  */
-function NavMenu({ group, modules, pathname }: NavMenuProps) {
+function ExploreMenu({ pathname }: ExploreMenuProps) {
   // Which pathname the panel was opened on. Navigating away therefore closes it
   // during render — no effect, and no cascading update.
   const [openForPath, setOpenForPath] = useState<string | null>(null);
@@ -65,7 +56,9 @@ function NavMenu({ group, modules, pathname }: NavMenuProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  const groupActive = modules.some((m) => isActiveRoute(pathname, m.route));
+  const active = CHAPTERS.some(({ modules }) =>
+    modules.some((m) => isActiveRoute(pathname, m.route)),
+  );
 
   const close = useCallback((returnFocus = false) => {
     setOpenForPath(null);
@@ -113,7 +106,6 @@ function NavMenu({ group, modules, pathname }: NavMenuProps) {
   return (
     <div
       ref={containerRef}
-      className="relative"
       onKeyDown={(event) => {
         if (event.key === 'Escape' && open) {
           event.stopPropagation();
@@ -121,7 +113,7 @@ function NavMenu({ group, modules, pathname }: NavMenuProps) {
         }
       }}
       onBlur={(event) => {
-        // Focus left the group entirely — Tab out, or a click elsewhere. A null
+        // Focus left the menu entirely — Tab out, or a click elsewhere. A null
         // relatedTarget (focus went to the body) counts as leaving too.
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
           setOpenForPath(null);
@@ -136,15 +128,9 @@ function NavMenu({ group, modules, pathname }: NavMenuProps) {
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpenForPath(open ? null : pathname)}
         onKeyDown={onButtonKeyDown}
-        className={cn(
-          'inline-flex h-9 items-center gap-1 rounded-md px-3 text-sm font-medium transition-colors',
-          focusRing,
-          groupActive
-            ? 'text-fg bg-surface-overlay'
-            : 'text-fg-secondary hover:text-fg hover:bg-surface-overlay',
-        )}
+        className={cn(navItemClasses(active), 'gap-1')}
       >
-        {group.label}
+        Explore
         <ChevronDown
           aria-hidden="true"
           className={cn('size-3.5 transition-transform', open && 'rotate-180')}
@@ -154,61 +140,92 @@ function NavMenu({ group, modules, pathname }: NavMenuProps) {
       {open ? (
         <div
           id={panelId}
-          // Below `sm` the panel is anchored to the viewport, not to its button:
-          // a 22rem dropdown hanging off the third button in the row runs straight
-          // off a phone screen and clips the status badges.
-          className="border-border bg-surface-overlay fixed top-14 right-4 left-4 z-50 rounded-xl border p-2 shadow-2xl sm:absolute sm:top-full sm:right-auto sm:left-0 sm:mt-2 sm:w-[min(22rem,calc(100vw-2rem))]"
+          role="menu"
+          aria-label="Explore"
+          className={cn(
+            // Anchored to the bar, not to the button: a 44rem panel hanging off the
+            // second link runs off the right edge of a 1024px screen.
+            'border-border bg-surface-overlay absolute top-full left-4 z-50 rounded-xl border p-3 shadow-2xl sm:left-6',
+            'w-[min(28rem,calc(100vw-2rem))] columns-1 gap-4 lg:w-[44rem] lg:columns-2',
+            'max-h-[calc(100dvh-5rem)] overflow-y-auto',
+          )}
         >
-          <p className="text-fg-muted px-2 pt-1 pb-2 text-xs leading-snug">
-            {group.description}
-          </p>
-          <ul role="menu" aria-label={group.label} className="flex flex-col">
-            {modules.map((module, index) => {
-              const active = isActiveRoute(pathname, module.route);
-              return (
-                <li key={module.id} role="none">
-                  <Link
-                    ref={(node) => {
-                      itemRefs.current[index] = node;
-                    }}
-                    role="menuitem"
-                    href={module.route}
-                    aria-current={active ? 'page' : undefined}
-                    onKeyDown={(event) => onItemKeyDown(event, index)}
-                    className={cn(
-                      'flex flex-col gap-1 rounded-lg px-2 py-2 transition-colors',
-                      'hover:bg-surface-raised focus-visible:bg-surface-raised',
-                      active && 'bg-surface-raised',
-                    )}
-                  >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="text-fg text-sm font-medium">{module.title}</span>
-                      <span className="flex shrink-0 items-center gap-1.5">
-                        {/*
-                          The security rule reaches the nav too: a module that can hit a
-                          real network says so before you click it, not after.
-                        */}
-                        {module.usesRealNetwork ? (
-                          // `interactive={false}`: this one is inside the link, so it
-                          // must not be a tab stop of its own -- see SafetyBadge.
-                          <SafetyBadge variant="live" compact interactive={false} />
-                        ) : null}
-                        <Badge tone={STATUS_TONE[module.status]}>
-                          {STATUS_LABEL[module.status]}
-                        </Badge>
+          {CHAPTERS.map(({ chapter, modules }, chapterIndex) => {
+            const labelId = `${panelId}-${chapter.key}`;
+            return (
+              <div
+                key={chapter.key}
+                role="group"
+                aria-labelledby={labelId}
+                className="mb-3 break-inside-avoid last:mb-0"
+              >
+                <span
+                  id={labelId}
+                  className="text-fg-muted text-caption block px-2 pb-1 font-semibold tracking-wide uppercase"
+                >
+                  {chapter.label}
+                </span>
+                {modules.map((module, moduleIndex) => {
+                  // Numbered across chapters, so the arrow keys run through the whole menu.
+                  const itemIndex = CHAPTER_OFFSETS[chapterIndex]! + moduleIndex;
+                  const current = isActiveRoute(pathname, module.route);
+                  return (
+                    <Link
+                      key={module.id}
+                      ref={(node) => {
+                        itemRefs.current[itemIndex] = node;
+                      }}
+                      role="menuitem"
+                      href={module.route}
+                      aria-current={current ? 'page' : undefined}
+                      onKeyDown={(event) => onItemKeyDown(event, itemIndex)}
+                      className={cn(
+                        'flex flex-col gap-0.5 rounded-lg px-2 py-1.5 transition-colors',
+                        'hover:bg-surface-raised focus-visible:bg-surface-raised',
+                        current && 'bg-surface-raised',
+                      )}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-fg text-small font-medium">
+                          {module.title}
+                        </span>
+                        <span className="flex shrink-0 items-center gap-1.5">
+                          {/*
+                            The security rule reaches the nav too: a module that can hit a
+                            real network says so before you click it, not after.
+                          */}
+                          {module.usesRealNetwork ? (
+                            // `interactive={false}`: this one is inside the link, so it
+                            // must not be a tab stop of its own -- see SafetyBadge.
+                            <SafetyBadge variant="live" compact interactive={false} />
+                          ) : null}
+                          <span className="text-fg-muted text-caption">
+                            {LEVEL_LABEL[module.level]}
+                          </span>
+                        </span>
                       </span>
-                    </span>
-                    <span className="text-fg-muted text-xs leading-snug">
-                      {module.summary}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+                      <span className="text-fg-secondary text-caption leading-snug">
+                        {module.question}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       ) : null}
     </div>
+  );
+}
+
+function navItemClasses(active: boolean) {
+  return cn(
+    'text-small inline-flex h-9 items-center rounded-md px-3 font-medium whitespace-nowrap transition-colors',
+    focusRing,
+    active
+      ? 'text-fg bg-surface-overlay'
+      : 'text-fg-secondary hover:text-fg hover:bg-surface-overlay',
   );
 }
 
@@ -217,11 +234,19 @@ export interface TopNavProps {
 }
 
 /**
- * The one navigation surface, driven entirely by the registry.
+ * The one navigation surface (docs/implementation/uiux-spec.md §5.5):
  *
- * Groups come from `MODULE_GROUPS` and membership from each entry's `group` field, so
- * a new module appears here the moment it is registered and no component ever holds a
- * list of module ids.
+ * ```
+ * ◈ Internet Visualizer   Start here   Explore ▾   Lessons   Glossary          🔍   ⚙
+ * ```
+ *
+ * Explore is driven entirely by the registry -- chapters from `MODULE_CHAPTERS`, their
+ * modules from `modulesInChapter` -- so a new module appears here the moment it is
+ * registered and no component ever holds a list of module ids. Under `md` the links fold
+ * into a menu button that opens the same items in a `Drawer` (`MobileNav`).
+ *
+ * `h-14` is load-bearing: the module e2e specs treat the top 56px as covered by this
+ * sticky bar when they pick a canvas node to click.
  */
 export function TopNav({ className }: TopNavProps) {
   const pathname = usePathname() ?? '/';
@@ -233,7 +258,7 @@ export function TopNav({ className }: TopNavProps) {
         className,
       )}
     >
-      <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-1 px-4 sm:px-6">
+      <div className="relative mx-auto flex h-14 w-full max-w-7xl items-center gap-1 px-4 sm:px-6">
         <Link
           href="/"
           aria-current={pathname === '/' ? 'page' : undefined}
@@ -243,24 +268,40 @@ export function TopNav({ className }: TopNavProps) {
           )}
         >
           <Network aria-hidden="true" className="text-accent size-5" />
-          <span className="text-fg hidden text-sm font-semibold tracking-tight sm:inline">
+          <span className="text-fg text-small hidden font-semibold tracking-tight sm:inline">
             Internet Visualizer
           </span>
         </Link>
 
-        <nav aria-label="Modules" className="flex min-w-0 items-center gap-0.5">
-          {MODULE_GROUPS.map((group) => (
-            <NavMenu
-              key={group.key}
-              group={group}
-              modules={modulesInGroup(group.key)}
-              pathname={pathname}
-            />
-          ))}
+        <nav aria-label="Main" className="hidden min-w-0 items-center gap-0.5 md:flex">
+          <Link href={NAV_LINKS.start.href} className={navItemClasses(false)}>
+            {NAV_LINKS.start.label}
+          </Link>
+          <ExploreMenu pathname={pathname} />
+          <Link
+            href={NAV_LINKS.lessons.href}
+            aria-current={pathname === NAV_LINKS.lessons.href ? 'page' : undefined}
+            className={navItemClasses(
+              isActiveRoute(pathname, NAV_LINKS.lessons.href) &&
+                !isActiveRoute(pathname, NAV_LINKS.glossary.href),
+            )}
+          >
+            {NAV_LINKS.lessons.label}
+          </Link>
+          <Link
+            href={NAV_LINKS.glossary.href}
+            aria-current={pathname === NAV_LINKS.glossary.href ? 'page' : undefined}
+            className={navItemClasses(isActiveRoute(pathname, NAV_LINKS.glossary.href))}
+          >
+            {NAV_LINKS.glossary.label}
+          </Link>
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <MotionToggle />
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {/* Search lands here (UX-4.2). Empty, and taking no space, until then. */}
+          <div data-slot="search" className="contents" />
+          <SettingsMenu />
+          <MobileNav pathname={pathname} className="md:hidden" />
         </div>
       </div>
     </header>

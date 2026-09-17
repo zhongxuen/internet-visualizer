@@ -27,13 +27,13 @@ export default function ModuleError({
       level={2}
       error={error}
       reset={reset}
-      title="This simulation stopped before it could be drawn"
+      title="This simulation stopped before it could start"
     >
       <p>
-        The module above is registered and its scenarios are bundled with the page, so
-        this is either a chunk that did not finish downloading or a bug in the run itself.
-        Nothing was sent anywhere: a simulation is a pure function of a fixture in this
-        repository, and an exception cannot start a network request.
+        Press Try again &mdash; a part of the page that didn&rsquo;t finish downloading is
+        the usual cause, and a second try fixes it. Nothing was sent anywhere: a
+        simulation runs from data already in this page, and an error can&rsquo;t start a
+        network request.
       </p>
     </RouteError>
   );

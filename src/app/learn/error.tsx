@@ -26,12 +26,12 @@ export default function LearnError({
         error={error}
         reset={reset}
         title="This lesson stopped loading"
-        escape={{ href: '/learn', label: 'Back to the Learning Center' }}
+        escape={{ href: '/learn', label: 'Back to the lessons' }}
       >
         <p>
-          The lesson text is compiled into the page itself, so this is most likely one of
-          the simulations it embeds failing to download rather than anything wrong with
-          the writing. Your progress is stored in this browser and is untouched by this.
+          Press Try again &mdash; usually one of the simulations in the lesson
+          didn&rsquo;t finish downloading, and a second try fixes it. Your progress is
+          saved in this browser and hasn&rsquo;t been lost.
         </p>
       </RouteError>
     </div>
