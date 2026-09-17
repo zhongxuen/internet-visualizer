@@ -73,9 +73,11 @@ describe('a lesson, as the route renders it', () => {
     renderLesson();
 
     // <Term>
-    const term = screen.getByRole('button', { name: 'protocol' });
-    await user.hover(term);
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(/An agreement about/);
+    const term = await screen.findByRole('button', { name: 'protocol' });
+    await user.click(term);
+    expect(screen.getByRole('dialog', { name: 'protocol' })).toHaveTextContent(
+      /An agreement about/,
+    );
 
     // <KeyTakeaways>
     const takeaways = screen.getByRole('region', { name: 'Key takeaways' });

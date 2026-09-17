@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { MODULES } from '@/modules/registry';
 
 import { EXTRA_TERMS_BY_MODULE, GLOSSARY, TERMS, type GlossaryTerm } from '../index';
-import { INLINE_TERMS, inlineTerm } from '../inline';
+import { INLINE_SPELLINGS, INLINE_TERMS, inlineTerm } from '../inline';
 import { lookupTerm, sortedGlossary } from '../lookup';
 
 function spellingsOf(entry: GlossaryTerm): Set<string> {
@@ -108,6 +108,21 @@ describe('the inline index', () => {
 
   it('carries nothing a popover does not show', () => {
     expect(Object.keys(inlineTerm('TTL')!).sort()).toEqual(['short', 'slug', 'term']);
+  });
+
+  it('keeps every spelling with its capitals, for matching text where case matters', () => {
+    const expected = GLOSSARY.flatMap((entry) =>
+      [entry.id, entry.term, ...(entry.aliases ?? [])].map((spelling) => ({
+        spelling,
+        slug: entry.id,
+      })),
+    );
+    expect(
+      INLINE_SPELLINGS.map(({ spelling, entry }) => ({ spelling, slug: entry.slug })),
+    ).toEqual(expected);
+    for (const { spelling, entry } of INLINE_SPELLINGS) {
+      expect(INLINE_TERMS.get(spelling.toLowerCase())).toEqual(entry);
+    }
   });
 
   it('resolves in any case and ignores surrounding space', () => {

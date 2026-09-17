@@ -33,7 +33,8 @@ progress/
 ```
 
 The glossary is not here. It moved to `src/core/glossary/` so that module screens can
-define words too; `<Term>` and the glossary page read it from there.
+define words too; the glossary page reads it from there, and `<Term>` is a thin wrapper
+over `src/components/glossary/GlossaryTerm`, which a module screen uses directly.
 
 ## Rules
 

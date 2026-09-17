@@ -113,8 +113,8 @@ export function Glossary({ className }: GlossaryProps) {
 
       <p className="text-fg-secondary mt-3 max-w-[68ch] leading-relaxed">
         Every term the lessons define, with the same wording they use. Anywhere one of
-        these appears in a lesson it is underlined -- hover it, or Tab to it, for the
-        short version without leaving the page.
+        these appears in a lesson it is underlined -- tap it, click it or Tab to it for
+        the short version without leaving the page.
       </p>
 
       <ul className="mt-10">

@@ -320,3 +320,39 @@ in both builds (`/packet-journey`, `/websocket-viewer`, `/internet-simulator`,
 `/network-diagnostics`, `/dns-explorer`, `/api-visualizer` in one pass or another), which is
 the load as well. CLS passes everywhere. **Accepted as noise; no wave-1 regression shown.**
 A quiet-machine pass is still owed before any fps claim is made.
+
+---
+
+## UX-1.5 — GlossaryTerm and TermText
+
+### `perf:bundles`, before and after
+
+"Before" is the wave-1 gate build above (`7ee2e3c`'s tree). "After" is this commit. No module
+route renders a glossary term yet (wave 3 adopts them), so a third build measured the cost to
+a route that does: a probe `<TermText>` rendered on `/network-map`'s page, built, measured
+and reverted before the commit.
+
+| Route                                          |   Before |    After |  Change |
+| ---------------------------------------------- | -------: | -------: | ------: |
+| `/network-map` with the probe `TermText`       | 190.5 KB | 193.3 KB |    +2.8 |
+| `/network-map` (this commit, no term on it)    | 190.5 KB | 190.7 KB |    +0.2 |
+| `/packet-journey`                              | 250.1 KB | 250.3 KB |    +0.2 |
+| other module routes, `/`, `/learn`, glossary   |        – |        – | +0.1–0.2 |
+| every lesson route (33)                        | 198.4 KB | 188.2 KB | **−10.2** |
+| `/_global-error`                               | 131.5 KB | 131.5 KB |       0 |
+
+A route that renders a term pays **2.6 KB** for it (193.3 against 190.7, the same build
+without the probe): `GlossaryTerm`, `TermText`, the matcher, the on-demand loader and the
+`Popover`. That is under the 4 KB budget in uiux-spec.md §5.6.
+
+The glossary itself is not in that figure. `@/core/glossary/inline` is built from the whole
+glossary, definitions included, and loads as its own chunk the first time a term mounts:
+11.2 KB gzipped today. Imported statically it would have cost a route about that much (the
+popover half alone, spellings and `short`, is 3.8 KB gzipped), which is why
+`useInlineGlossary` loads it on demand. It is also why every lesson route is 10.2 KB lighter:
+`<Term>` used to put the whole glossary in each lesson's first load.
+
+The 0.1–0.2 KB on routes that render no term is in the root layout chunk (12,266 → 12,408
+bytes gzipped), which contains no glossary code; it looks like module-id churn from adding
+modules to the build, not verified further. It moves `/packet-journey` from 0.1 to 0.3 KB
+over the 250 KB budget.
