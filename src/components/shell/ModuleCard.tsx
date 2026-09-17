@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Clock } from 'lucide-react';
 
-import { Badge } from '@/components/ui/Badge';
+import { Badge, type BadgeTone } from '@/components/ui/Badge';
+import type { Level } from '@/core/types/story';
 import { cn } from '@/lib/cn';
-import type { ModuleMeta, ModuleStatus } from '@/modules/registry';
+import type { ModuleMeta } from '@/modules/registry';
 
 import { ModuleGlyph, type GlyphVariant } from './ModuleGlyph';
 import { SafetyBadge } from './SafetyBadge';
@@ -29,42 +30,40 @@ const GLYPH_BY_MODULE: Record<string, GlyphVariant> = {
   'learning-center': 'lesson',
 };
 
-const STATUS_LABEL: Record<ModuleStatus, string> = {
-  planned: 'Planned',
-  'in-progress': 'In progress',
-  ready: 'Ready',
+/**
+ * The level in words, always -- the tone is a second signal, never the only one. Neutral
+ * for beginner on purpose: the first thing a newcomer sees should not look like a grade.
+ */
+const LEVEL: Record<Level, { label: string; tone: BadgeTone }> = {
+  beginner: { label: 'Beginner', tone: 'neutral' },
+  intermediate: { label: 'Intermediate', tone: 'accent' },
+  advanced: { label: 'Advanced', tone: 'warn' },
 };
-
-const STATUS_TONE = {
-  planned: 'pending',
-  'in-progress': 'warn',
-  ready: 'ok',
-} as const;
-
-/** Beyond this the topic row wraps and cards stop lining up. */
-const MAX_TOPICS = 3;
 
 export interface ModuleCardProps {
   module: ModuleMeta;
+  /**
+   * The title's heading level. 3 under a page section (`h2`); 4 when the grid sits under
+   * a chapter heading of its own, so no level is skipped.
+   */
+  headingLevel?: 3 | 4;
   className?: string;
 }
 
 /**
- * One module on the home page explorer.
+ * One module, as a beginner meets it (uiux-spec.md §5.5): its name, the question it
+ * answers, how hard it is and how long it takes.
  *
  * Renders an `<li>`: it is always a child of `ModuleGrid`'s list, and a real list item
  * (rather than a `display: contents` wrapper) keeps "3 of 10" announced correctly.
  *
- * `planned` modules are muted, not unclickable. Every module in the registry is
- * planned today, so disabling the links would leave the product inert and the
- * EmptyState on each route unreachable — the opposite of what "planned modules route
- * to an EmptyState" asks for. The status badge and the dimmed glyph carry the message.
+ * No status badge. Every module is ready, and a word that is the same on every card is
+ * noise to someone deciding where to start.
  */
-export function ModuleCard({ module, className }: ModuleCardProps) {
-  const { id, title, route, summary, status, topics, usesRealNetwork } = module;
-  const shown = topics.slice(0, MAX_TOPICS);
-  const overflow = topics.length - shown.length;
-  const planned = status === 'planned';
+export function ModuleCard({ module, headingLevel = 3, className }: ModuleCardProps) {
+  const { id, title, route, question, level, minutes, usesRealNetwork } = module;
+  const Heading = headingLevel === 4 ? 'h4' : 'h3';
+  const levelSpec = LEVEL[level];
 
   return (
     <li
@@ -78,7 +77,7 @@ export function ModuleCard({ module, className }: ModuleCardProps) {
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-fg text-base font-medium">
+        <Heading className="text-fg text-base font-medium">
           {/*
             Stretched link: the accessible name stays the module title while the click
             target becomes the whole card. Anything that must stay independently
@@ -90,56 +89,42 @@ export function ModuleCard({ module, className }: ModuleCardProps) {
           >
             {title}
           </Link>
-        </h3>
-        <Badge tone={STATUS_TONE[status]} className="shrink-0">
-          {STATUS_LABEL[status]}
-        </Badge>
-      </div>
-
-      <p className="text-fg-muted mt-2 text-sm leading-relaxed">{summary}</p>
-
-      {/* `mt-auto` pins the footer down so cards with shorter summaries still align. */}
-      <div className="mt-auto flex items-end justify-between gap-3 pt-5">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {shown.map((topic) => (
-            <Badge key={topic} tone="neutral">
-              {topic}
-            </Badge>
-          ))}
-          {overflow > 0 ? (
-            <span className="text-fg-muted text-xs" title={topics.join(', ')}>
-              +{overflow} more
-            </span>
-          ) : null}
-        </div>
-
+        </Heading>
         <ModuleGlyph
           variant={GLYPH_BY_MODULE[id]}
-          className={cn(
-            'shrink-0 transition-opacity group-hover:opacity-100',
-            planned ? 'opacity-45' : 'opacity-80',
-          )}
+          className="shrink-0 opacity-80 transition-opacity group-hover:opacity-100"
         />
       </div>
 
-      <div className="border-border mt-4 flex items-center justify-between gap-3 border-t pt-3">
-        {/*
-          Every card states its safety posture — not just the live ones. A user should
-          read the badge, never have to notice the absence of one.
+      <p className="text-fg-secondary mt-2 text-sm leading-relaxed">{question}</p>
+
+      {/* `mt-auto` pins the footer down so cards with shorter questions still align. */}
+      <div className="mt-auto pt-4">
+        <div className="border-border flex flex-wrap items-center gap-2 border-t pt-3">
+          <Badge tone={levelSpec.tone}>{levelSpec.label}</Badge>
+          {minutes !== undefined ? (
+            <span className="text-fg-muted inline-flex items-center gap-1 text-xs">
+              <Clock aria-hidden="true" className="size-3.5" />
+              {minutes} min
+            </span>
+          ) : null}
+
+          {/*
+          Every card states its safety posture — not just the live one. A user should
+          read the badge, never have to notice the absence of one. Compact, so the word
+          is its accessible name and its tooltip rather than more text on the card.
 
           `z-10` lifts it out from under the stretched link so its tooltip is still
           reachable by pointer; keyboard focus reaches it either way.
         */}
-        <span className="relative z-10">
-          <SafetyBadge variant={usesRealNetwork ? 'live' : 'simulated'} />
-        </span>
-        <span
-          aria-hidden="true"
-          className="text-fg-muted group-hover:text-accent inline-flex items-center gap-1 text-xs transition-colors"
-        >
-          {planned ? 'Preview' : 'Open'}
-          <ArrowRight className="size-3.5" />
-        </span>
+          <span className="relative z-10 ml-auto">
+            <SafetyBadge variant={usesRealNetwork ? 'live' : 'simulated'} compact />
+          </span>
+          <ArrowRight
+            aria-hidden="true"
+            className="text-fg-muted group-hover:text-accent size-4 transition-colors"
+          />
+        </div>
       </div>
     </li>
   );

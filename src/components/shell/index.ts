@@ -19,3 +19,8 @@ export {
 } from './SafetyBadge';
 export { SkipLink, MAIN_CONTENT_ID, type SkipLinkProps } from './SkipLink';
 export { TopNav, type TopNavProps } from './TopNav';
+export { HeroJourney, type HeroJourneyProps } from './HeroJourney';
+export { QuickStart, type QuickStartProps } from './QuickStart';
+export { checkQuickStart, quickStartHref, type QuickStartCheck } from './QuickStartUrl';
+export { StartPath, type StartPathItem, type StartPathProps } from './StartPath';
+export { FIRST_STEPS_PATH, type StartPathStep } from './StartPathSteps';

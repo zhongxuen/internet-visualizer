@@ -35,32 +35,54 @@ describe('ModuleCard', () => {
 
     const link = screen.getByRole('link', { name: 'DNS Explorer' });
     expect(link).toHaveAttribute('href', '/dns-explorer');
-    expect(screen.getByText(base.summary)).toBeInTheDocument();
   });
 
-  it('shows status and caps the topic badges with a count of the rest', () => {
+  it('asks the module question and gives its level and length in words', () => {
     renderCard(base);
 
-    expect(screen.getByText('Planned')).toBeInTheDocument();
-    expect(screen.getByText('DNS')).toBeInTheDocument();
-    expect(screen.queryByText('Anycast')).not.toBeInTheDocument();
-    expect(screen.getByText('+1 more')).toBeInTheDocument();
+    expect(screen.getByText(base.question)).toBeInTheDocument();
+    expect(screen.getByText('Beginner')).toBeInTheDocument();
+    expect(screen.getByText('8 min')).toBeInTheDocument();
   });
 
-  it('stays reachable while planned, so its EmptyState route is not orphaned', () => {
-    renderCard(base);
+  it('shows no status badge, and no length where the registry gives none', () => {
+    renderCard({ ...base, status: 'ready', minutes: undefined });
 
-    const link = screen.getByRole('link', { name: 'DNS Explorer' });
-    expect(link).not.toHaveAttribute('aria-disabled');
+    expect(screen.queryByText(/^(Planned|In progress|Ready)$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\bmin$/)).not.toBeInTheDocument();
   });
 
   it('states the safety posture of every module, live or not', () => {
+    // Compact: the word is still in the badge, as visually hidden text.
     const { unmount } = renderCard(base);
-    expect(screen.getByText('Simulated')).toBeInTheDocument();
+    expect(screen.getByText('Simulated').closest('[data-variant]')).toHaveAttribute(
+      'data-variant',
+      'simulated',
+    );
     unmount();
 
     renderCard({ ...base, id: 'network-diagnostics', usesRealNetwork: true });
-    expect(screen.getByText('Live network')).toBeInTheDocument();
+    expect(screen.getByText('Live network').closest('[data-variant]')).toHaveAttribute(
+      'data-variant',
+      'live',
+    );
+  });
+
+  it('titles itself one level deeper under a chapter heading', () => {
+    const { unmount } = renderCard(base);
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'DNS Explorer' }),
+    ).toBeInTheDocument();
+    unmount();
+
+    render(
+      <ul>
+        <ModuleCard module={base} headingLevel={4} />
+      </ul>,
+    );
+    expect(
+      screen.getByRole('heading', { level: 4, name: 'DNS Explorer' }),
+    ).toBeInTheDocument();
   });
 
   it('renders its idle glyph as decoration only', () => {
