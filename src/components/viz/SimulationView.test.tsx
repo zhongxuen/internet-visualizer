@@ -48,12 +48,16 @@ function canvas() {
   return within(screen.getByRole('region', { name: 'Network topology' }));
 }
 
+/**
+ * The title of the step marked current. Read through its number, because Simple detail
+ * shows a step's plain sentence rather than its title.
+ */
 function currentPhase(): string {
-  return (
-    phasePanel()
-      .getAllByRole('button')
-      .find((button) => button.getAttribute('aria-current') === 'step')?.textContent ?? ''
-  );
+  const current = phasePanel()
+    .getAllByRole('button')
+    .find((button) => button.getAttribute('aria-current') === 'step');
+  const number = Number(current?.textContent?.match(/\d+/)?.[0]);
+  return RUN.result.phases[number - 1]?.title ?? '';
 }
 
 describe('SimulationView', () => {
@@ -63,10 +67,8 @@ describe('SimulationView', () => {
     expect(screen.getByRole('region', { name: /topology/i })).toBeInTheDocument();
     expect(screen.getByRole('slider', { name: 'Playback position' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
-    expect(screen.getByText('Event log')).toBeInTheDocument();
-    expect(
-      phasePanel().getByRole('button', { name: /Building the packet/ }),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Everything that happened')).toBeInTheDocument();
+    expect(phasePanel().getByRole('button', { name: /^Step 1 / })).toBeInTheDocument();
   });
 
   it('starts at rest, at the beginning', () => {
@@ -155,7 +157,7 @@ describe('SimulationView', () => {
     it('follows the phase list when a phase is chosen with the pointer', () => {
       renderView();
 
-      fireEvent.click(phasePanel().getByRole('button', { name: /Echo reply returns/ }));
+      fireEvent.click(phasePanel().getByRole('button', { name: /^Step 3 / }));
       expect(positionMs()).toBe(60);
     });
   });
@@ -191,6 +193,8 @@ describe('SimulationView', () => {
     it('seeks from a line in the event log', () => {
       renderView();
 
+      // The log is closed, and its rows unmounted, until it is opened.
+      fireEvent.click(screen.getByText('Everything that happened'));
       fireEvent.click(screen.getByText(/64 bytes from 198\.51\.100\.42/));
       expect(positionMs()).toBe(102);
     });
@@ -202,7 +206,14 @@ describe('SimulationView', () => {
    * wire, click the chip on the canvas, and read the header out of the inspector.
    */
   describe('inspecting a packet', () => {
-    const inspector = () => within(screen.getByRole('region', { name: 'Inspector' }));
+    const inspector = () => within(screen.getByRole('region', { name: 'Details' }));
+
+    /** Full detail, where the panel's technical half is open: these read header fields. */
+    function renderView() {
+      return renderWithPreferences(<SimulationView simulation={RUN} />, {
+        detail: 'full',
+      });
+    }
 
     it('starts with nothing selected', () => {
       renderView();
@@ -216,9 +227,12 @@ describe('SimulationView', () => {
 
       fireEvent.click(await canvas().findByRole('button', { name: /ICMP echo request/ }));
 
+      // Twice in Full detail when the toy packet has no plain label: the plain summary
+      // falls back to it, and the technical header prints it.
       expect(
-        inspector().getByText('ICMP echo request 192.168.1.24 -> 198.51.100.42'),
-      ).toBeInTheDocument();
+        inspector().getAllByText('ICMP echo request 192.168.1.24 -> 198.51.100.42')
+          .length,
+      ).toBeGreaterThan(0);
       expect(inspector().getByText('Ethernet II carrying ICMP')).toBeInTheDocument();
       expect(inspector().getByText('98 bytes on the wire')).toBeInTheDocument();
     });
@@ -258,8 +272,8 @@ describe('SimulationView', () => {
       scrubTo(120);
 
       expect(
-        inspector().getByText(/ICMP echo request 192\.168\.1\.24/),
-      ).toBeInTheDocument();
+        inspector().getAllByText(/ICMP echo request 192\.168\.1\.24/).length,
+      ).toBeGreaterThan(0);
     });
 
     it('replaces a selected machine when a packet is clicked instead', async () => {

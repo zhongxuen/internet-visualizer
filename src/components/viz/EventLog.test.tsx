@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import { renderWithPreferences } from '@/components/prefs/testing';
 import { buildToyRun, TOY_TOPOLOGY } from '@/core/sim/toyRun';
 
 import { EventLog } from './EventLog';
@@ -10,9 +11,13 @@ import { labelsFor } from './events';
 const RUN = buildToyRun();
 const LABELS = labelsFor(TOY_TOPOLOGY);
 
-function renderLog(overrides: Partial<Parameters<typeof EventLog>[0]> = {}) {
+/** Rendered open, in Full detail unless a test says otherwise. */
+function renderLog(
+  overrides: Partial<Parameters<typeof EventLog>[0]> = {},
+  detail: 'simple' | 'full' = 'full',
+) {
   const onSeek = vi.fn();
-  render(
+  renderWithPreferences(
     <EventLog
       events={RUN.events}
       virtualTime={16}
@@ -20,20 +25,41 @@ function renderLog(overrides: Partial<Parameters<typeof EventLog>[0]> = {}) {
       labels={LABELS}
       pdus={RUN.pdus}
       onSeek={onSeek}
+      defaultOpen
       {...overrides}
     />,
+    { detail },
   );
   return { onSeek, user: userEvent.setup() };
 }
 
 describe('EventLog', () => {
+  it.each(['simple', 'full'] as const)(
+    'is closed by default in %s, with no rows mounted until it is opened',
+    async (detail) => {
+      const { user } = renderLog({ defaultOpen: undefined }, detail);
+
+      const summary = screen.getByText('Everything that happened');
+      expect(summary.closest('details')).not.toHaveAttribute('open');
+      expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+
+      await user.click(summary);
+      expect(summary.closest('details')).toHaveAttribute('open');
+      expect(screen.getAllByRole('listitem')).toHaveLength(RUN.events.length);
+
+      // Closing unmounts them again: a closed log costs the document one row.
+      await user.click(summary);
+      expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+    },
+  );
+
   it('lists the whole run, not only what has happened', () => {
     renderLog();
     expect(screen.getAllByRole('listitem')).toHaveLength(RUN.events.length);
   });
 
-  it('counts how far through the run the playhead is', () => {
-    renderLog();
+  it('counts how far through the run the playhead is, even while closed', () => {
+    renderLog({ defaultOpen: false });
 
     const reached = RUN.events.filter((event) => event.at <= 16).length;
     expect(reached).toBeGreaterThan(0);
@@ -76,14 +102,32 @@ describe('EventLog', () => {
     expect(screen.getAllByText('16 ms').length).toBeGreaterThan(0);
   });
 
-  it('is collapsible, and open by default', async () => {
-    const { user } = renderLog();
+  it('names a packet by what it is for in Simple detail', () => {
+    const pdus = {
+      ...RUN.pdus,
+      'echo-request': { ...RUN.pdus['echo-request']!, plainLabel: 'Are you there?' },
+    };
+    renderLog({ pdus }, 'simple');
 
-    const disclosure = screen.getByText('Event log');
-    expect(disclosure.closest('details')).toHaveAttribute('open');
+    expect(
+      screen.getAllByText('Laptop to Home router: Are you there?').length,
+    ).toBeGreaterThan(0);
+  });
 
-    await user.click(disclosure);
-    expect(disclosure.closest('details')).not.toHaveAttribute('open');
+  it('announces a teaching note as a note, and a phase as a step', () => {
+    renderLog({ virtualTime: RUN.durationMs });
+
+    const note = RUN.events.find((event) => event.kind === 'annotate')!;
+    const noteRow = screen
+      .getAllByRole('button')
+      .find((button) =>
+        button.textContent?.includes(note.kind === 'annotate' ? note.text : '-'),
+      );
+    expect(noteRow).toHaveTextContent(/Note\./);
+    expect(noteRow).not.toHaveTextContent('Phase');
+
+    const phaseRow = screen.getByText('Phase: Building the packet');
+    expect(phaseRow.closest('button')).toHaveTextContent('Step.');
   });
 
   /**
@@ -106,6 +150,7 @@ describe('EventLog', () => {
 
     const { rerender } = render(
       <EventLog
+        defaultOpen
         events={RUN.events}
         virtualTime={0}
         durationMs={RUN.durationMs}
@@ -119,6 +164,7 @@ describe('EventLog', () => {
     for (const time of [8, 16, 60, 96, 120]) {
       rerender(
         <EventLog
+          defaultOpen
           events={RUN.events}
           virtualTime={time}
           durationMs={RUN.durationMs}

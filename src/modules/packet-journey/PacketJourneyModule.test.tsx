@@ -37,7 +37,7 @@ describe('PacketJourneyModule', () => {
     render(<PacketJourneyModule />);
 
     expect(screen.getByRole('region', { name: 'Phases' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Inspector' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Details' })).toBeInTheDocument();
     expect(screen.getByRole('slider', { name: 'Playback position' })).toBeInTheDocument();
   });
 

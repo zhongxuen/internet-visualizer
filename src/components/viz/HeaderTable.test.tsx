@@ -1,4 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
+
+import { renderWithPreferences } from '@/components/prefs/testing';
 import { describe, expect, it } from 'vitest';
 
 import type { HeaderField } from '@/core/types/pdu';
@@ -45,7 +47,9 @@ describe('HeaderTable', () => {
   });
 
   it('prints the width in bits, spelled out for a screen reader', () => {
-    render(<HeaderTable fields={IPV4_FIELDS} layer="network" />);
+    renderWithPreferences(<HeaderTable fields={IPV4_FIELDS} layer="network" />, {
+      detail: 'full',
+    });
 
     const ttl = screen.getByRole('rowheader', { name: 'TTL' }).parentElement!;
 
@@ -54,7 +58,10 @@ describe('HeaderTable', () => {
   });
 
   it('draws the width to scale against the widest field, as decoration only', () => {
-    const { container } = render(<HeaderTable fields={IPV4_FIELDS} layer="network" />);
+    const { container } = renderWithPreferences(
+      <HeaderTable fields={IPV4_FIELDS} layer="network" />,
+      { detail: 'full' },
+    );
 
     const bars = container.querySelectorAll<HTMLElement>('[aria-hidden="true"] > span');
 
@@ -63,7 +70,7 @@ describe('HeaderTable', () => {
   });
 
   it('says nothing about a width the scenario did not state', () => {
-    render(<HeaderTable fields={IPV4_FIELDS} />);
+    renderWithPreferences(<HeaderTable fields={IPV4_FIELDS} />, { detail: 'full' });
 
     const options = screen.getByRole('rowheader', { name: 'Options' }).parentElement!;
 
@@ -71,11 +78,25 @@ describe('HeaderTable', () => {
     expect(within(options).queryByText('bits')).not.toBeInTheDocument();
   });
 
-  it('carries the teaching note for the field it belongs to', () => {
-    render(<HeaderTable fields={IPV4_FIELDS} layer="network" />);
+  it('keeps bit widths to Full detail', () => {
+    const { container } = render(<HeaderTable fields={IPV4_FIELDS} layer="network" />);
 
-    expect(screen.getByText(/every router subtracts one/i)).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Width' })).not.toBeInTheDocument();
+    expect(screen.queryByText('bits')).not.toBeInTheDocument();
+    expect(container.querySelectorAll('[aria-hidden="true"] > span')).toHaveLength(0);
   });
+
+  it.each(['simple', 'full'] as const)(
+    'carries the teaching note as a plain "What it\'s for" line (%s)',
+    (detail) => {
+      renderWithPreferences(<HeaderTable fields={IPV4_FIELDS} layer="network" />, {
+        detail,
+      });
+
+      const note = screen.getByText(/every router subtracts one/i);
+      expect(note).toHaveTextContent(/^What it’s for: Every router subtracts one/);
+    },
+  );
 
   it('captions itself, and takes a caption from the layer that owns it', () => {
     const { rerender } = render(<HeaderTable fields={IPV4_FIELDS} />);

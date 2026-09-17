@@ -9,13 +9,23 @@
  * `router` and `echo`, so every description resolves ids through the labels the caller
  * built from the topology -- falling back to the id only when the scenario references a
  * machine it never declared, which is a bug worth being able to see.
+ *
+ * Two voices (docs/implementation/uiux-spec.md §5.1): with `detail: 'simple'`, a packet is
+ * named by its `plainLabel` and a note by its `plain` text, each falling back to the
+ * technical wording when the scenario has not written a plain one. Full detail is the
+ * technical line, unchanged.
  */
 
-import type { SimEvent, SimEventKind } from '@/core/types/events';
+import type { NodeState, SimEvent, SimEventKind } from '@/core/types/events';
 import type { PDU } from '@/core/types/pdu';
 
-/** How a log line is coloured and iconed. Never colour alone -- see `EventLog`. */
-export type EventTone = 'info' | 'accent' | 'warn' | 'error';
+import { nodeStateToken } from './nodes/state';
+
+/**
+ * How a log line is coloured and iconed. Never colour alone -- see `EventLog`, which
+ * prints a word for each: a phase and a teaching note share a colour and not a word.
+ */
+export type EventTone = 'info' | 'accent' | 'note' | 'warn' | 'error';
 
 export interface EventDescription {
   /** Virtual millisecond it happened. */
@@ -31,14 +41,33 @@ export interface EventContext {
   labels?: Readonly<Record<string, string>>;
   /** Every PDU in the run, so a hop can be described by its summary. */
   pdus?: Readonly<Record<string, PDU>>;
+  /** Which voice to write in. Defaults to `'full'`, the technical line. */
+  detail?: 'simple' | 'full';
 }
 
 function labelOf(id: string, context: EventContext): string {
   return context.labels?.[id] ?? id;
 }
 
+function simple(context: EventContext): boolean {
+  return context.detail === 'simple';
+}
+
+function nameOf(pdu: PDU, context: EventContext): string {
+  return simple(context) ? (pdu.plainLabel ?? pdu.summary) : pdu.summary;
+}
+
 function pduOf(id: string, context: EventContext): string {
-  return context.pdus?.[id]?.summary ?? id;
+  const pdu = context.pdus?.[id];
+  return pdu ? nameOf(pdu, context) : id;
+}
+
+/**
+ * The same word the node's chip on the canvas prints ("Working", not "processing"), so
+ * the log and the diagram never describe one state two ways.
+ */
+function stateWord(state: NodeState): string {
+  return nodeStateToken(state).label;
 }
 
 const LOG_TONES: Record<'info' | 'warn' | 'error', EventTone> = {
@@ -50,34 +79,35 @@ const LOG_TONES: Record<'info' | 'warn' | 'error', EventTone> = {
 /** One log line for one event. */
 export function describeEvent(event: SimEvent, context: EventContext = {}) {
   const base = { at: event.at, kind: event.kind } as const;
+  const arrow = simple(context) ? ' to ' : ' -> ';
 
   switch (event.kind) {
     case 'phase':
       return {
         ...base,
         tone: 'accent',
-        text: `Phase: ${event.title}`,
+        text: `${simple(context) ? 'Step' : 'Phase'}: ${event.title}`,
       } satisfies EventDescription;
 
     case 'transmit':
       return {
         ...base,
         tone: 'info',
-        text: `${labelOf(event.from, context)} -> ${labelOf(event.to, context)}: ${pduOf(event.pduId, context)}`,
+        text: `${labelOf(event.from, context)}${arrow}${labelOf(event.to, context)}: ${pduOf(event.pduId, context)}`,
       } satisfies EventDescription;
 
     case 'node-state':
       return {
         ...base,
         tone: event.state === 'error' ? 'error' : 'info',
-        text: `${labelOf(event.nodeId, context)} is ${event.state}${event.note ? ` (${event.note})` : ''}`,
+        text: `${labelOf(event.nodeId, context)}: ${stateWord(event.state)}${event.note ? ` (${event.note})` : ''}`,
       } satisfies EventDescription;
 
     case 'pdu-created':
       return {
         ...base,
         tone: 'info',
-        text: `${labelOf(event.atNode, context)} built ${event.pdu.summary}`,
+        text: `${labelOf(event.atNode, context)} built ${nameOf(event.pdu, context)}`,
       } satisfies EventDescription;
 
     case 'pdu-transform':
@@ -97,8 +127,10 @@ export function describeEvent(event: SimEvent, context: EventContext = {}) {
     case 'annotate':
       return {
         ...base,
-        tone: 'accent',
-        text: `${labelOf(event.targetId, context)}: ${event.text}`,
+        tone: 'note',
+        text: `${labelOf(event.targetId, context)}: ${
+          simple(context) ? (event.plain ?? event.text) : event.text
+        }`,
       } satisfies EventDescription;
 
     case 'log':

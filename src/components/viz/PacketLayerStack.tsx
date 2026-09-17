@@ -1,8 +1,9 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Mail } from 'lucide-react';
 import { useId, useState, type ReactNode } from 'react';
 
+import { useDetail } from '@/components/prefs';
 import { Badge } from '@/components/ui';
 import type { PDU, ProtocolLayer } from '@/core/types/pdu';
 import { cn } from '@/lib/cn';
@@ -23,6 +24,12 @@ import { HeaderTable } from './HeaderTable';
  * has -- "what is wrapped around what" at a glance, and "what does this header actually
  * say" on demand. The outermost is open by default because it is the header the receiving
  * NIC reads first, and it is the one that changes at every hop.
+ *
+ * Each box is drawn as an envelope -- the product's one analogy for encapsulation
+ * (docs/implementation/uiux-spec.md §5.1.1), "envelopes inside envelopes" -- with an
+ * envelope icon, and in Simple detail it is called one: "Envelope 1", outermost first.
+ * The protocol name stays on every box in both detail levels; it is the real term the
+ * analogy is paired with.
  *
  * Collapsed layers are unmounted rather than hidden: nothing on screen that a reader
  * cannot reach, and no rendering of five header tables to show one.
@@ -46,6 +53,7 @@ interface LayerBoxProps {
   expanded: boolean;
   onToggle: () => void;
   panelId: string;
+  full: boolean;
   /** The layer this one encapsulates, nested inside it. */
   children?: ReactNode;
 }
@@ -57,6 +65,7 @@ function LayerBox({
   expanded,
   onToggle,
   panelId,
+  full,
   children,
 }: LayerBoxProps) {
   const innermost = ordinal === total;
@@ -66,7 +75,7 @@ function LayerBox({
     <div
       data-layer={layer.layer}
       data-protocol={layer.protocol}
-      className="rounded-lg border p-1.5"
+      className="rounded-lg border border-t-2 p-1.5"
       style={{
         borderColor: layerTint(layer.layer, 55),
         backgroundColor: layerTint(layer.layer, 7),
@@ -77,7 +86,7 @@ function LayerBox({
         onClick={onToggle}
         aria-expanded={expanded}
         aria-controls={panelId}
-        className="hover:bg-surface-overlay/60 flex w-full items-center gap-2 rounded-md px-1 py-1 text-left"
+        className="hover:bg-surface-overlay/60 min-h-target-floor flex w-full items-center gap-2 rounded-md px-1 py-1 text-left"
       >
         <ChevronRight
           aria-hidden="true"
@@ -86,7 +95,10 @@ function LayerBox({
             expanded && 'rotate-90',
           )}
         />
-        <span className="text-fg-muted text-caption font-mono">{ordinal}</span>
+        <Mail aria-hidden="true" className="text-fg-muted size-3.5 shrink-0" />
+        <span className="text-fg-secondary text-small">
+          {full ? <span className="font-mono">{ordinal}</span> : `Envelope ${ordinal}`}
+        </span>
         <Badge layer={layer.layer} className="text-caption px-1.5 py-0">
           {layer.protocol}
         </Badge>
@@ -119,8 +131,10 @@ function LayerBox({
       {children ? (
         <div className="mt-1.5">{children}</div>
       ) : innermost ? (
-        <p className="text-fg-muted text-caption px-1 pt-1 pb-0.5">
-          Innermost — nothing else is wrapped inside this.
+        <p className="text-fg-muted text-small px-1 pt-1 pb-0.5">
+          {full
+            ? 'Innermost — nothing else is wrapped inside this.'
+            : 'The innermost envelope: the message itself is inside.'}
         </p>
       ) : null}
     </div>
@@ -132,6 +146,7 @@ export function PacketLayerStack({
   defaultExpanded = [0],
   className,
 }: PacketLayerStackProps) {
+  const full = useDetail() === 'full';
   const baseId = useId();
   const [expanded, setExpanded] = useState<ReadonlySet<number>>(
     () => new Set(defaultExpanded),
@@ -146,7 +161,7 @@ export function PacketLayerStack({
 
   if (pdu.layers.length === 0) {
     return (
-      <p className={cn('text-fg-muted text-xs', className)}>
+      <p className={cn('text-fg-muted text-small', className)}>
         This PDU carries no protocol layers.
       </p>
     );
@@ -167,6 +182,7 @@ export function PacketLayerStack({
         expanded={expanded.has(index)}
         onToggle={() => toggle(index)}
         panelId={`${baseId}-layer-${index}`}
+        full={full}
       >
         {inner}
       </LayerBox>
@@ -176,9 +192,10 @@ export function PacketLayerStack({
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <p className="text-fg-muted text-caption leading-snug">
-        Outermost header first — the order a receiving network card reads them, each one
-        wrapped around everything below it.
+      <p className="text-fg-muted text-small leading-snug">
+        {full
+          ? 'Outermost header first — the order a receiving network card reads them, each one wrapped around everything below it.'
+          : 'Envelopes inside envelopes, outermost first. Each one wraps everything inside it. Open one to read its label.'}
       </p>
       {stack}
     </div>

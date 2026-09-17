@@ -1,7 +1,9 @@
 'use client';
 
-import { memo, useEffect, useRef, type RefObject } from 'react';
+import { memo, useEffect, useRef, useState, type RefObject } from 'react';
 
+import { useDetail, type DetailLevel } from '@/components/prefs';
+import { Disclosure } from '@/components/ui';
 import type { SimEvent } from '@/core/types/events';
 import type { PDU } from '@/core/types/pdu';
 import { cn } from '@/lib/cn';
@@ -10,7 +12,7 @@ import { describeEvent, type EventTone } from './events';
 import { formatTimecode } from './time';
 
 /**
- * The running commentary, and a way to travel through it.
+ * "Everything that happened": the running commentary, and a way to travel through it.
  *
  * The whole run is listed, not just what has happened: events still ahead are dimmed and
  * marked, and clicking any line seeks to it. That makes the log a table of contents as
@@ -21,8 +23,14 @@ import { formatTimecode } from './time';
  * assistive technology (a position changing sixty times a second is noise); everything
  * they convey is here as ordinary text, in order, with timestamps.
  *
- * Collapsible via a native `<details>`, so it is keyboard-operable and correctly
- * announced without a line of JavaScript.
+ * ## Closed, and not mounted while closed
+ *
+ * A `Disclosure` with `lazy`, closed by default in both detail levels
+ * (docs/implementation/uiux-spec.md §5.2). The rows are most of the document on a long
+ * run -- Packet Journey's log is 822 lines -- and CLAUDE.md's measurements found that the
+ * size of the document, not any one render, is what costs frames during playback. A
+ * closed log is one summary row; opening it mounts the lines, closing it drops them.
+ * The summary still counts how far through the run the playhead is.
  */
 
 export interface EventLogProps {
@@ -35,14 +43,19 @@ export interface EventLogProps {
   labels?: Readonly<Record<string, string>>;
   pdus?: Readonly<Record<string, PDU>>;
   onSeek: (time: number) => void;
+  /** Open on mount. Closed by default: the rows are mounted only while it is open. */
   defaultOpen?: boolean;
   className?: string;
 }
 
-/** Tone as a colour *and* a printed word, so the severity survives greyscale. */
+/**
+ * Tone as a colour *and* a printed word, so the severity survives greyscale. A phase and
+ * a teaching note share the accent colour, which is why they must not share a word.
+ */
 const TONES: Record<EventTone, { className: string; word: string }> = {
   info: { className: 'text-fg-secondary', word: 'Info' },
-  accent: { className: 'text-accent', word: 'Phase' },
+  accent: { className: 'text-accent', word: 'Step' },
+  note: { className: 'text-accent', word: 'Note' },
   warn: { className: 'text-state-warn', word: 'Warning' },
   error: { className: 'text-state-error', word: 'Error' },
 };
@@ -56,6 +69,7 @@ interface EventLineProps {
   durationMs: number;
   labels?: Readonly<Record<string, string>>;
   pdus?: Readonly<Record<string, PDU>>;
+  detail: DetailLevel;
   onSeek: (time: number) => void;
   /** Attached to the current line, for the scroll-into-view in `EventLog`. */
   activeRef: RefObject<HTMLLIElement | null>;
@@ -69,6 +83,9 @@ interface EventLineProps {
  * one line and `current` on two, so with the comparison here React re-renders three lines
  * instead of eight hundred. `describeEvent` is inside the memo for the same reason: the
  * text of a line never changes at all once the run is fixed.
+ *
+ * No `TermText` here, on purpose: matching glossary words in hundreds of rows is the
+ * per-row work uiux-spec.md §5.6 rules out.
  */
 const EventLine = memo(function EventLine({
   event,
@@ -77,10 +94,11 @@ const EventLine = memo(function EventLine({
   durationMs,
   labels,
   pdus,
+  detail,
   onSeek,
   activeRef,
 }: EventLineProps) {
-  const line = describeEvent(event, { labels, pdus });
+  const line = describeEvent(event, { labels, pdus, detail });
   const tone = TONES[line.tone];
 
   return (
@@ -89,7 +107,7 @@ const EventLine = memo(function EventLine({
         type="button"
         onClick={() => onSeek(event.at)}
         className={cn(
-          'focus-visible:outline-focus flex w-full items-baseline gap-2.5 rounded px-2 py-1 text-left text-xs focus-visible:outline-2 focus-visible:outline-offset-1',
+          'focus-visible:outline-focus min-h-target-floor text-small flex w-full items-baseline gap-2.5 rounded px-2 py-1 text-left focus-visible:outline-2 focus-visible:outline-offset-1',
           'hover:bg-surface-overlay',
           current && 'bg-surface-overlay',
           // Not `opacity-45`: an alpha multiplier took this text to 2.25:1.
@@ -119,6 +137,7 @@ interface EventLinesProps {
   durationMs: number;
   labels?: Readonly<Record<string, string>>;
   pdus?: Readonly<Record<string, PDU>>;
+  detail: DetailLevel;
   onSeek: (time: number) => void;
   activeRef: RefObject<HTMLLIElement | null>;
 }
@@ -136,6 +155,7 @@ const EventLines = memo(function EventLines({
   durationMs,
   labels,
   pdus,
+  detail,
   onSeek,
   activeRef,
 }: EventLinesProps) {
@@ -150,6 +170,7 @@ const EventLines = memo(function EventLines({
           durationMs={durationMs}
           labels={labels}
           pdus={pdus}
+          detail={detail}
           onSeek={onSeek}
           activeRef={activeRef}
         />
@@ -165,9 +186,12 @@ export function EventLog({
   labels,
   pdus,
   onSeek,
-  defaultOpen = true,
+  defaultOpen = false,
   className,
 }: EventLogProps) {
+  const detail = useDetail();
+  const [open, setOpen] = useState(defaultOpen);
+
   /** The last event that has already happened -- the line the log follows. */
   let latestIndex = -1;
   for (const [index, event] of events.entries()) {
@@ -181,7 +205,7 @@ export function EventLog({
   useEffect(() => {
     const list = listRef.current;
     const active = activeRef.current;
-    if (!list || !active) return;
+    if (!open || !list || !active) return;
 
     /*
       The log's own box is scrolled by hand rather than with `scrollIntoView`, which
@@ -202,34 +226,35 @@ export function EventLog({
     } else if (activeBox.bottom > listBox.bottom) {
       list.scrollTop += activeBox.bottom - listBox.bottom;
     }
-  }, [latestIndex]);
+  }, [latestIndex, open]);
 
   return (
-    <details
-      open={defaultOpen}
-      className={cn('border-border bg-surface-raised group rounded-xl border', className)}
-    >
-      <summary className="focus-visible:outline-focus text-fg-secondary flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-xs font-medium tracking-widest uppercase focus-visible:outline-2 focus-visible:outline-offset-2">
-        Event log
-        <span className="text-fg-muted text-caption font-mono normal-case">
+    <Disclosure
+      summary="Everything that happened"
+      meta={
+        <span className="font-mono tabular-nums">
           {latestIndex + 1} / {events.length}
         </span>
-      </summary>
-
-      <ol
-        ref={listRef}
-        className="border-border max-h-56 overflow-y-auto border-t px-2 py-2"
-      >
+      }
+      open={open}
+      onToggle={setOpen}
+      lazy
+      className={cn('bg-surface-raised rounded-xl', className)}
+      summaryClassName="rounded-xl px-4"
+      contentClassName="border-border border-t px-2 py-2"
+    >
+      <ol ref={listRef} className="max-h-56 overflow-y-auto">
         <EventLines
           events={events}
           latestIndex={latestIndex}
           durationMs={durationMs}
           labels={labels}
           pdus={pdus}
+          detail={detail}
           onSeek={onSeek}
           activeRef={activeRef}
         />
       </ol>
-    </details>
+    </Disclosure>
   );
 }

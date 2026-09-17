@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
+import { renderWithPreferences } from '@/components/prefs/testing';
 import { HOME_LAN, noteFor } from '@/core/topologies';
 
 import { NetworkMapModule } from './NetworkMapModule';
@@ -25,7 +26,7 @@ function phasePanel() {
 }
 
 function inspector() {
-  return within(screen.getByRole('region', { name: 'Inspector' }));
+  return within(screen.getByRole('region', { name: 'Details' }));
 }
 
 /** The node card for a machine, by the label printed on it. */
@@ -88,7 +89,9 @@ describe('NetworkMapModule', () => {
   });
 
   it('takes the addresses off the diagram without taking them out of the product', async () => {
-    render(<NetworkMapModule />);
+    // Full detail: the addresses are in the Details panel's technical half, which is
+    // open there and one click away in Simple.
+    renderWithPreferences(<NetworkMapModule />, { detail: 'full' });
 
     expect(canvas().getAllByText('192.168.1.1')[0]).toBeInTheDocument();
 
@@ -124,14 +127,16 @@ describe('NetworkMapModule', () => {
 
   describe('guided tour', () => {
     it('is a phase per machine, in the order the scenario introduces them', () => {
-      render(<NetworkMapModule />);
+      // Full detail shows each step's title as well as its description.
+      renderWithPreferences(<NetworkMapModule />, { detail: 'full' });
 
       const steps = buildTour(HOME_LAN).steps;
-      const buttons = phasePanel().getAllByRole('button');
+      // Rows, not buttons: a glossary word inside a step's text is a button of its own.
+      const rows = phasePanel().getAllByRole('listitem');
 
-      expect(buttons).toHaveLength(steps.length);
-      expect(buttons[0].textContent).toContain('Laptop');
-      expect(buttons[0].textContent).toContain(noteFor(HOME_LAN, 'laptop')!.text);
+      expect(rows).toHaveLength(steps.length);
+      expect(rows[0].textContent).toContain('Laptop');
+      expect(rows[0].textContent).toContain(noteFor(HOME_LAN, 'laptop')!.text);
     });
 
     it('selects and explains the machine at each stop once it is following', async () => {
