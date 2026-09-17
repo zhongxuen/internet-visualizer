@@ -1,0 +1,63 @@
+{/* First steps, lesson 4. Written for a reader who has never heard any of these words. */}
+{/* Every term is wrapped in <Term> on its first use in this file, and the only analogies are the shared ones in docs/CONTENT-STYLE.md. */}
+
+# Finding a website's address
+
+How does your computer find the number behind a website's name?
+
+A name such as www.example.com is a <Term>domain name</Term>. People can remember it.
+But <Term>packets</Term> can only be sent to a number: the site's <Term>IP address</Term>.
+
+Turning the name into the number is the job of <Term>DNS</Term>. Your computer doesn't do
+the searching itself. It asks a <Term>resolver</Term>, which works like a helper who looks
+up numbers for you.
+
+No single <Term>server</Term> holds every name. So a resolver that knows nothing yet has to
+ask in steps.
+
+1. A root server says which servers look after names ending in .com.
+2. A .com server says which servers look after example.com.
+3. Those servers hold the real answer, and give the resolver the number.
+
+Press play to watch a resolver with nothing written down find the number from scratch.
+
+<EmbeddedSim module="dns-explorer" scenario="cold-cache" />
+
+Three questions for one name takes time. So the resolver writes each answer down to reuse
+it, and the saved answers are called a <Term>cache</Term>. The next time anyone asks for
+example.com, the resolver answers straight away, without asking anyone else. Each answer
+says how long it may be kept, so old answers don't linger forever.
+
+The run ends with a second question about the same site. Its answer is too big for one small packet.
+So the resolver asks again, in a way that can carry more.
+
+<Quiz
+  id="who-knows"
+  question="Nobody using this resolver has visited example.com before. Who gives the resolver the site's number?"
+  options={[
+    {
+      id: 'root',
+      label: 'A root server',
+      why: 'A root server doesn’t know the number. It only says which servers look after names ending in .com. That is the first of three steps.',
+    },
+    {
+      id: 'site-servers',
+      label: 'The servers that look after example.com',
+      correct: true,
+      why: 'Right. Only the servers that look after example.com hold its real number. The root and .com servers only point the resolver toward them.',
+    },
+    {
+      id: 'computer',
+      label: 'Your own computer, which already knows it',
+      why: 'A computer doesn’t come with a list of every website’s number. It asks the resolver, which finds the number and writes it down for next time.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'Packets are sent to IP addresses, so a website’s name has to be turned into a number first. That is what DNS does.',
+    'A resolver finds the number by asking in steps: a root server, a .com server, then the site’s own servers.',
+    'The resolver keeps answers in a cache, so the next lookup for the same name is almost instant.',
+  ]}
+/>

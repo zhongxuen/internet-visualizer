@@ -1,0 +1,58 @@
+{/* First steps, lesson 3. Written for a reader who has never heard any of these words. */}
+{/* Every term is wrapped in <Term> on its first use in this file, and the only analogies are the shared ones in docs/CONTENT-STYLE.md. */}
+
+# Messages travel in small packets
+
+How does a message get from your laptop to a <Term>server</Term> in another country?
+
+Nothing you send travels in one piece. It is cut into small <Term>packets</Term>. A packet is
+like a parcel with a label. The label says where it came from and where it is going.
+
+No single machine knows the whole way. Each <Term>router</Term> passes the packet one step
+on, like a sorting office passing parcels on. Each step is called a <Term>hop</Term>.
+
+Before your message is sent, your laptop and the server agree to talk. That opening exchange
+is a <Term>handshake</Term>, and it is part of <Term>TCP</Term>. TCP makes sure every packet
+arrives, like recorded delivery: every piece is signed for.
+
+Press play to follow one web page's packets to a server in Frankfurt, and back.
+
+<EmbeddedSim module="packet-journey" scenario="tcp-web-request" />
+
+On the way out, the home router changes where the label says the packet came from. The
+laptop's <Term>IP address</Term> only works inside its home. So the router swaps in the one address the whole home shares. It remembers the
+swap, so the reply can find its way back to the laptop.
+
+That swap is called <Term>NAT</Term>. It works like one street address for a whole
+building, with a front desk that remembers who ordered what.
+
+<Quiz
+  id="whole-route"
+  question="A router receives a packet for a server three countries away. What does the router know about the route?"
+  options={[
+    {
+      id: 'whole',
+      label: 'The whole route, from the laptop to the server',
+      why: 'No router holds the whole route. Each one knows only which neighbour is a step closer. That is enough when every router on the way does the same.',
+    },
+    {
+      id: 'next-hop',
+      label: 'Only which way to send it next',
+      correct: true,
+      why: 'Right. A router reads where the packet is going and picks the next hop. The routers after it make their own choices, one hop at a time.',
+    },
+    {
+      id: 'everywhere',
+      label: 'Nothing, so it sends a copy of the packet everywhere',
+      why: 'Sending copies everywhere would swamp every router on the way. A router picks one next hop for each packet, using the destination on its label.',
+    },
+  ]}
+/>
+
+<KeyTakeaways
+  items={[
+    'Everything you send is cut into packets, and each packet carries a label saying where it is going.',
+    'Routers pass packets on one hop at a time. None of them knows the whole route.',
+    'TCP opens with a handshake and makes sure every packet arrives, like recorded delivery.',
+  ]}
+/>

@@ -27,6 +27,14 @@ export type LessonContent = (props: MDXProps) => ReactNode;
 type LessonLoader = () => Promise<{ default: LessonContent }>;
 
 const LOADERS: Record<string, LessonLoader> = {
+  'what-happens-when-you-open-a-website': () =>
+    import('./lessons/what-happens-when-you-open-a-website.mdx'),
+  'your-devices-are-on-a-network': () =>
+    import('./lessons/your-devices-are-on-a-network.mdx'),
+  'messages-travel-in-packets': () => import('./lessons/messages-travel-in-packets.mdx'),
+  'finding-a-websites-address': () => import('./lessons/finding-a-websites-address.mdx'),
+  'asking-for-the-page': () => import('./lessons/asking-for-the-page.mdx'),
+  'keeping-it-private': () => import('./lessons/keeping-it-private.mdx'),
   'what-is-a-network': () => import('./lessons/what-is-a-network.mdx'),
   'addresses-and-subnets': () => import('./lessons/addresses-and-subnets.mdx'),
   'routing-and-the-path-between': () =>

@@ -31,7 +31,10 @@ export interface LessonMeta {
   title: string;
   /** One line, shown on the track card and in the lesson header. */
   summary: string;
-  /** Reading time in minutes. The spec's budget for one lesson is 5-10. */
+  /**
+   * Reading time in minutes. The spec's budget for one lesson is 5-10, and a First steps
+   * lesson takes 5 at most.
+   */
   minutes: number;
   /**
    * Learning topics this lesson covers. These strings are matched against the `topics`
@@ -47,13 +50,140 @@ export interface LessonMeta {
 }
 
 /**
- * The curriculum: thirty-three lessons, listed in `TRACKS` order.
+ * The curriculum: thirty-nine lessons, listed in `TRACKS` order.
  *
  * Order in this array is documentation only. `tracks.ts` decides what follows what,
  * and a lesson deliberately does not name the track it belongs to -- see the note at
  * the top of that file.
  */
 export const LESSONS: readonly LessonMeta[] = [
+  // First steps: five minutes each, for a reader who has never heard any of the words.
+  {
+    slug: 'what-happens-when-you-open-a-website',
+    title: 'What happens when you open a website?',
+    summary:
+      'Your browser finds the site, connects to it, locks the connection, and only then asks for the page.',
+    minutes: 5,
+    topics: ['DNS', 'HTTP', 'HTTPS'],
+    modules: ['internet-simulator'],
+    references: [
+      {
+        label: 'RFC 9110',
+        title: 'HTTP Semantics',
+        href: 'https://www.rfc-editor.org/rfc/rfc9110',
+      },
+      {
+        label: 'RFC 3986',
+        title: 'Uniform Resource Identifier (URI): Generic Syntax',
+        href: 'https://www.rfc-editor.org/rfc/rfc3986',
+      },
+    ],
+  },
+  {
+    slug: 'your-devices-are-on-a-network',
+    title: 'Your devices are on a network',
+    summary:
+      'Laptops, phones, a switch and one router: what a home network is made of, and where it meets the internet.',
+    minutes: 5,
+    topics: ['Topology', 'Routing'],
+    modules: ['network-map'],
+    references: [
+      {
+        label: 'RFC 1122',
+        title: 'Requirements for Internet Hosts -- Communication Layers',
+        href: 'https://www.rfc-editor.org/rfc/rfc1122',
+      },
+      {
+        label: 'RFC 1918',
+        title: 'Address Allocation for Private Internets',
+        href: 'https://www.rfc-editor.org/rfc/rfc1918',
+      },
+    ],
+  },
+  {
+    slug: 'messages-travel-in-packets',
+    title: 'Messages travel in small packets',
+    summary:
+      'Everything you send is cut into packets, and routers pass each one on, one hop at a time.',
+    minutes: 5,
+    topics: ['TCP/IP', 'Routing'],
+    modules: ['packet-journey'],
+    references: [
+      {
+        label: 'RFC 791',
+        title: 'Internet Protocol',
+        href: 'https://www.rfc-editor.org/rfc/rfc791',
+      },
+      {
+        label: 'RFC 9293',
+        title: 'Transmission Control Protocol (TCP)',
+        href: 'https://www.rfc-editor.org/rfc/rfc9293',
+      },
+    ],
+  },
+  {
+    slug: 'finding-a-websites-address',
+    title: "Finding a website's address",
+    summary:
+      'Computers need a number, not a name. A resolver finds it by asking in steps, and writes the answer down.',
+    minutes: 5,
+    topics: ['DNS', 'Caching'],
+    modules: ['dns-explorer'],
+    references: [
+      {
+        label: 'RFC 1034',
+        title: 'Domain Names -- Concepts and Facilities',
+        href: 'https://www.rfc-editor.org/rfc/rfc1034',
+      },
+      {
+        label: 'RFC 1035',
+        title: 'Domain Names -- Implementation and Specification',
+        href: 'https://www.rfc-editor.org/rfc/rfc1035',
+      },
+    ],
+  },
+  {
+    slug: 'asking-for-the-page',
+    title: 'Asking for the page',
+    summary:
+      'The browser sends a request, the server sends a response, and a status code says how it went.',
+    minutes: 5,
+    topics: ['HTTP'],
+    modules: ['http-explorer'],
+    references: [
+      {
+        label: 'RFC 9110',
+        title: 'HTTP Semantics',
+        href: 'https://www.rfc-editor.org/rfc/rfc9110',
+      },
+      {
+        label: 'RFC 9112',
+        title: 'HTTP/1.1',
+        href: 'https://www.rfc-editor.org/rfc/rfc9112',
+      },
+    ],
+  },
+  {
+    slug: 'keeping-it-private',
+    title: 'Keeping it private with HTTPS',
+    summary:
+      "A handshake agrees a secret and checks the site's ID. After that, only the two ends can read what is sent.",
+    minutes: 5,
+    topics: ['HTTPS', 'SSL/TLS', 'Certificates'],
+    modules: ['https-explorer'],
+    references: [
+      {
+        label: 'RFC 8446',
+        title: 'The Transport Layer Security (TLS) Protocol Version 1.3',
+        href: 'https://www.rfc-editor.org/rfc/rfc8446',
+      },
+      {
+        label: 'RFC 9110',
+        title: 'HTTP Semantics',
+        href: 'https://www.rfc-editor.org/rfc/rfc9110',
+      },
+    ],
+  },
   {
     slug: 'what-is-a-network',
     title: 'What a network actually is',

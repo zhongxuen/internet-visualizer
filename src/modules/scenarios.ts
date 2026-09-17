@@ -48,6 +48,7 @@
  */
 
 import type { VisualizedRun } from '@/components/viz';
+import type { StoryMeta } from '@/core/types/story';
 
 /**
  * One run a lesson can embed.
@@ -62,6 +63,11 @@ export interface EmbeddableScenario {
   readonly summary: string;
   /** What a learner should walk away understanding, as short phrases. */
   readonly teaches: readonly string[];
+  /**
+   * The scenario's beginner-facing face, passed through untouched when its module supplies
+   * one (wave 3), so an embed can show the plain title. Absent until then.
+   */
+  readonly story?: StoryMeta;
   /** Run it. Deterministic: same scenario in, deep-equal run out. */
   run(): VisualizedRun;
 }
@@ -78,6 +84,7 @@ interface DescribedScenario {
   readonly title: string;
   readonly summary: string;
   readonly teaches: readonly string[];
+  readonly story?: StoryMeta;
 }
 
 /** Pair a module's scenario list with the one function that runs one. */
@@ -90,6 +97,7 @@ function embeddable<S extends DescribedScenario>(
     title: scenario.title,
     summary: scenario.summary,
     teaches: scenario.teaches,
+    ...(scenario.story ? { story: scenario.story } : {}),
     run: () => run(scenario),
   }));
 }
