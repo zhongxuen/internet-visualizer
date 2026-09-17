@@ -36,7 +36,7 @@ describe('PacketJourneyModule', () => {
   it('reuses the shared playback surfaces rather than building its own', () => {
     render(<PacketJourneyModule />);
 
-    expect(screen.getByRole('region', { name: 'Phases' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Steps' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Inspector' })).toBeInTheDocument();
     expect(screen.getByRole('slider', { name: 'Playback position' })).toBeInTheDocument();
   });

@@ -2,6 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { playUntilEnded, ROUTES } from './routes';
 
+import { setSpeed } from './helpers';
+
 /**
  * The security headers, asserted where they actually have to be true: on a response
  * from a production build.
@@ -171,7 +173,7 @@ test('a scenario runs to completion without a CSP violation', async ({ page }) =
   const violations = await watchCspViolations(page);
 
   await page.goto('/packet-journey');
-  await page.getByRole('button', { name: '4x', exact: true }).click();
+  await setSpeed(page, '4x');
   // Pressed again at each step: a fresh browser is in Simple, which pauses after each.
   await playUntilEnded(page);
 

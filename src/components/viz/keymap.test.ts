@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { PLAYBACK_SPEEDS } from '@/core/sim/playback';
 
 import {
+  isTypingTarget,
   matchPlaybackKey,
   PLAYBACK_SHORTCUTS,
   shouldIgnoreKey,
@@ -94,9 +95,35 @@ describe('shouldIgnoreKey', () => {
     expect(shouldIgnoreKey(element('<div role="button"></div>'), TOGGLE)).toBe(true);
   });
 
+  it('hands every key back to a select', () => {
+    expect(shouldIgnoreKey(element('<select></select>'), STEP)).toBe(true);
+  });
+
   it('claims everything when the press landed on nothing in particular', () => {
     expect(shouldIgnoreKey(null, TOGGLE)).toBe(false);
     expect(shouldIgnoreKey(document.body, TOGGLE)).toBe(false);
+  });
+});
+
+describe('isTypingTarget', () => {
+  it('is true wherever the viewer types text', () => {
+    for (const html of [
+      '<input type="text" />',
+      '<input type="search" />',
+      '<input />',
+      '<textarea></textarea>',
+      '<select></select>',
+      '<div contenteditable="true"></div>',
+    ]) {
+      expect(isTypingTarget(element(html)), html).toBe(true);
+    }
+  });
+
+  it('is false for a slider, a button, the page, or nothing', () => {
+    expect(isTypingTarget(element('<input type="range" />'))).toBe(false);
+    expect(isTypingTarget(element('<button type="button"></button>'))).toBe(false);
+    expect(isTypingTarget(document.body)).toBe(false);
+    expect(isTypingTarget(null)).toBe(false);
   });
 });
 

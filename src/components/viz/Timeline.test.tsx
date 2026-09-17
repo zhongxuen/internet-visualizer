@@ -44,7 +44,7 @@ describe('Timeline', () => {
     const { onSeek } = renderTimeline();
 
     const marker = screen.getByRole('button', {
-      name: 'Phase 3, Echo reply returns, at 60 ms',
+      name: 'Step 3, Echo reply returns, at 60 ms',
     });
     await user.click(marker);
 
@@ -54,9 +54,9 @@ describe('Timeline', () => {
   it('marks which phase the playhead is in', () => {
     renderTimeline();
 
-    const current = screen.getByRole('button', { name: /Phase 2/ });
+    const current = screen.getByRole('button', { name: /Step 2/ });
     expect(current).toHaveAttribute('aria-current', 'step');
-    expect(screen.getByRole('button', { name: /Phase 1/ })).not.toHaveAttribute(
+    expect(screen.getByRole('button', { name: /Step 1/ })).not.toHaveAttribute(
       'aria-current',
     );
   });
@@ -66,7 +66,7 @@ describe('Timeline', () => {
     const { onSeek } = renderTimeline();
 
     await user.tab();
-    expect(screen.getByRole('button', { name: /Phase 1/ })).toHaveFocus();
+    expect(screen.getByRole('button', { name: /Step 1/ })).toHaveFocus();
 
     await user.keyboard('{Enter}');
     expect(onSeek).toHaveBeenCalledWith(0);

@@ -1,13 +1,15 @@
 import { Kbd } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
-import { PLAYBACK_SHORTCUTS } from './keymap';
+import { PLAYBACK_SHORTCUTS, STAGE_SHORTCUTS } from './keymap';
 
 /**
  * The printed keyboard map.
  *
  * Rendered from the same `PLAYBACK_SHORTCUTS` table `matchPlaybackKey` is built on, so a
  * shortcut cannot exist without appearing here and cannot appear here without working.
+ * `STAGE_SHORTCUTS` follows it: the Stage's own keys (`?` for help), each handled by the
+ * component the table names.
  * Every module shows this legend, which is what makes the shortcuts worth learning once.
  *
  * A `<dl>` rather than a table: each row is one term (the keys) and its description
@@ -26,7 +28,7 @@ export function KeyboardLegend({ className }: KeyboardLegendProps) {
         className,
       )}
     >
-      {PLAYBACK_SHORTCUTS.map((shortcut) => (
+      {[...PLAYBACK_SHORTCUTS, ...STAGE_SHORTCUTS].map((shortcut) => (
         <div key={shortcut.action} className="contents">
           <dt className="flex flex-wrap items-center gap-1">
             {shortcut.chords.map((chord, index) => (

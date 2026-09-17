@@ -16,7 +16,7 @@ import { formatTimecode, percentOf } from './time';
  * do the right thing -- the keyboard map hands those back to it whenever it has focus
  * (`shouldIgnoreKey`) rather than moving the playhead twice.
  *
- * Phase markers sit on their own rail above the track, as focusable buttons. That is the
+ * Step markers sit on their own rail above the track, as focusable buttons. That is the
  * other half of "navigable without a pointer": tab to a phase, press it, and playback
  * jumps to the moment that chapter begins. They are deliberately *not* overlaid on the
  * slider, where they would swallow drags aimed at the thumb.
@@ -118,7 +118,12 @@ export function Timeline({
 
   return (
     <div className={cn('flex flex-col gap-1', className)}>
-      <div className="relative h-5" aria-hidden={phases.length === 0}>
+      {/*
+        Below `lg` the bar has room for the track and not for a marker per step, and a
+        marker narrower than the 24px target floor is worse than none: the Steps tab is
+        the way to a step there.
+      */}
+      <div className="relative h-5 max-lg:hidden" aria-hidden={phases.length === 0}>
         {phases.map((phase) => (
           <button
             key={phase.id}
@@ -126,7 +131,7 @@ export function Timeline({
             onClick={() => onSeek(phase.startMs)}
             style={{ left: `${percentOf(phase.startMs, durationMs)}%` }}
             aria-current={phase.index === currentPhaseIndex ? 'step' : undefined}
-            aria-label={`Phase ${phase.index + 1}, ${phase.title}, at ${formatTimecode(phase.startMs, durationMs)}`}
+            aria-label={`Step ${phase.index + 1}, ${phase.title}, at ${formatTimecode(phase.startMs, durationMs)}`}
             title={`${phase.title} (${formatTimecode(phase.startMs, durationMs)})`}
             className={cn(
               'focus-visible:outline-focus absolute bottom-0 flex h-5 w-4 -translate-x-1/2 items-end justify-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2',
@@ -189,7 +194,7 @@ export function Timeline({
         />
       </div>
 
-      <div className="text-fg-muted text-caption flex justify-between font-mono">
+      <div className="text-fg-muted text-caption flex justify-between font-mono max-lg:hidden">
         <span ref={elapsedRef}>{formatTimecode(virtualTime, durationMs)}</span>
         <span>{total}</span>
       </div>
