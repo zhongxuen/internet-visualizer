@@ -2,11 +2,10 @@ import Link from 'next/link';
 import { Play } from 'lucide-react';
 
 import { HeroJourney, ModuleGrid, QuickStart } from '@/components/shell';
-import { FIRST_STEPS_PATH } from '@/components/shell/StartPathSteps';
 import { buttonClasses } from '@/components/ui';
 import { focusRing } from '@/components/ui/styles';
 import { cn } from '@/lib/cn';
-import { lessonHref } from '@/modules/learning-center/content/navigation';
+import { firstStepsPath } from '@/modules/learning-center/content/navigation';
 import { MODULE_CHAPTERS, MODULES } from '@/modules/registry';
 
 import { StartPathProgress } from './_home/StartPathProgress';
@@ -32,11 +31,8 @@ export default function Home() {
    */
   const live = MODULES.find((module) => module.usesRealNetwork);
 
-  const { trackId, minutes, steps } = FIRST_STEPS_PATH;
-  const pathSteps = steps.map((step) => ({
-    ...step,
-    href: lessonHref(trackId, step.slug),
-  }));
+  // The step count and the minutes are the First steps track's own, not a copy.
+  const { steps, minutes } = firstStepsPath();
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
@@ -73,7 +69,7 @@ export default function Home() {
         <h2 id="path-heading" className="text-fg text-xl font-semibold tracking-tight">
           Your path
         </h2>
-        <StartPathProgress steps={pathSteps} className="mt-4" />
+        <StartPathProgress steps={steps} className="mt-4" />
       </section>
 
       {/* `scroll-mt` clears the sticky header when a link lands on `/#explore`. */}

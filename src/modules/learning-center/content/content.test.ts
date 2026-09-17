@@ -8,6 +8,8 @@ import { lessonSlugsWithContent } from './load';
 import {
   allLessonParams,
   firstLessonOf,
+  firstStepsPath,
+  FIRST_STEPS_TRACK_ID,
   glossaryHref,
   lessonHref,
   lessonPath,
@@ -127,6 +129,20 @@ describe('navigation', () => {
     expect(position?.previous).toBeUndefined();
     expect(position?.next).toBe(lessons[1]);
     expect(firstLessonOf(track)).toBe(first);
+  });
+
+  it('derives the "Start here" path from the First steps track itself', () => {
+    const track = getTrack(FIRST_STEPS_TRACK_ID);
+    expect(track).toBeDefined();
+
+    const path = firstStepsPath();
+    const lessons = lessonsInTrack(FIRST_STEPS_TRACK_ID);
+
+    expect(path.startHref).toBe(
+      lessonHref(FIRST_STEPS_TRACK_ID, firstLessonOf(track!)!.slug),
+    );
+    expect(path.steps.map((step) => step.slug)).toEqual(track!.lessons);
+    expect(path.minutes).toBe(lessons.reduce((sum, lesson) => sum + lesson.minutes, 0));
   });
 
   /**

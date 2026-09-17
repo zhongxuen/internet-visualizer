@@ -2,11 +2,22 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { StartPath } from './StartPath';
-import { FIRST_STEPS_PATH } from './StartPathSteps';
-
-const steps = FIRST_STEPS_PATH.steps.map((step) => ({
-  ...step,
-  href: `/learn/first-steps/${step.slug}`,
+/*
+ * A fixture, not the real track: the shell may not import a module (architecture rule 3).
+ * The real steps are derived in `learning-center/content/navigation.ts`, and
+ * `content.test.ts` asserts that derivation.
+ */
+const steps = [
+  'what-happens-when-you-open-a-website',
+  'your-devices-are-on-a-network',
+  'messages-travel-in-packets',
+  'finding-a-websites-address',
+  'asking-for-the-page',
+  'keeping-it-private',
+].map((slug, index) => ({
+  slug,
+  title: `Lesson ${index + 1}`,
+  href: `/learn/first-steps/${slug}`,
 }));
 
 describe('StartPath', () => {

@@ -170,7 +170,7 @@ test.describe('a list view of the canvas, reachable without a pointer', () => {
     await page.goto(MODULE.route);
     await expect(page.locator('.react-flow')).toBeVisible();
 
-    const summary = page.locator('summary', { hasText: 'Topology as a list' });
+    const summary = page.locator('summary', { hasText: 'The map as a list' });
     /*
      * Located by its summary rather than by role: Playwright's role engine does not map
      * `<details>` to `group`, so `getByRole('group')` finds nothing here even though a
@@ -196,7 +196,7 @@ test.describe('a list view of the canvas, reachable without a pointer', () => {
     ).toBe(drawn);
 
     /*
-     * The point of the list: choosing a machine here fills the same inspector a click on
+     * The point of the list: choosing a machine here fills the same Details panel a click on
      * the diagram fills. Two representations, one selection -- not a read-only summary
      * that leaves a keyboard user unable to ask for detail.
      */
@@ -206,7 +206,7 @@ test.describe('a list view of the canvas, reachable without a pointer', () => {
 
     await expect(first).toHaveAttribute('aria-pressed', 'true');
 
-    const inspector = page.getByRole('region', { name: 'Inspector', exact: true });
+    const inspector = page.getByRole('region', { name: 'Details', exact: true });
     await expect(inspector.getByText('Nothing selected')).toHaveCount(0);
     await expect(inspector).toContainText(label);
   });

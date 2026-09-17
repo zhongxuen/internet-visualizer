@@ -77,12 +77,8 @@ export interface InspectorProps {
   className?: string;
 }
 
-/**
- * A pinned note, with the plain sentence its event may carry. `projectAt` does not copy
- * `plain` onto `Annotation` yet; reading it optionally here means the panel shows it the
- * moment it does, and the technical text until then.
- */
-type PinnedNote = Annotation & { plain?: string };
+/** A pinned note; `plain` is the sentence its event may carry, copied by `projectAt`. */
+type PinnedNote = Annotation;
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (

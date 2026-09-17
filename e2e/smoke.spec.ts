@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { START_HERE_DESTINATION } from '@/app/start/destination';
+import { firstStepsPath } from '@/modules/learning-center/content/navigation';
 
 import { NOT_FOUND_ROUTES, ROUTES, SIMULATING_MODULES, watchConsole } from './routes';
 
@@ -13,8 +13,8 @@ import { NOT_FOUND_ROUTES, ROUTES, SIMULATING_MODULES, watchConsole } from './ro
  * a unit test, because none of them happen until Next assembles the page.
  *
  * The assertion is deliberately blunt -- status 200, one `h1`, zero console errors --
- * because the depth belongs in `modules.spec.ts`. What this file guarantees is coverage:
- * it visits *every* URL, including all thirty-three lessons, which no other test does.
+ * because the depth belongs in `e2e/modules/`. What this file guarantees is coverage:
+ * it visits *every* URL, including every lesson, which no other test does.
  */
 
 for (const route of ROUTES) {
@@ -92,7 +92,7 @@ test('/start redirects to the first lesson of First steps', async ({ request }) 
 
   expect([307, 308]).toContain(response.status());
   expect(new URL(response.headers().location ?? '', 'http://x').pathname).toBe(
-    START_HERE_DESTINATION,
+    firstStepsPath().startHref,
   );
 });
 

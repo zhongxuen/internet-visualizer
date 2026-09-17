@@ -67,6 +67,8 @@ export interface Annotation {
   targetId: string;
   /** The note itself. */
   text: string;
+  /** The same note in plain words, when the event carries one (uiux-spec.md §5.1). */
+  plain?: string;
   /** Optional citation into the standards documents. */
   reference?: RfcRef;
   /** Virtual millisecond the note appeared, for ordering and for the event log. */
@@ -227,6 +229,7 @@ export function projectAt(result: SimResult, t: number): VisualState {
           at: event.at,
         };
         if (event.reference) annotation.reference = event.reference;
+        if (event.plain) annotation.plain = event.plain;
         activeAnnotations.push(annotation);
         break;
       }

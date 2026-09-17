@@ -217,7 +217,8 @@ test('the zod JIT probe is the only eval report, and only on zod routes', async 
  * The claim the whole product rests on, checked in a browser rather than argued for.
  *
  * "Every module is a deterministic client-side simulation, except Network Diagnostics'
- * Live mode" is a sentence in the footer, the README and the home page. `connect-src
+ * Live mode" is a sentence in the README, and the footer and the home page say it in
+ * plain words ("Everything here runs in your browser, except ..."). `connect-src
  * 'self'` is what makes it enforceable: a simulated module cannot reach another origin
  * even if its code asked to, because the browser refuses before a socket is opened. So
  * this test does what a compromised or careless module would do -- `fetch` and

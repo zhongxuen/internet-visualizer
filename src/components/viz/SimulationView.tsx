@@ -465,6 +465,7 @@ export function SimulationView({
                     topology={topology}
                     selection={selection}
                     pdus={result.pdus}
+                    events={result.events}
                     nodeStates={visible.nodeStates}
                     annotations={visible.activeAnnotations}
                     onSelect={select}

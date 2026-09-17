@@ -108,6 +108,45 @@ export function firstLessonOf(track: Track): LessonMeta | undefined {
   return lessonsInTrack(track.id)[0];
 }
 
+/** The track "Start here" sends a newcomer down (docs/implementation/uiux-spec.md §7.7). */
+export const FIRST_STEPS_TRACK_ID = 'first-steps';
+
+export interface FirstStepsPath {
+  /** `/start` redirects here: the track's own first lesson. */
+  startHref: string;
+  /** The track's lessons in teaching order, each with its URL. */
+  steps: { slug: string; title: string; href: string }[];
+  /** The sum of the lessons' own reading times. */
+  minutes: number;
+}
+
+/**
+ * First steps as the home page and `/start` need it, read from `TRACKS` and `LESSONS`
+ * rather than typed a second time, so a lesson renamed, reordered or retimed moves the
+ * redirect, the step list and "about N minutes" together.
+ *
+ * Throws rather than returning a path to nowhere: both callers are pre-rendered, so a
+ * missing or empty track fails the build instead of shipping a "Start here" that 404s.
+ */
+export function firstStepsPath(): FirstStepsPath {
+  const lessons = lessonsInTrack(FIRST_STEPS_TRACK_ID);
+  if (lessons.length === 0) {
+    throw new Error(`The "${FIRST_STEPS_TRACK_ID}" track has no lessons.`);
+  }
+
+  const steps = lessons.map((lesson) => ({
+    slug: lesson.slug,
+    title: lesson.title,
+    href: lessonHref(FIRST_STEPS_TRACK_ID, lesson.slug),
+  }));
+
+  return {
+    startHref: steps[0].href,
+    steps,
+    minutes: lessons.reduce((total, lesson) => total + lesson.minutes, 0),
+  };
+}
+
 /** Every track/lesson pair, in curriculum order. Feeds `generateStaticParams`. */
 export function allLessonParams(): { track: string; lesson: string }[] {
   return TRACKS.flatMap((track) =>

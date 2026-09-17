@@ -107,11 +107,11 @@ export function moduleContract(id: string): void {
 
       // --- open the details ------------------------------------------------------
       /*
-       * `exact`, because a module may add an inspector of its own beside the shared one
+       * `exact`, because a module may add a details panel of its own beside the shared one
        * -- the WebSocket Viewer's "Frame inspector" is one -- and this test is about the
        * panel every module gets from `SimulationView`.
        */
-      const inspector = page.getByRole('region', { name: 'Inspector', exact: true });
+      const inspector = page.getByRole('region', { name: 'Details', exact: true });
       const node = await clickableNode(page);
 
       /*
@@ -129,6 +129,8 @@ export function moduleContract(id: string): void {
       await node.click();
 
       await expect(inspector.getByText('Nothing selected')).toHaveCount(0);
+      // Addresses are in the technical half, which a fresh browser (Simple) keeps closed.
+      await inspector.getByText('Technical details').click();
       await expect(inspector.getByRole('heading', { name: 'Addresses' })).toBeVisible();
       await expect(inspector).toContainText(label);
 

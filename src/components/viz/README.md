@@ -80,12 +80,15 @@ panel, the step list, and the event log.
 | `StartOverlay`       | "Watch it happen", over the canvas until the first play or seek |
 | `RunRecap`           | "What just happened", over the canvas at the end of a run |
 | `StageHelp`          | "How to use this page": the `?` button and key, and its dialog |
-| `SimulationCanvas`   | the React Flow surface: pan, zoom, fit-view, selection, tokens  |
+| `SimulationCanvas`   | the React Flow surface: pan, zoom, selection, tokens, zones, and a camera that frames the whole map or follows the action |
+| `CameraToggle`       | "Show whole map" / "Follow the action", a 44px button in the canvas corner |
+| `CanvasLegend`       | the "Key" popover: the kinds present, what a packet is, link media, state meanings |
 | `LazyCanvas`         | the canvas behind `next/dynamic` (React Flow is ~80 KB and off the first load) and behind an error boundary, so a chunk that never arrives costs the picture and not the module |
 | `frameClock.ts`      | the playhead, readable without a render; how a packet moves      |
-| `layout.ts`          | breadth-first placement — one column per hop from the client    |
+| `layout.ts`          | placement by zone, then by hops within a zone (a long zone wraps to two rows); the camera's framing arithmetic |
 | `graph.ts`           | `Topology` → React Flow nodes/edges, handle sides, aria labels  |
-| `nodes/kinds.ts`     | icon, role word, layer, and silhouette per `NodeKind`           |
+| `nodes/kinds.ts`     | icon, role word, plain role (from `core/text/kinds.ts`), layer, and silhouette per `NodeKind` |
+| `nodes/zones.tsx`    | zone kinds and their icons, and `ZoneLayer`: labelled backdrops that never take focus |
 | `nodes/state.ts`     | colour + icon + word + outline per `NodeState`                  |
 | `nodes/*Node.tsx`    | one component per family of kinds, over a shared `NodeShell`    |
 | `edges/media.ts`     | dash pattern + icon per `LinkMedium`                            |
@@ -94,12 +97,12 @@ panel, the step list, and the event log.
 | `packetPath.ts`      | the point and heading at `t` along a drawn bezier, arithmetically |
 | `PacketLayerStack`   | the encapsulation stack, outermost first, each layer expandable |
 | `HeaderTable`        | header fields: name, value, bit width, teaching note            |
-| `Inspector`          | the selected node, link, or PDU — and a way to navigate between them |
+| `Inspector`          | the "Details" region: the selected node, link, or PDU in plain words, with everything technical in a "Technical details" disclosure |
 | `Timeline`           | the scrubber, with a focusable marker per step at `lg`          |
 | `PlaybackControls`   | the transport: Back, Play, Next step, speed menu, "Pause after each step", shortcuts |
 | `PhaseStepper`       | the steps of the run; the primary navigation under reduced motion |
-| `TopologyList`       | the canvas as tab-through buttons; the non-pointer route into the topology |
-| `EventLog`           | the whole run as text, click any line to seek                   |
+| `TopologyList`       | "The map as a list": the canvas as tab-through buttons; the non-pointer route into the topology |
+| `EventLog`           | "Everything that happened": the whole run as text, closed by default and mounted only while open; click any line to seek |
 | `KeyboardLegend`     | the printed keyboard map, rendered from `keymap.ts`             |
 | `keymap.ts`          | the one keyboard table: what the handler reads and the legend prints |
 | `events.ts`          | `SimEvent` → one line of log text                               |
@@ -109,7 +112,7 @@ panel, the step list, and the event log.
 | `hooks/usePlaybackKeys` | binds the keyboard map, and hands keys back to the focused element |
 | `hooks/useVisibleState` | `projectAt` plus the reduced-motion policy, memoized per cursor |
 | `hooks/useMediaQuery` | a media query through `useSyncExternalStore`; roles and mount points only, never layout |
-| `display.ts`         | view preferences that cross the canvas: hidden addresses, dimmed nodes |
+| `display.ts`         | view preferences that cross the canvas: hidden addresses, dimmed nodes, and `DetailContext` (Simple or Full) |
 
 Adding a `NodeKind` to `src/core/types/topology.ts` fails to compile until it is given an
 entry in `nodes/kinds.ts` and a renderer in `nodes/index.ts`. That is deliberate.
@@ -134,15 +137,16 @@ Every slot renders inside `PlaybackContext`, so its content can call
 playback-aware controls without this component growing a prop per module.
 - **`selection` / `onSelect`** — take ownership of what is selected. Needed whenever
   something other than a click moves the selection (a guided tour) or something outside
-  the canvas has to know what it is (an inspector section about the selected machine).
+  the canvas has to know what it is (a details section about the selected machine).
 - **`focusNodeIds`** — aim the camera at a few machines. The one imperative thing on the
   canvas, because "where the view is pointing" is genuinely not a function of virtual
-  time. Emptying it returns to the whole diagram; the pan is skipped under reduced motion.
+  time. Emptying it hands the camera back to its mode (whole map, or following the action)
+  rather than always fitting the whole diagram; the pan is skipped under reduced motion.
 - **`AddressVisibilityContext` / `DimmedNodesContext`** (`display.ts`) — hide addressing
   on the node cards, or push machines into the background. Contexts rather than props
   because they cross the React Flow tree, which has no channel from a module down to an
   individual node. Neither removes anything: a hidden address is still in the `SimNode`,
-  in the inspector, and in the node's accessible name, and a dimmed machine is still
+  in the Details panel, and in the node's accessible name, and a dimmed machine is still
   drawn, still clickable, and still in the tab order.
 
 ## Keyboard

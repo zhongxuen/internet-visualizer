@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { NOT_FOUND_ROUTES, playUntilEnded, ROUTES, SIMULATING_MODULES } from './routes';
 
-import { setSpeed } from './helpers';
+import { clickableNode, setSpeed } from './helpers';
 
 /**
  * axe-core on every URL this product serves, failing on serious and critical only.
@@ -177,7 +177,11 @@ test('a module in a played, selected state stays clean', async ({ page }) => {
   // Pressed again at each step: a fresh browser is in Simple, which pauses after each.
   await playUntilEnded(page);
 
-  await page.locator('.react-flow__node').first().click();
+  /*
+   * Not simply the first node: after playback the camera follows the action, so the
+   * first node can sit outside the canvas box. `clickableNode` picks one a click reaches.
+   */
+  await (await clickableNode(page)).click();
 
   await scan(page, `${meta!.route} (played, node selected)`);
 });

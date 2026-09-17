@@ -35,7 +35,7 @@ const LOCAL_URL = `http://127.0.0.1:${PORT}`;
  * while a violation still cannot break anything, then enforce.
  *
  * Only `security.spec.ts` is really portable this way. `smoke` and `a11y` will pass
- * against a deployment too, but `modules.spec.ts` plays every scenario to completion
+ * against a deployment too, but `e2e/modules/` plays every scenario to completion
  * over the public internet, which is slow enough to be a bad idea rather than a wrong
  * one.
  */
@@ -52,7 +52,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
 
   /*
-   * Generous, deliberately. `modules.spec.ts` plays a scenario to its end at 4x, and the
+   * Generous, deliberately. `e2e/modules/` plays a scenario to its end at 4x, and the
    * longest run in the product is a page load with a cold cache; a timeout tuned to the
    * fastest module would turn a slow CI runner into a flake.
    */

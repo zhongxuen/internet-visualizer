@@ -3,7 +3,7 @@
 **How the Internet actually works, animated — DNS, TCP, TLS, HTTP and the rest, as
 simulations you can step through rather than paragraphs you have to picture.**
 
-Ten modules, thirty-three lessons, and one rule: every claim on screen is either something
+Ten modules, thirty-nine lessons, and one rule: every claim on screen is either something
 you can watch happen or something with an RFC section number next to it.
 
 > **Everything here is a deterministic client-side simulation, except Network
@@ -43,7 +43,7 @@ Each name below links to that module's source; the routes are `/network-map`,
 
 | Module                            | What it is                                                                    |
 | --------------------------------- | ------------------------------------------------------------------------------ |
-| [Learning Center](src/modules/learning-center)         | 33 lessons across 7 tracks, plus a 63-term glossary. Every lesson embeds a module's own run, so a lesson cannot contradict the thing it teaches |
+| [Learning Center](src/modules/learning-center)         | 39 lessons across 8 tracks, plus a 63-term glossary. Every lesson embeds a module's own run, so a lesson cannot contradict the thing it teaches |
 
 ![DNS Explorer resolving a cold cache, with the ladder and the message fields](docs/media/dns-explorer.png)
 
@@ -143,7 +143,7 @@ into it.
 ## Accessibility
 
 Checked, not assumed. `e2e/a11y.spec.ts` runs axe-core against every route — all ten
-modules, the glossary and all thirty-three lessons — and fails on any serious or critical
+modules, the glossary and all thirty-nine lessons — and fails on any serious or critical
 violation. `e2e/a11y-manual.spec.ts` covers what a static scan cannot see: keyboard
 traversal of the timeline, the `aria-live` phase announcements, the focusable list view
 that is the non-pointer alternative to each React Flow canvas, and 200% zoom.

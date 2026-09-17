@@ -56,6 +56,8 @@ export {
 export {
   allLessonParams,
   firstLessonOf,
+  firstStepsPath,
+  FIRST_STEPS_TRACK_ID,
   glossaryHref,
   learnHref,
   lessonHref,
@@ -64,6 +66,7 @@ export {
   lessonsInTrack,
   trackAnchorId,
   trackHref,
+  type FirstStepsPath,
   type LessonPosition,
 } from './content/navigation';
 export { getTrack, TRACKS, trackOfLesson, type Track } from './content/tracks';
