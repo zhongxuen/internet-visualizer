@@ -1,6 +1,8 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
+import { preloadInlineGlossary } from '@/components/glossary';
 
 import { MDX_ELEMENTS } from '@/mdx-components';
 
@@ -48,6 +50,10 @@ beforeEach(() => {
 });
 
 describe('a lesson, as the route renders it', () => {
+  // The index loads on demand. Load it once up front, so these tests are about behaviour
+  // rather than about how fast a chunk arrives in a busy worker pool.
+  beforeAll(() => preloadInlineGlossary());
+
   it('has exactly one h1, and it is the lesson', () => {
     renderLesson();
 

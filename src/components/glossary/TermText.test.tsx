@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { inlineTerm } from '@/core/glossary/inline';
 
@@ -15,6 +15,10 @@ vi.mock('./matchTerms', async (importOriginal) => {
 });
 
 describe('TermText', () => {
+  // The index loads on demand. Load it once up front, so these tests are about behaviour
+  // rather than about how fast a chunk arrives in a busy worker pool.
+  beforeAll(() => preloadInlineGlossary());
+
   it('links the first occurrence of each glossary word and keeps every character', async () => {
     const text = 'A router forwards each packet one hop closer; every packet does.';
     const { container } = render(

@@ -356,3 +356,44 @@ The 0.1–0.2 KB on routes that render no term is in the root layout chunk (12,2
 bytes gzipped), which contains no glossary code; it looks like module-id churn from adding
 modules to the build, not verified further. It moves `/packet-journey` from 0.1 to 0.3 KB
 over the 250 KB budget.
+
+### UX-1.5 gate (`ux-1.5`)
+
+2026-09-17, main checkout, port 3100. The same load as the wave-1 gate (the game still
+running; CPU at 76% before vitals).
+
+**CI sequence**, first pass on `00247fb`: `npm ci`, `lint`, `build`, `typecheck`,
+`format:check` green; `test:coverage` 4,773/4,774. The failure was UX-1.5's own:
+`lesson-pipeline.test.tsx` waited the default 1 s for `<Term>`'s button, and under coverage
+in a saturated pool the on-demand glossary chunk took longer. Fixed by preloading the index
+in the tests that are about behaviour rather than loading (`lesson-pipeline`, `Term`,
+`GlossaryTerm`, `TermText`), and adding `useInlineGlossary.test.tsx` for the state before
+the index arrives (server render and first client render are plain text). Second pass:
+`typecheck`, `format:check`, `lint` green; `test:coverage` 216 files, 4,776 tests, every
+threshold met; `test:e2e` 214 passed (axe, CSP and smoke on every lesson route and the
+glossary included).
+
+**`uiux:screens -- ux-1.5`:** identical to `wave-1` in every module metric and position.
+
+**`perf:bundles`:** identical to the "After" column above.
+
+**`perf:vitals`**, UX-1.5 and then the wave-0 build (`1eb0adb`) under the same load:
+
+| Route                  | LCP ms (1.5 / W0) | CLS (1.5 / W0)  | INP ms (1.5 / W0) | Playback fps (1.5 / W0) | LoAF count/ms (1.5 / W0) |
+| ---------------------- | ----------------: | --------------: | ----------------: | ----------------------: | -----------------------: |
+| `/`                    |        1000 / 884 |           0 / 0 |         840 / 464 |                       – |                        – |
+| `/network-map`         |       2240 / 1148 |           0 / 0 |         648 / 688 |               16.0 / 18.0 |          6/404 · 5/361 |
+| `/packet-journey`      |       5784 / 4660 | 0.002 / 0.0039  |       2720 / 2784 |                 1.0 / 1.2 |      4/3818 · 4/4183 |
+| `/dns-explorer`        |       2380 / 2844 |      0.0003 / 0 |         760 / 888 |               37.7 / 37.9 |      7/1524 · 7/1352 |
+| `/http-explorer`       |       2716 / 2636 |           0 / 0 |         648 / 696 |               57.7 / 57.5 |        3/554 · 3/577 |
+| `/https-explorer`      |       1940 / 3040 |      0 / 0.0001 |       1176 / 1224 |               53.3 / 53.2 |        3/846 · 3/861 |
+| `/api-visualizer`      |       2644 / 3448 | 0.0003 / 0.0002 |        1224 / 792 |                 4.4 / 5.1 |    17/3507 · 17/2924 |
+| `/websocket-viewer`    |       2808 / 2956 |      0.0001 / 0 |        1032 / 880 |               33.4 / 33.5 |    11/2097 · 11/2122 |
+| `/internet-simulator`  |       2988 / 2808 | 0.0001 / 0.0001 |         856 / 880 |               38.9 / 28.7 |      6/1843 · 6/2196 |
+| `/network-diagnostics` |       1116 / 2408 |           0 / 0 |         824 / 856 |                7.4 / 12.7 |     20/3104 · 19/2626 |
+
+UX-1.5 renders nothing new on these routes; the only runtime difference from wave 1 is the
+0.1–0.2 KB above. Every pair sits inside the spread of repeated runs on this machine
+(Network Diagnostics was 7.5 and 23.9 across two passes of identical wave-1 code), and LCP
+misses the budget in both builds on the same routes. **Accepted as load; no regression
+shown.** The quiet-machine pass owed since wave 1 is still owed.

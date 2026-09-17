@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
-import { glossaryHref } from '@/components/glossary';
+import { glossaryHref, preloadInlineGlossary } from '@/components/glossary';
 import { INLINE_SPELLINGS } from '@/core/glossary/inline';
 import { lookupTerm } from '@/core/glossary/lookup';
 
@@ -15,6 +15,10 @@ import { Term } from './Term';
  * explicit `id`, and plain text for a word with no entry.
  */
 describe('Term', () => {
+  // The index loads on demand. Load it once up front, so these tests are about behaviour
+  // rather than about how fast a chunk arrives in a busy worker pool.
+  beforeAll(() => preloadInlineGlossary());
+
   /**
    * The phase 02 rule applied to prose: a definition reachable only by hovering
    * exactly the right word with a mouse is a definition most readers do not have.

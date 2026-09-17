@@ -1,14 +1,19 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { inlineTerm } from '@/core/glossary/inline';
 
 import { GlossaryTerm } from './GlossaryTerm';
+import { preloadInlineGlossary } from './useInlineGlossary';
 
 const hop = inlineTerm('hop')!;
 
 describe('GlossaryTerm', () => {
+  // The index loads on demand. Load it once up front, so these tests are about behaviour
+  // rather than about how fast a chunk arrives in a busy worker pool.
+  beforeAll(() => preloadInlineGlossary());
+
   /** Hover is not a way in: the definition has to be reachable with no mouse at all. */
   it('opens from the keyboard, lets Tab reach the link, and gives focus back on Escape', async () => {
     const user = userEvent.setup();
