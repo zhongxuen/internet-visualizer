@@ -18,6 +18,7 @@ export {
   type UsePlaybackOptions,
 } from './usePlayback';
 export { usePlaybackKeys } from './usePlaybackKeys';
+export { LG_QUERY, useMediaQuery } from './useMediaQuery';
 export {
   useSimulation,
   type Simulation,

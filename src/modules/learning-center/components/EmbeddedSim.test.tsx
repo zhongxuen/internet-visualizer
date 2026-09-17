@@ -70,7 +70,7 @@ describe('EmbeddedSim', () => {
     // Phase 04's composition, not a copy of it.
     expect(screen.getByRole('slider', { name: 'Playback position' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Phases' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Steps' })).toBeInTheDocument();
   });
 
   it('says outright that nothing here touches a network', async () => {

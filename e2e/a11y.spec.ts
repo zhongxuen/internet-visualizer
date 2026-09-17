@@ -3,6 +3,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { NOT_FOUND_ROUTES, playUntilEnded, ROUTES, SIMULATING_MODULES } from './routes';
 
+import { setSpeed } from './helpers';
+
 /**
  * axe-core on every URL this product serves, failing on serious and critical only.
  *
@@ -171,7 +173,7 @@ test('a module in a played, selected state stays clean', async ({ page }) => {
   await page.goto(meta!.route);
   await page.waitForLoadState('networkidle');
 
-  await page.getByRole('button', { name: '4x', exact: true }).click();
+  await setSpeed(page, '4x');
   // Pressed again at each step: a fresh browser is in Simple, which pauses after each.
   await playUntilEnded(page);
 

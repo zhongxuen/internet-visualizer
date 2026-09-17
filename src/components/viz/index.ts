@@ -10,14 +10,38 @@ export { SimulationCanvas, type SimulationCanvasProps } from './SimulationCanvas
 export { SimulationView, type SimulationViewProps } from './SimulationView';
 export { EventLog, type EventLogProps } from './EventLog';
 export { KeyboardLegend, type KeyboardLegendProps } from './KeyboardLegend';
+export { StepCaption, type StepCaptionProps } from './StepCaption';
+export { StoryPicker, type StoryPickerProps } from './StoryPicker';
+export { StartOverlay, type StartOverlayProps } from './StartOverlay';
+export { RunRecap, type RunRecapProps } from './RunRecap';
+export { HELP_STEPS, StageHelp, type StageHelpProps } from './StageHelp';
+export { SCENARIO_PARAM, scenarioHref, useScenarioParam } from './useScenarioParam';
 export {
-  PhaseAnnouncer,
-  phaseAnnouncement,
-  type PhaseAnnouncerProps,
-} from './PhaseAnnouncer';
+  DONE_CAPTION,
+  groupStories,
+  MAX_VISIBLE_STORIES,
+  nextStory,
+  orderDeeperTabs,
+  recapLines,
+  splitStories,
+  stageMoment,
+  stepCaption,
+  storyName,
+  type DeeperTab,
+  type Detail,
+  type StageMoment,
+  type StepCaptionText,
+  type StoriesProp,
+  type StoryGroup,
+  type StoryOption,
+} from './stage';
 export { PhaseStepper, type PhaseStepperProps } from './PhaseStepper';
 export { TopologyList, type TopologyListProps } from './TopologyList';
-export { PlaybackControls, type PlaybackControlsProps } from './PlaybackControls';
+export {
+  PlaybackControls,
+  playbackAction,
+  type PlaybackControlsProps,
+} from './PlaybackControls';
 export { Timeline, type TimelineProps } from './Timeline';
 export {
   createPlaybackStore,
@@ -29,6 +53,7 @@ export {
   usePlayheadCursor,
   useSimulation,
   useSteadyPackets,
+  useMediaQuery,
   useVisibleState,
   snapToEndpoints,
   type PlaybackActions,
@@ -40,9 +65,11 @@ export {
   type VisualizedRun,
 } from './hooks';
 export {
+  isTypingTarget,
   matchPlaybackKey,
   shouldIgnoreKey,
   PLAYBACK_SHORTCUTS,
+  STAGE_SHORTCUTS,
   type KeyChord,
   type PlaybackCommand,
   type PlaybackShortcut,

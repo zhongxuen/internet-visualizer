@@ -21,7 +21,7 @@ function canvas() {
 }
 
 function phasePanel() {
-  return within(screen.getByRole('region', { name: 'Phases' }));
+  return within(screen.getByRole('region', { name: 'Steps' }));
 }
 
 function inspector() {

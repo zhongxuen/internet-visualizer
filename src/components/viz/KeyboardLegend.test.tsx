@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { KeyboardLegend } from './KeyboardLegend';
-import { matchPlaybackKey, PLAYBACK_SHORTCUTS } from './keymap';
+import { matchPlaybackKey, PLAYBACK_SHORTCUTS, STAGE_SHORTCUTS } from './keymap';
 
 /**
  * The acceptance criterion this covers is "every shortcut works and is discoverable via
@@ -19,19 +19,21 @@ const AS_EVENT_KEY: Record<string, string> = {
 };
 
 describe('KeyboardLegend', () => {
-  it('prints every shortcut in the map', () => {
+  it('prints every shortcut in the map, and the Stage keys after it', () => {
     render(<KeyboardLegend />);
 
-    for (const shortcut of PLAYBACK_SHORTCUTS) {
+    for (const shortcut of [...PLAYBACK_SHORTCUTS, ...STAGE_SHORTCUTS]) {
       expect(screen.getByText(shortcut.action)).toBeInTheDocument();
     }
+    expect(screen.getByText('How to use this page')).toBeInTheDocument();
   });
 
   it('pairs each set of key caps with what it does, as a description list', () => {
     const { container } = render(<KeyboardLegend />);
+    const rows = PLAYBACK_SHORTCUTS.length + STAGE_SHORTCUTS.length;
 
-    expect(container.querySelectorAll('dt')).toHaveLength(PLAYBACK_SHORTCUTS.length);
-    expect(container.querySelectorAll('dd')).toHaveLength(PLAYBACK_SHORTCUTS.length);
+    expect(container.querySelectorAll('dt')).toHaveLength(rows);
+    expect(container.querySelectorAll('dd')).toHaveLength(rows);
   });
 
   it('draws the key caps as real kbd elements', () => {

@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
+import { playheadMs, scrollsSideways, transport } from './helpers';
 import { ROUTES, SIMULATING_MODULES } from './routes';
 
 /**
@@ -14,19 +15,12 @@ import { ROUTES, SIMULATING_MODULES } from './routes';
  * `docs/implementation/14-quality-and-deployment.md`, section 2.
  *
  * Written against the shared `SimulationView` rather than per module, for the same
- * reason `modules.spec.ts` is: nine modules render the same view, so a keyboard
+ * reason the `modules/` specs share one contract: nine modules render the same view, so a keyboard
  * regression in it is a regression in all nine.
  */
 
 /** The module the interaction tests drive. First in registry order, so: Network Map. */
 const MODULE = SIMULATING_MODULES[0]!;
-
-/** The timeline's position, in virtual milliseconds. */
-async function playheadMs(page: Page): Promise<number> {
-  return Number(
-    await page.getByRole('slider', { name: 'Playback position' }).inputValue(),
-  );
-}
 
 test.describe('keyboard traversal of the timeline', () => {
   test('the scrubber is a real slider its own arrow keys drive', async ({ page }) => {
@@ -61,12 +55,12 @@ test.describe('keyboard traversal of the timeline', () => {
     expect(await playheadMs(page)).toBe(0);
   });
 
-  test('every phase marker is a tab stop that seeks', async ({ page }) => {
+  test('every step marker is a tab stop that seeks', async ({ page }) => {
     await page.goto(MODULE.route);
 
     // The markers sit on their own rail above the track, as buttons, precisely so they
     // are reachable without dragging anything.
-    const markers = page.getByRole('button', { name: /^Phase \d+, / });
+    const markers = page.getByRole('button', { name: /^Step \d+, / });
     const count = await markers.count();
     expect(count, 'the run should mark its phases on the timeline').toBeGreaterThan(1);
 
@@ -104,31 +98,71 @@ test.describe('keyboard traversal of the timeline', () => {
   });
 });
 
-test('the current phase is announced in a live region', async ({ page }) => {
+test('the current step is announced in a live region', async ({ page }) => {
   await page.goto(MODULE.route);
 
   /*
    * `role="status"` is `aria-live="polite"`; asserting the role rather than the attribute
-   * is asserting what a screen reader actually acts on. `PhaseAnnouncer` renders exactly
-   * one per view, and it must be the only thing shouting -- a second live region fed by
-   * the playhead would make both useless.
+   * is asserting what a screen reader actually acts on. `StepCaption` -- the visible
+   * form of what was `PhaseAnnouncer` -- renders exactly one per view, and it must be the
+   * only thing shouting: a second live region fed by the playhead would make both useless.
    */
   const status = page.locator('main [role="status"]');
   await expect(status).toHaveCount(1);
+  // Visible, now: the caption is for everyone, not only for a screen reader.
+  await expect(status).toBeVisible();
 
+  // Before the first play it asks the story's question, or says how to start.
   const before = (await status.textContent()) ?? '';
-  expect(before).toMatch(/phases in this run|Phase \d+ of \d+/);
+  expect(before).toMatch(/\?$|^Press Play to watch it happen/);
 
-  await page.getByRole('button', { name: 'Next phase' }).click();
-  await page.getByRole('button', { name: 'Next phase' }).click();
+  const next = transport(page).getByRole('button', { name: 'Next step', exact: true });
+  await next.click();
+  await next.click();
 
   await expect
     .poll(() => status.textContent(), {
-      message: 'stepping phases should change what the live region says',
+      message: 'stepping should change what the live region says',
     })
     .not.toBe(before);
 
-  await expect(status).toHaveText(/^Phase \d+ of \d+: /);
+  await expect(status).toHaveText(/^Step \d+ of \d+/);
+});
+
+test('"How to use this page" opens on ?, closes on Escape, and returns focus', async ({
+  page,
+}) => {
+  await page.goto(MODULE.route);
+  await expect(page.locator('.react-flow')).toBeVisible();
+
+  const help = page.getByRole('button', { name: 'How to use this page' });
+  await help.focus();
+  await page.keyboard.press('?');
+
+  const dialog = page.getByRole('dialog', { name: 'How to use this page' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Keyboard shortcuts')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(help).toBeFocused();
+});
+
+test('the transport stays in reach while the stage is on screen', async ({ page }) => {
+  await page.goto(MODULE.route);
+  await expect(page.locator('.react-flow')).toBeVisible();
+
+  // Scrolled so the canvas is in view and the bar's own place, under it, is not.
+  await page
+    .locator('.react-flow')
+    .evaluate((canvas) => canvas.scrollIntoView({ block: 'start' }));
+  const play = transport(page).getByRole('button', { name: 'Play', exact: true });
+  await expect(play).toBeInViewport({ ratio: 1 });
+
+  const box = await play.boundingBox();
+  expect(box!.height, 'Play is a primary control, at least 44px').toBeGreaterThanOrEqual(
+    44,
+  );
 });
 
 test.describe('a list view of the canvas, reachable without a pointer', () => {
@@ -193,16 +227,10 @@ test.describe('layout at 200% zoom', () => {
       await page.goto(route.path);
       await page.waitForLoadState('networkidle');
 
-      const { scrollWidth, clientWidth } = await page.evaluate(() => ({
-        scrollWidth: document.documentElement.scrollWidth,
-        clientWidth: document.documentElement.clientWidth,
-      }));
-
-      // One pixel of slack for sub-pixel rounding in the layout engine.
       expect(
-        scrollWidth,
+        await scrollsSideways(page),
         `${route.path} scrolls horizontally at 200% zoom`,
-      ).toBeLessThanOrEqual(clientWidth + 1);
+      ).toBe(false);
     });
   }
 
@@ -220,4 +248,25 @@ test.describe('layout at 200% zoom', () => {
         .map((v) => `${v.id}: ${v.help}`),
     ).toEqual([]);
   });
+});
+
+test.describe('layout on a 390px phone', () => {
+  /*
+   * The narrowest screen the Stage is designed for (uiux-spec.md §5.3, "Mobile"): the
+   * story select, a 60svh canvas, the Steps / Details / Go deeper tabs and a sticky
+   * transport all have to fit across it without the page scrolling sideways.
+   */
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  for (const route of ROUTES) {
+    test(`${route.name} fits 390px without sideways scrolling`, async ({ page }) => {
+      await page.goto(route.path);
+      await page.waitForLoadState('networkidle');
+
+      expect(
+        await scrollsSideways(page),
+        `${route.path} scrolls horizontally at 390px`,
+      ).toBe(false);
+    });
+  }
 });

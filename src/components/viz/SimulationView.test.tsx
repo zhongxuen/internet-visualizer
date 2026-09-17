@@ -39,9 +39,17 @@ function scrubTo(time: number) {
   fireEvent.change(screen.getByRole('slider'), { target: { value: String(time) } });
 }
 
-/** The phase list, the canvas, and the log all mention the same words -- scope queries. */
+/** The step list, the canvas, and the log all mention the same words -- scope queries. */
 function phasePanel() {
-  return within(screen.getByRole('region', { name: 'Phases' }));
+  return within(screen.getByRole('region', { name: 'Steps' }));
+}
+
+/**
+ * The transport's Back / Play / Next step group. "Play again" is also the recap's first
+ * button once a run ends, so the transport's own is asked for here.
+ */
+function transport() {
+  return within(screen.getByRole('group', { name: 'Playback' }));
 }
 
 function canvas() {
@@ -146,7 +154,7 @@ describe('SimulationView', () => {
 
       press('End');
       expect(positionMs()).toBe(120);
-      expect(screen.getByRole('button', { name: 'Play again' })).toBeInTheDocument();
+      expect(transport().getByRole('button', { name: 'Play again' })).toBeInTheDocument();
 
       press('Home');
       expect(positionMs()).toBe(0);
@@ -279,19 +287,17 @@ describe('SimulationView', () => {
     it('is set by the number keys and reflected in the control', () => {
       renderView();
 
-      const speeds = within(screen.getByRole('group', { name: 'Playback speed' }));
-      expect(speeds.getByRole('button', { name: '1x' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      );
+      // The menu's trigger says the speed in force; the ladder itself is in the menu.
+      expect(screen.getByRole('button', { name: 'Speed 1x' })).toBeInTheDocument();
 
       press('5');
-      expect(speeds.getByRole('button', { name: '4x' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      );
+      expect(screen.getByRole('button', { name: 'Speed 4x' })).toBeInTheDocument();
 
       press('1');
+      expect(screen.getByRole('button', { name: 'Speed 0.25x' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Speed 0.25x' }));
+      const speeds = within(screen.getByRole('group', { name: 'Playback speed' }));
       expect(speeds.getByRole('button', { name: '0.25x' })).toHaveAttribute(
         'aria-pressed',
         'true',
@@ -350,7 +356,7 @@ describe('SimulationView, playing', () => {
     press(' ');
     advance(200);
     expect(positionMs()).toBe(120);
-    expect(screen.getByRole('button', { name: 'Play again' })).toBeInTheDocument();
+    expect(transport().getByRole('button', { name: 'Play again' })).toBeInTheDocument();
   });
 
   it('plays forward on Space, and pauses on Space', () => {
@@ -379,7 +385,7 @@ describe('SimulationView, playing', () => {
     advance(200);
 
     expect(positionMs()).toBe(120);
-    expect(screen.getByRole('button', { name: 'Play again' })).toBeInTheDocument();
+    expect(transport().getByRole('button', { name: 'Play again' })).toBeInTheDocument();
     expect(currentPhase()).toContain('Echo reply returns');
   });
 

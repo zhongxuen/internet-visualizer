@@ -38,7 +38,7 @@ export interface PlaybackShortcut {
 /** The full map, in the order the legend lists it. */
 export const PLAYBACK_SHORTCUTS: readonly PlaybackShortcut[] = [
   { chords: [['Space']], action: 'Play or pause' },
-  { chords: [['→'], ['←']], action: 'Step forward or back one phase' },
+  { chords: [['→'], ['←']], action: 'Next step or back one step' },
   {
     chords: [
       ['Shift', '→'],
@@ -51,7 +51,16 @@ export const PLAYBACK_SHORTCUTS: readonly PlaybackShortcut[] = [
     chords: [['1'], ['2'], ['3'], ['4'], ['5']],
     action: 'Speed 0.25x, 0.5x, 1x, 2x, 4x',
   },
-  { chords: [['.']], action: 'Replay the current phase' },
+  { chords: [['.']], action: 'Replay this step' },
+];
+
+/**
+ * Keys the Stage handles that are not playback: printed in the same legend, handled by
+ * the component named beside each (not by `matchPlaybackKey`).
+ */
+export const STAGE_SHORTCUTS: readonly PlaybackShortcut[] = [
+  // `StageHelp`.
+  { chords: [['?']], action: 'How to use this page' },
 ];
 
 /** The parts of a `KeyboardEvent` the map reads. */
@@ -125,21 +134,32 @@ export function shouldIgnoreKey(
   if (!(target instanceof Element)) return false;
 
   const tag = target.tagName.toLowerCase();
-  if (tag === 'textarea' || tag === 'select') return true;
-  // The attribute as well as the property: `isContentEditable` is a rendering-time
-  // computation that jsdom does not implement, and this has to hold in tests too.
-  if (target.getAttribute('contenteditable') === 'true') return true;
-  if (target instanceof HTMLElement && target.isContentEditable) return true;
-
-  if (tag === 'input') {
-    if ((target as HTMLInputElement).type !== 'range') return true;
+  if (tag === 'input' && (target as HTMLInputElement).type === 'range') {
     return (
       command.type === 'step-phase' ||
       command.type === 'step-event' ||
       command.type === 'jump'
     );
   }
+  if (isTypingTarget(target)) return true;
 
   if (command.type !== 'toggle') return false;
   return SPACE_ACTIVATES.has(tag) || target.getAttribute('role') === 'button';
+}
+
+/**
+ * Is a key press landing somewhere the viewer types? Every text field, text area, select
+ * and editable element -- everything but a range slider, which takes keys without
+ * taking text. Used by `shouldIgnoreKey`, and by `StageHelp` for `?`.
+ */
+export function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+
+  const tag = target.tagName.toLowerCase();
+  if (tag === 'textarea' || tag === 'select') return true;
+  if (tag === 'input') return (target as HTMLInputElement).type !== 'range';
+  // The attribute as well as the property: `isContentEditable` is a rendering-time
+  // computation that jsdom does not implement, and this has to hold in tests too.
+  if (target.getAttribute('contenteditable') === 'true') return true;
+  return target instanceof HTMLElement && target.isContentEditable === true;
 }

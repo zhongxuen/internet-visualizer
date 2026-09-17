@@ -3,10 +3,11 @@
 Everything that turns a simulation into something you can look at. Built in phase 04
 (`docs/implementation/04-visualization-layer.md`).
 
-The payoff: **building a module means writing a scenario and a scenario picker, not
-writing animation code.** A module renders one `SimulationView`, hands it a run, and gets
-the canvas, packets, playback, the keyboard map, the inspector, the phase stepper, and the
-event log.
+The payoff: **building a module means writing a scenario, not writing animation code.**
+A module renders one `SimulationView` -- the Stage (`docs/implementation/uiux-spec.md`
+§5.3, built in UX-2.3) -- hands it a run and its stories, and gets the story picker, the
+canvas, packets, the step caption, the transport bar, the keyboard map, the details
+panel, the step list, and the event log.
 
 ## Rules
 
@@ -32,8 +33,8 @@ event log.
   clears 4.5:1 on all three surfaces, and it never goes on a row that is also drawing a
   selection tint.
 - **The canvas is never the only route in.** `SimulationView` renders `TopologyList`
-  beside the diagram and `PhaseAnnouncer` above it, so the network is readable and the run
-  followable with no pointer at all. A new visual affordance has to answer "and how is this
+  below the diagram and `StepCaption` beside it -- the view's one `aria-live` region -- so
+  the network is readable and the run followable with no pointer at all. A new visual affordance has to answer "and how is this
   reached from a keyboard" before it ships.
 - **No literal colours, including the library's.** React Flow ships its own greys through
   `--xy-*` custom properties; `SimulationCanvas` rebinds every one it uses to a token from
@@ -71,7 +72,14 @@ event log.
 
 | File                 | What it owns                                                   |
 | -------------------- | -------------------------------------------------------------- |
-| `SimulationView`     | the composed layout every module uses, and the only state there is |
+| `SimulationView`     | the Stage: the composed layout every module uses, and the only state there is |
+| `stage.ts`           | the Stage contract (`StoryOption`, `StoriesProp`, `DeeperTab`) and its pure decisions: story names, the "More stories" split, tab order, the caption's words |
+| `StoryPicker`        | the one scenario picker: a row of up to five toggles at `lg`, a select below it |
+| `useScenarioParam`   | the selected story in `?scenario=`, read without making the route dynamic |
+| `StepCaption`        | the current step in one large sentence -- and the view's one `aria-live` region |
+| `StartOverlay`       | "Watch it happen", over the canvas until the first play or seek |
+| `RunRecap`           | "What just happened", over the canvas at the end of a run |
+| `StageHelp`          | "How to use this page": the `?` button and key, and its dialog |
 | `SimulationCanvas`   | the React Flow surface: pan, zoom, fit-view, selection, tokens  |
 | `LazyCanvas`         | the canvas behind `next/dynamic` (React Flow is ~80 KB and off the first load) and behind an error boundary, so a chunk that never arrives costs the picture and not the module |
 | `frameClock.ts`      | the playhead, readable without a render; how a packet moves      |
@@ -87,10 +95,9 @@ event log.
 | `PacketLayerStack`   | the encapsulation stack, outermost first, each layer expandable |
 | `HeaderTable`        | header fields: name, value, bit width, teaching note            |
 | `Inspector`          | the selected node, link, or PDU — and a way to navigate between them |
-| `Timeline`           | the scrubber, with a focusable marker per phase                 |
-| `PlaybackControls`   | play/pause, step, jump, speed, and the shortcut legend          |
-| `PhaseStepper`       | the chapters of the run; the primary navigation under reduced motion |
-| `PhaseAnnouncer`     | the current chapter in an `aria-live` region — the only thing announced |
+| `Timeline`           | the scrubber, with a focusable marker per step at `lg`          |
+| `PlaybackControls`   | the transport: Back, Play, Next step, speed menu, "Pause after each step", shortcuts |
+| `PhaseStepper`       | the steps of the run; the primary navigation under reduced motion |
 | `TopologyList`       | the canvas as tab-through buttons; the non-pointer route into the topology |
 | `EventLog`           | the whole run as text, click any line to seek                   |
 | `KeyboardLegend`     | the printed keyboard map, rendered from `keymap.ts`             |
@@ -101,6 +108,7 @@ event log.
 | `hooks/usePlayback`  | the Zustand store over `core/sim/playback.ts`, and **the** rAF loop |
 | `hooks/usePlaybackKeys` | binds the keyboard map, and hands keys back to the focused element |
 | `hooks/useVisibleState` | `projectAt` plus the reduced-motion policy, memoized per cursor |
+| `hooks/useMediaQuery` | a media query through `useSyncExternalStore`; roles and mount points only, never layout |
 | `display.ts`         | view preferences that cross the canvas: hidden addresses, dimmed nodes |
 
 Adding a `NodeKind` to `src/core/types/topology.ts` fails to compile until it is given an
@@ -108,14 +116,22 @@ entry in `nodes/kinds.ts` and a renderer in `nodes/index.ts`. That is deliberate
 
 ## What a module can reach into
 
-`SimulationView` is composed, not forked. Four things let a module change what it shows
-without touching the layout, and all four default to the behaviour the view had before
-they existed:
+`SimulationView` is composed, not forked. These let a module change what it shows
+without touching the layout, and all of them default to showing nothing extra:
 
-- **`controlPanel` / `inspectorExtra`** — the two slots. Both render inside
-  `PlaybackContext`, so slot content can call `usePlaybackContext()` and read or seek the
-  playhead; that is how a module builds its own playback-aware controls without this
-  component growing a prop per module.
+- **The Stage slots** (`./stage.ts`) — `stories` (the scenarios, for `StoryPicker`; keep
+  the choice in the URL with `useScenarioParam`), `input` (the thing a viewer types, when
+  that is the module), `experiment` (knobs, in a disclosure open by default only in Full
+  detail), `deeper` (tabs below the stage; only the active one's `render()` is called, and
+  `advanced` ones go last) and `help` (lines for "How to use this page").
+- **`inspectorExtra`** — appended to the details panel.
+- **`controlPanel` / `footer`** — deprecated, and removed in UX-4.3. They still render
+  where they always did, above the canvas and under the transport, while modules move
+  onto the slots above.
+
+Every slot renders inside `PlaybackContext`, so its content can call
+`usePlaybackContext()` and read or seek the playhead; that is how a module builds its own
+playback-aware controls without this component growing a prop per module.
 - **`selection` / `onSelect`** — take ownership of what is selected. Needed whenever
   something other than a click moves the selection (a guided tour) or something outside
   the canvas has to know what it is (an inspector section about the selected machine).
@@ -137,11 +153,12 @@ One map, every module, printed by `KeyboardLegend` and interpreted by `matchPlay
 | Key                 | Action                            |
 | ------------------- | --------------------------------- |
 | `Space`             | play / pause                      |
-| `→` / `←`           | step forward / back one phase     |
+| `→` / `←`           | next step / back one step         |
 | `Shift` + `→` / `←` | step one event                    |
 | `Home` / `End`      | jump to start / end               |
 | `1`–`5`             | speed 0.25× / 0.5× / 1× / 2× / 4× |
-| `.`                 | replay current phase              |
+| `.`                 | replay this step                  |
+| `?`                 | how to use this page (`StageHelp`; not while typing) |
 
 `shouldIgnoreKey` hands a press back whenever the focused element already owns it: text
 fields keep every key, the scrubber keeps its own arrows and `Home`/`End`, and a focused

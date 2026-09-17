@@ -45,11 +45,27 @@ remembered.
 | File                   | Asks                                                                 |
 | ---------------------- | -------------------------------------------------------------------- |
 | `routes.ts`            | not a spec — the derived route list and the console-error watcher     |
+| `helpers/`             | not specs — the Stage's selectors (`transport`, `setSpeed`, `playUntilEnded`), `clickableNode`, `setPreferences`, and the module contract |
 | `smoke.spec.ts`        | does every URL serve a 200, one `h1`, and no console errors?          |
-| `modules.spec.ts`      | does each simulating module play, step back, and open its inspector?  |
+| `modules/<id>.spec.ts` | one per simulating module: does it play, step back, and open its details? Then anything that is that module's own |
 | `a11y.spec.ts`         | is every route free of serious/critical axe violations, with a sane heading hierarchy? |
-| `a11y-manual.spec.ts`  | the section-2 checklist items axe cannot see: keyboard, live regions, the list view, 200% zoom |
+| `a11y-manual.spec.ts`  | the section-2 checklist items axe cannot see: keyboard, live regions, the list view, help, the sticky transport, 200% zoom and a 390px phone |
 | `security.spec.ts`     | do the security headers arrive on every response, and does anything violate the CSP? |
+
+## Helpers, and preferences
+
+Specs find the Stage by role and accessible name, through `helpers/`, so a renamed button
+is one edit. A fresh browser is in Simple detail, as a new visitor is; a spec that means
+anything else says so before it navigates:
+
+```ts
+await setPreferences(page, { detail: 'full', pauseAtSteps: false });
+await page.goto('/dns-explorer');
+```
+
+`modules/` has one file per simulating module, each starting with
+`moduleContract('<id>')`, so that module passes can run in parallel and each edit one
+file. The contract also checks that the files and the simulating modules are the same set.
 
 ## The two accessibility specs
 
