@@ -201,22 +201,68 @@ export function togglePlay(
   return state.status === 'playing' ? pause(state) : play(state, timeline);
 }
 
+export interface TickOptions {
+  /**
+   * Stop at every phase boundary the playhead reaches.
+   *
+   * "Pause after each step" (docs/implementation/uiux.md §5.3): a beginner watching a
+   * run for the first time needs it to wait between steps while they read, and pressing
+   * Play is how they say they are ready for the next part. The playhead stops *exactly*
+   * on the next phase's `startMs`, so the paused frame is that phase's first frame --
+   * `currentPhaseStart` and `replayPhase` already count it as the new phase -- and
+   * `play` continues from there.
+   *
+   * Boundaries at `0` and at `durationMs` are not steps: the first is where a run
+   * starts, and the last is where it ends anyway.
+   */
+  pauseAtPhaseEnd?: boolean;
+}
+
+/**
+ * The first phase boundary in the open interval `(from, durationMs)`, or `null`.
+ *
+ * A boundary within `EPSILON` *above* `from` counts as the one the playhead is sitting
+ * on -- that is how play resumes from a boundary it paused at without pausing again.
+ */
+function nextStepBoundary(timeline: PlaybackTimeline, from: number): number | null {
+  const boundary = nextStop(timeline.phaseStarts, from);
+  if (boundary === null || boundary <= EPSILON) return null;
+  return boundary < timeline.durationMs - EPSILON ? boundary : null;
+}
+
 /**
  * Advance by `deltaMs` of **real** time, scaled by `speed`.
  *
  * The only function that moves time on its own, and it still does not know what time it
  * is -- the caller measures the frame. Anything but `playing` ignores the tick, so a
  * loop that is a frame late shutting down cannot nudge a paused run.
+ *
+ * With `pauseAtPhaseEnd`, a tick that would carry the playhead onto or past the next
+ * phase boundary stops on it instead. However long the frame -- 4x speed, a slow frame,
+ * a clamped catch-up after a background tab -- the playhead can cross at most one
+ * boundary per tick, and it is the first one, so no step is ever skipped.
  */
 export function tick(
   state: PlaybackState,
   timeline: PlaybackTimeline,
   deltaMs: number,
+  options: TickOptions = {},
 ): PlaybackState {
   if (state.status !== 'playing') return state;
   if (!Number.isFinite(deltaMs) || deltaMs <= 0) return state;
 
   const virtualTime = state.virtualTime + deltaMs * state.speed;
+
+  if (options.pauseAtPhaseEnd) {
+    const boundary = nextStepBoundary(timeline, state.virtualTime);
+    // `- EPSILON`: a frame that lands a hair short of the boundary has reached it. Left
+    // for the next frame, it would be within `EPSILON` of the boundary, which
+    // `nextStop` treats as already there -- and the step would be skipped.
+    if (boundary !== null && virtualTime >= boundary - EPSILON) {
+      return { ...state, virtualTime: boundary, status: 'paused' };
+    }
+  }
+
   if (virtualTime >= timeline.durationMs) {
     return { ...state, virtualTime: timeline.durationMs, status: 'ended' };
   }

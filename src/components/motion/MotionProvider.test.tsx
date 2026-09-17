@@ -2,6 +2,8 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { LEGACY_MOTION_KEY, parsePreferences, PREFERENCES_KEY } from '@/components/prefs';
+
 import { MotionProvider } from './MotionProvider';
 import { useReducedMotionSafe } from './useReducedMotionSafe';
 
@@ -74,6 +76,8 @@ let originalMatchMedia: typeof window.matchMedia;
 
 beforeEach(() => {
   originalMatchMedia = window.matchMedia;
+  // The override is a stored preference now, so it outlives a render by design.
+  window.localStorage.clear();
   window.sessionStorage.clear();
 });
 
@@ -122,7 +126,7 @@ describe('MotionProvider', () => {
     expect(durations()).toBe('0,0,0');
   });
 
-  it('lets a session override collapse motion the OS has not asked to reduce', async () => {
+  it('lets an override collapse motion the OS has not asked to reduce', async () => {
     const user = userEvent.setup();
     mockSystemReducedMotion(false);
     render(
@@ -138,7 +142,7 @@ describe('MotionProvider', () => {
     expect(durations()).toBe('0,0,0');
   });
 
-  it('lets a session override restore motion the OS has asked to reduce', async () => {
+  it('lets an override restore motion the OS has asked to reduce', async () => {
     const user = userEvent.setup();
     mockSystemReducedMotion(true);
     render(
@@ -170,7 +174,7 @@ describe('MotionProvider', () => {
     expect(reduced()).toBe('true');
   });
 
-  it('restores the override for the rest of the session', async () => {
+  it('restores the override on the next visit', async () => {
     const user = userEvent.setup();
     mockSystemReducedMotion(false);
     const first = render(
@@ -205,6 +209,77 @@ describe('MotionProvider', () => {
 
     await user.click(screen.getByRole('button', { name: 'Reduced' }));
     expect(document.documentElement.dataset.motion).toBe('reduced');
+  });
+});
+
+describe('the stored override', () => {
+  it('is the `motion` field of the preferences, in localStorage', async () => {
+    const user = userEvent.setup();
+    mockSystemReducedMotion(false);
+    render(
+      <MotionProvider>
+        <Probe />
+      </MotionProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Reduced' }));
+
+    const stored = parsePreferences(window.localStorage.getItem(PREFERENCES_KEY));
+    expect(stored.motion).toBe('reduced');
+    expect(window.sessionStorage.length).toBe(0);
+  });
+
+  it('is read from the preferences a previous visit stored', () => {
+    mockSystemReducedMotion(true);
+    window.localStorage.setItem(
+      PREFERENCES_KEY,
+      JSON.stringify({ version: 1, motion: 'full' }),
+    );
+    render(
+      <MotionProvider>
+        <Probe />
+      </MotionProvider>,
+    );
+
+    expect(screen.getByTestId('preference')).toHaveTextContent('full');
+    expect(reduced()).toBe('false');
+  });
+
+  it('carries over the old per-tab override once, then stops reading it', () => {
+    mockSystemReducedMotion(false);
+    window.sessionStorage.setItem(LEGACY_MOTION_KEY, 'reduced');
+    render(
+      <MotionProvider>
+        <Probe />
+      </MotionProvider>,
+    );
+
+    expect(reduced()).toBe('true');
+    expect(window.sessionStorage.getItem(LEGACY_MOTION_KEY)).toBeNull();
+    expect(parsePreferences(window.localStorage.getItem(PREFERENCES_KEY)).motion).toBe(
+      'reduced',
+    );
+  });
+
+  it('is left alone by a provider with a pinned defaultPreference', async () => {
+    const user = userEvent.setup();
+    mockSystemReducedMotion(false);
+    window.localStorage.setItem(
+      PREFERENCES_KEY,
+      JSON.stringify({ version: 1, motion: 'full' }),
+    );
+    render(
+      <MotionProvider defaultPreference="reduced">
+        <Probe />
+      </MotionProvider>,
+    );
+
+    expect(reduced()).toBe('true');
+    await user.click(screen.getByRole('button', { name: 'Follow system' }));
+    expect(reduced()).toBe('false');
+    expect(parsePreferences(window.localStorage.getItem(PREFERENCES_KEY)).motion).toBe(
+      'full',
+    );
   });
 });
 

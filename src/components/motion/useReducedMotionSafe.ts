@@ -21,7 +21,7 @@ const noop = () => {};
  *  - **Provider-safe** — with no `MotionProvider` above it (an isolated unit test, a
  *    primitive rendered on its own) it falls back to reading the OS setting directly
  *    instead of throwing or, worse, silently animating for someone who asked it not to.
- *    Only the session override is unavailable in that case.
+ *    Only the stored override is unavailable in that case.
  *
  * Never read `prefers-reduced-motion` any other way: durations must go through
  * `scale()` so the override is honoured everywhere.
@@ -36,7 +36,7 @@ export function useReducedMotionSafe(): MotionContextValue {
       reduced: systemReduced,
       systemReduced,
       preference: 'system',
-      // No provider means no session state to write to; the OS setting still applies.
+      // No provider means no override to write to; the OS setting still applies.
       setPreference: noop,
       scale: (ms: number) => scaleDuration(systemReduced, ms),
     }),

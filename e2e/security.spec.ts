@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { ROUTES } from './routes';
+import { playUntilEnded, ROUTES } from './routes';
 
 /**
  * The security headers, asserted where they actually have to be true: on a response
@@ -172,10 +172,8 @@ test('a scenario runs to completion without a CSP violation', async ({ page }) =
 
   await page.goto('/packet-journey');
   await page.getByRole('button', { name: '4x', exact: true }).click();
-  await page.getByRole('button', { name: 'Play', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Play again' })).toBeVisible({
-    timeout: 60_000,
-  });
+  // Pressed again at each step: a fresh browser is in Simple, which pauses after each.
+  await playUntilEnded(page);
 
   expect(await violations()).toEqual([]);
 });

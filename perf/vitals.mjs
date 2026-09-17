@@ -61,6 +61,27 @@ const COLLECTOR = () => {
 };
 
 /**
+ * Playback is measured as one continuous run.
+ *
+ * A fresh browser is in Simple detail, where playback pauses after each step and waits
+ * for Play (docs/implementation/uiux.md §5.2). A paused page paints a perfect frame rate,
+ * so a pause inside the four-second window below would inflate the figure and make it
+ * incomparable with every number measured before that default existed. So the pauses
+ * are turned off, and nothing else: detail stays Simple, which is what a new visitor
+ * renders. `iv:preferences` reads a partial version-1 object field by field.
+ */
+const PLAY_STRAIGHT_THROUGH = () => {
+  try {
+    localStorage.setItem(
+      'iv:preferences',
+      JSON.stringify({ version: 1, pauseAtSteps: false }),
+    );
+  } catch {
+    // No storage, no pauses to turn off either: the store falls back to its defaults.
+  }
+};
+
+/**
  * Press the playback controls, so INP measures the hot path rather than a nav link.
  *
  * Deliberately never clicks an `<a href>`: a client-side navigation would pull in the
@@ -177,6 +198,7 @@ for (const route of ROUTES) {
   for (let i = 0; i < RUNS; i++) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     await context.addInitScript(COLLECTOR);
+    await context.addInitScript(PLAY_STRAIGHT_THROUGH);
     const page = await context.newPage();
     const cdp = await context.newCDPSession(page);
     if (CPU > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: CPU });

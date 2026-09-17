@@ -26,6 +26,7 @@ import {
 } from '@/core/sim/playback';
 import type { SimResult } from '@/core/sim/result';
 import { useReducedMotionSafe } from '@/components/motion';
+import { usePauseAtSteps } from '@/components/prefs';
 
 import type { PlaybackCommand } from '../keymap';
 
@@ -74,12 +75,16 @@ export interface PlaybackActions {
   replayPhase(): void;
   /** Point playback at a different run. Resets to the start. */
   setTimeline(timeline: PlaybackTimeline): void;
+  /** Turn "pause after each step" on or off. Takes effect from the next frame. */
+  setPauseAtPhaseEnd(on: boolean): void;
   /** Run a command from the keyboard map. The one path shortcuts and buttons share. */
   run(command: PlaybackCommand): void;
 }
 
 export interface PlaybackStoreState extends PlaybackState, PlaybackActions {
   timeline: PlaybackTimeline;
+  /** Whether a tick stops on each phase boundary (`tick`'s `pauseAtPhaseEnd`). */
+  pauseAtPhaseEnd: boolean;
 }
 
 export type PlaybackStore = StoreApi<PlaybackStoreState>;
@@ -87,9 +92,15 @@ export type PlaybackStore = StoreApi<PlaybackStoreState>;
 /** A transition from the core state machine. */
 type Transition = (state: PlaybackState, timeline: PlaybackTimeline) => PlaybackState;
 
+export interface PlaybackStoreOptions {
+  /** Start with "pause after each step" on. Off unless asked for. */
+  pauseAtPhaseEnd?: boolean;
+}
+
 export function createPlaybackStore(
   timeline: PlaybackTimeline,
   speed: number = DEFAULT_SPEED,
+  { pauseAtPhaseEnd = false }: PlaybackStoreOptions = {},
 ): PlaybackStore {
   return createStore<PlaybackStoreState>((set, get) => {
     /**
@@ -109,12 +120,16 @@ export function createPlaybackStore(
     return {
       ...createPlayback(speed),
       timeline,
+      pauseAtPhaseEnd,
 
       play: () => apply(playState),
       pause: () => apply(pauseState),
       toggle: () => apply(togglePlay),
       seek: (time) => apply((state, line) => seekState(state, line, time)),
-      tick: (deltaMs) => apply((state, line) => tickState(state, line, deltaMs)),
+      tick: (deltaMs) =>
+        apply((state, line) =>
+          tickState(state, line, deltaMs, { pauseAtPhaseEnd: get().pauseAtPhaseEnd }),
+        ),
       stepPhase: (direction) => apply(direction === 1 ? stepForward : stepBack),
       stepEvent: (direction) => apply(direction === 1 ? stepEventForward : stepEventBack),
       jumpTo: (edge) => apply(edge === 'start' ? jumpToStart : jumpToEnd),
@@ -126,6 +141,10 @@ export function createPlaybackStore(
         // A different run is a different story: keeping the playhead would drop the
         // viewer into the middle of a simulation they have not seen the start of.
         set({ timeline: next, ...createPlayback(get().speed) });
+      },
+
+      setPauseAtPhaseEnd: (on) => {
+        if (on !== get().pauseAtPhaseEnd) set({ pauseAtPhaseEnd: on });
       },
 
       run: (command) => {
@@ -201,6 +220,14 @@ export interface UsePlaybackOptions {
    * stepper as the way in -- which is the phase-02 policy applied to playback.
    */
   autoPlay?: boolean;
+  /**
+   * Stop at each step boundary until Play is pressed again.
+   *
+   * Leave it out to follow the viewer's `pauseAtSteps` preference -- which, unset, is on
+   * in Simple detail and off in Full detail. Pass it to override the viewer, as a
+   * compact embed that must play straight through would.
+   */
+  pauseAtPhaseEnd?: boolean;
 }
 
 /**
@@ -213,14 +240,25 @@ export function usePlayback({
   result,
   speed = DEFAULT_SPEED,
   autoPlay = false,
+  pauseAtPhaseEnd,
 }: UsePlaybackOptions): PlaybackStore {
   const timeline = useMemo(() => timelineFrom(result), [result]);
-  const [store] = useState(() => createPlaybackStore(timeline, speed));
+  const preferred = usePauseAtSteps();
+  const pauseAtSteps = pauseAtPhaseEnd ?? preferred;
+  const [store] = useState(() =>
+    createPlaybackStore(timeline, speed, { pauseAtPhaseEnd: pauseAtSteps }),
+  );
   const { reduced } = useReducedMotionSafe();
 
   useEffect(() => {
     store.getState().setTimeline(timeline);
   }, [store, timeline]);
+
+  // The preference can change while the view is open -- from Settings, or from another
+  // tab -- and a run in progress picks it up on its next frame.
+  useEffect(() => {
+    store.getState().setPauseAtPhaseEnd(pauseAtSteps);
+  }, [store, pauseAtSteps]);
 
   const shouldAutoPlay = autoPlay && !reduced;
   useEffect(() => {

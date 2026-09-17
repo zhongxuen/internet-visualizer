@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { renderWithPreferences } from '@/components/prefs/testing';
 import { buildToyRun, TOY_TOPOLOGY } from '@/core/sim/toyRun';
 
 import { SimulationView } from './SimulationView';
@@ -322,8 +323,38 @@ describe('SimulationView, playing', () => {
     });
   }
 
-  it('plays forward on Space, and pauses on Space', () => {
+  /**
+   * The view as a viewer who has turned "Pause after each step" off sees it. jsdom, like
+   * a fresh browser, is in Simple, where the run stops at every step; the tests below
+   * are about continuous playback, so they say so.
+   */
+  function renderStraightThrough() {
+    return renderWithPreferences(<SimulationView simulation={RUN} />, {
+      pauseAtSteps: false,
+    });
+  }
+
+  it('pauses after each step in Simple, and Play continues from there', () => {
     renderView();
+
+    press('5'); // 4x
+    press(' ');
+    advance(200);
+    expect(positionMs()).toBe(10);
+    expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
+
+    press(' ');
+    advance(200);
+    expect(positionMs()).toBe(60);
+
+    press(' ');
+    advance(200);
+    expect(positionMs()).toBe(120);
+    expect(screen.getByRole('button', { name: 'Play again' })).toBeInTheDocument();
+  });
+
+  it('plays forward on Space, and pauses on Space', () => {
+    renderStraightThrough();
 
     press(' ');
     expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
@@ -341,7 +372,7 @@ describe('SimulationView, playing', () => {
   });
 
   it('runs to the end and stops there', () => {
-    renderView();
+    renderStraightThrough();
 
     press('5'); // 4x
     press(' ');

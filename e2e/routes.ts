@@ -1,4 +1,4 @@
-import type { ConsoleMessage, Page } from '@playwright/test';
+import { expect, type ConsoleMessage, type Page } from '@playwright/test';
 
 import { allLessonParams } from '@/modules/learning-center/content/navigation';
 import { MODULES, readyModules, type ModuleMeta } from '@/modules/registry';
@@ -124,4 +124,25 @@ export function watchConsole(page: Page): ConsoleWatcher {
       return errors;
     },
   };
+}
+
+/**
+ * Press Play until the run is over, and resolve once the toggle reads `Play again`.
+ *
+ * A fresh browser starts in Simple detail, where playback pauses after each step and
+ * waits for Play (docs/implementation/uiux.md §5.2, "Pause after each step"), so one
+ * press is no longer a whole run. This presses it again at every pause -- which is what
+ * a viewer does -- and asserts on the button rather than on the clock, because `Play
+ * again` is `playbackAction('ended')` and only appears once the store has run the
+ * timeline out. `Play` (exact) is never on screen while the run is moving, so a press
+ * can only ever resume a pause, never interrupt playback.
+ */
+export async function playUntilEnded(page: Page, timeout = 60_000): Promise<void> {
+  const play = page.getByRole('button', { name: 'Play', exact: true });
+  const again = page.getByRole('button', { name: 'Play again' });
+
+  await expect(async () => {
+    if (await play.isVisible()) await play.click();
+    await expect(again).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout });
 }

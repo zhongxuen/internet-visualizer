@@ -135,6 +135,152 @@ describe('tick', () => {
   });
 });
 
+describe('tick with pauseAtPhaseEnd', () => {
+  const STEPS = { pauseAtPhaseEnd: true } as const;
+  const PLAYING_AT = (time: number, speed = 1) =>
+    ({ status: 'playing', virtualTime: time, speed }) as const;
+
+  /** Play from `state`, one `frameMs` tick at a time, until playback stops moving. */
+  function runUntilStopped(
+    state: ReturnType<typeof PLAYING_AT> | ReturnType<typeof play>,
+    frameMs: number,
+    options: { pauseAtPhaseEnd?: boolean } = STEPS,
+  ) {
+    let current: ReturnType<typeof play> = state;
+    for (let frame = 0; frame < 10_000 && current.status === 'playing'; frame += 1) {
+      current = tick(current, TIMELINE, frameMs, options);
+    }
+    return current;
+  }
+
+  it('is off unless asked for, so a run plays straight through', () => {
+    expect(runUntilStopped(play(createPlayback(), TIMELINE), 1, {})).toMatchObject({
+      status: 'ended',
+      virtualTime: 120,
+    });
+    const crossing = tick(PLAYING_AT(8), TIMELINE, 4);
+    expect(crossing).toEqual({ status: 'playing', virtualTime: 12, speed: 1 });
+  });
+
+  it('pauses with the playhead exactly on the next phase start', () => {
+    expect(tick(PLAYING_AT(8), TIMELINE, 4, STEPS)).toEqual({
+      status: 'paused',
+      virtualTime: 10,
+      speed: 1,
+    });
+  });
+
+  it('lets a tick that stops short of the boundary move as normal', () => {
+    expect(tick(PLAYING_AT(2), TIMELINE, 4, STEPS)).toEqual(PLAYING_AT(6));
+  });
+
+  it('continues from the boundary when Play is pressed, without pausing there again', () => {
+    const paused = tick(PLAYING_AT(8), TIMELINE, 4, STEPS);
+    const resumed = play(paused, TIMELINE);
+    expect(resumed).toEqual({ status: 'playing', virtualTime: 10, speed: 1 });
+
+    expect(tick(resumed, TIMELINE, 16, STEPS)).toEqual(PLAYING_AT(26));
+  });
+
+  /** Where a viewer pressing Play at every pause sees the run stop, first to last. */
+  function stopsOf(speed: number, frameMs: number): number[] {
+    const stops: number[] = [];
+    let state = play(createPlayback(speed), TIMELINE);
+    while (stops.length < 10) {
+      state = runUntilStopped(state, frameMs);
+      stops.push(state.virtualTime);
+      if (state.status === 'ended') break;
+      expect(state.status).toBe('paused');
+      state = play(state, TIMELINE);
+    }
+    return stops;
+  }
+
+  it('stops at every interior boundary in order, then ends', () => {
+    expect(stopsOf(1, 1)).toEqual([10, 60, 120]);
+  });
+
+  it('never skips a boundary at 4x, however long the frame', () => {
+    // 4x with the loop's largest believable frame (100 ms) is 400 virtual ms: enough to
+    // cross both boundaries and the end of the run in one tick.
+    expect(tick(PLAYING_AT(0, 4), TIMELINE, 100, STEPS)).toEqual({
+      status: 'paused',
+      virtualTime: 10,
+      speed: 4,
+    });
+    expect(tick(PLAYING_AT(10, 4), TIMELINE, 100, STEPS)).toEqual({
+      status: 'paused',
+      virtualTime: 60,
+      speed: 4,
+    });
+    expect(tick(PLAYING_AT(60, 4), TIMELINE, 100, STEPS)).toEqual({
+      status: 'ended',
+      virtualTime: 120,
+      speed: 4,
+    });
+  });
+
+  it('visits the same stops at every speed on the ladder', () => {
+    for (const speed of PLAYBACK_SPEEDS) {
+      expect(stopsOf(speed, 16.667), `at ${speed}x`).toEqual([10, 60, 120]);
+    }
+  });
+
+  it('never pauses at zero', () => {
+    // The toy run's first phase starts at 0: playing from the top must not stop there.
+    expect(TIMELINE.phaseStarts[0]).toBe(0);
+    expect(tick(play(createPlayback(), TIMELINE), TIMELINE, 1, STEPS)).toEqual(
+      PLAYING_AT(1),
+    );
+  });
+
+  it('never pauses at the end, even when a phase starts there', () => {
+    const endsOnABoundary: PlaybackTimeline = {
+      durationMs: 50,
+      phaseStarts: [0, 20, 50],
+      eventTimes: [0, 20, 50],
+    };
+    expect(tick(PLAYING_AT(40), endsOnABoundary, 20, STEPS)).toEqual({
+      status: 'ended',
+      virtualTime: 50,
+      speed: 1,
+    });
+  });
+
+  it('plays straight through a run with no interior phases', () => {
+    const flat: PlaybackTimeline = { durationMs: 50, phaseStarts: [0], eventTimes: [] };
+    expect(tick(PLAYING_AT(0), flat, 60, STEPS).status).toBe('ended');
+  });
+
+  it('catches a frame that lands a hair short of a boundary', () => {
+    // Left alone, 59.9999999 would be within EPSILON of 60 on the next tick, and
+    // `nextStop` would treat 60 as already passed.
+    const drifted = tick(PLAYING_AT(50), TIMELINE, 9.9999999, STEPS);
+    expect(drifted).toEqual({ status: 'paused', virtualTime: 60, speed: 1 });
+  });
+
+  it('resumes from a boundary reached by accumulated float drift', () => {
+    const resumed = play(PAUSED_AT(60.00000000000001), TIMELINE);
+    expect(tick(resumed, TIMELINE, 5, STEPS).status).toBe('playing');
+  });
+
+  it('still ignores ticks while paused, idle, or ended', () => {
+    for (const status of ['idle', 'paused', 'ended'] as const) {
+      const state = { status, virtualTime: 8, speed: 1 };
+      expect(tick(state, TIMELINE, 16, STEPS)).toBe(state);
+    }
+  });
+
+  it('pauses at the next boundary after a seek past earlier ones', () => {
+    const scrubbed = seek(PLAYING_AT(0), TIMELINE, 30);
+    expect(tick(scrubbed, TIMELINE, 100, STEPS)).toEqual({
+      status: 'paused',
+      virtualTime: 60,
+      speed: 1,
+    });
+  });
+});
+
 describe('seek', () => {
   it('clamps into the run', () => {
     expect(seek(PAUSED_AT(40), TIMELINE, -10).virtualTime).toBe(0);
