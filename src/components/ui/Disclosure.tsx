@@ -103,8 +103,7 @@ export function Disclosure({
       <summary
         onClick={onSummaryClick}
         className={cn(
-          // --target-min
-          'flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2',
+          'min-h-target flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2',
           'text-fg text-base font-medium select-none [&::-webkit-details-marker]:hidden',
           'hover:bg-surface-overlay transition-colors',
           focusRing,

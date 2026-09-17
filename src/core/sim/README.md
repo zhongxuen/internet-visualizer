@@ -24,6 +24,8 @@ Rules:
   transitions behind every playback control. Plain functions over a plain value, with no
   clock of its own — something outside calls `tick(state, timeline, deltaMs)`. Zustand
   wraps it in `src/components/viz/hooks/usePlayback.ts`; the rules are tested here.
+  `tick(..., { pauseAtPhaseEnd: true })` stops exactly on the next interior phase start and
+  can cross at most one boundary per tick, so no step is skipped at 4x or on a long frame.
 - `toyRun.ts` — a hand-authored two-hop ping run. It stands in for
   `Simulation.run(scenario)` until the kernel lands, so the visualization layer could be
   built and demonstrated against the real shape of the data. Replacing it changes nothing

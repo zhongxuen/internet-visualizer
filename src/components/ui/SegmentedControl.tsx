@@ -31,10 +31,8 @@ export interface SegmentedOption<T extends string> {
 export type SegmentedSize = 'sm' | 'md';
 
 const SIZES: Record<SegmentedSize, string> = {
-  // --target-floor
-  sm: 'min-h-6 h-8 px-2.5 text-xs',
-  // --target-min
-  md: 'h-11 px-4 text-sm',
+  sm: 'min-h-target-floor h-8 px-2.5 text-xs',
+  md: 'h-target px-4 text-sm',
 };
 
 export interface SegmentedControlProps<T extends string> {

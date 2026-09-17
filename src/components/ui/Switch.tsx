@@ -79,8 +79,7 @@ export function Switch({
         onCheckedChange?.(next);
       }}
       className={cn(
-        // --target-min
-        'group inline-flex min-h-11 items-center gap-3 rounded-md px-2 py-1.5 text-left',
+        'group min-h-target inline-flex items-center gap-3 rounded-md px-2 py-1.5 text-left',
         'hover:bg-surface-overlay transition-colors',
         'disabled:pointer-events-none disabled:opacity-50',
         focusRing,

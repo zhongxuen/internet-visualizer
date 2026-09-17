@@ -180,8 +180,7 @@ export function DialogSurface({
             aria-label={closeLabel}
             onClick={onClose}
             className={cn(
-              // --target-min
-              'text-fg-secondary hover:bg-surface-overlay hover:text-fg inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors',
+              'text-fg-secondary hover:bg-surface-overlay hover:text-fg size-target inline-flex shrink-0 items-center justify-center rounded-md transition-colors',
               focusRing,
             )}
           >

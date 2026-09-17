@@ -18,10 +18,8 @@ import { focusRing } from './styles';
 export type SelectSize = 'sm' | 'md';
 
 const SIZES: Record<SelectSize, string> = {
-  // --target-floor
-  sm: 'min-h-6 h-8 pl-2.5 pr-8 text-xs',
-  // --target-min
-  md: 'h-11 pl-3 pr-10 text-sm',
+  sm: 'min-h-target-floor h-8 pl-2.5 pr-8 text-xs',
+  md: 'h-target pl-3 pr-10 text-sm',
 };
 
 export interface SelectProps extends Omit<ComponentProps<'select'>, 'size'> {

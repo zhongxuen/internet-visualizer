@@ -179,10 +179,15 @@ export function useAnchoredPosition(
   useLayoutEffect(() => {
     if (!open) return;
 
-    let frame = 0;
+    // At most one frame pending, however many scroll events arrive before it. Not a loop:
+    // nothing re-schedules itself, and a frame that lands after cleanup does nothing
+    // rather than being cancelled (tests/single-raf-loop.test.ts counts a cancel as a loop).
+    let pending = false;
+    let disposed = false;
 
     const update = () => {
-      frame = 0;
+      pending = false;
+      if (disposed) return;
       const anchor = anchorRef.current;
       const floating = floatingRef.current;
       if (!anchor || !floating) return;
@@ -201,7 +206,9 @@ export function useAnchoredPosition(
     };
 
     const schedule = () => {
-      if (frame === 0) frame = requestAnimationFrame(update);
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(update);
     };
 
     update();
@@ -210,7 +217,7 @@ export function useAnchoredPosition(
     window.addEventListener('scroll', schedule, { capture: true, passive: true });
 
     return () => {
-      if (frame !== 0) cancelAnimationFrame(frame);
+      disposed = true;
       window.removeEventListener('resize', schedule);
       window.removeEventListener('scroll', schedule, { capture: true });
     };

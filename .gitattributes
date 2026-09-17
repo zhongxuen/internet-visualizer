@@ -1,0 +1,3 @@
+# Content is LF in git; check it out as LF too, whatever core.autocrlf says, so a fresh
+# worktree passes format:check.
+* text=auto eol=lf

@@ -171,3 +171,152 @@ What this means for later gates: on this machine with other sessions running, a
 per-route fps change smaller than the spread across these three runs (Packet Journey
 2.4–4.2, Network Diagnostics 16.4–32.4) is not evidence of anything. Measure on a quiet
 machine, or run each side twice, before claiming a change.
+
+---
+
+## Wave 1
+
+UX-1.1 (`57db703`) and UX-1.2 (`1904b10`) ran in the main checkout and committed straight to
+`main`; UX-1.3 and UX-1.4 ran in worktrees and were merged by UX-W1. Only UX-1.4 left a perf
+note. UX-1.1 added no dependency and did not run `perf:bundles`; UX-1.2 could not build in
+the shared checkout and left its measurement to the gate. Both are covered by the gate
+numbers below.
+
+### UX-1.4 — preferences store, pre-paint attributes, pause at steps
+
+Folded in from `perf/uiux/ux-1.4.md`.
+
+Measured in the `uiux/1-4` worktree, both builds from the same machine, `node
+perf/bundles.mjs` against `.next` (no server needed). "Before" is `main` at `0fbb3a4`,
+built in this worktree before any change; "after" is this branch.
+
+#### First-load JS, gzipped
+
+Every route gains about 1 KB of chunk code: `PreferencesProvider`, the store and the
+preference hooks, in the root layout's client chunk. No new runtime dependency.
+
+Not in these figures: the pre-paint script, which is inlined into each HTML document's
+`<head>` (about 750 bytes minified) and so is page weight rather than a chunk --
+`bundles.mjs` counts only `static/chunks/*.js`.
+
+| Route | Before | After | Change |
+| --- | --- | --- | --- |
+| `/` (index) | 151.7 KB | 152.6 KB | +0.9 |
+| `/learn` | 162.1 KB | 163.0 KB | +0.9 |
+| `/learn/glossary` | 153.3 KB | 154.2 KB | +0.9 |
+| every lesson | 195.5 KB | 196.5 KB | +1.0 |
+| `/network-map` | 187.7 KB | 188.7 KB | +1.0 |
+| `/websocket-viewer` | 217.2 KB | 218.2 KB | +1.0 |
+| `/https-explorer` | 223.0 KB | 224.1 KB | +1.1 |
+| `/packet-journey` | 247.3 KB | 248.4 KB | +1.1 |
+| `/dns-explorer` | 292.1 KB | 293.1 KB | +1.0 |
+| `/http-explorer` | 316.8 KB | 317.9 KB | +1.1 |
+| `/api-visualizer` | 319.2 KB | 320.2 KB | +1.0 |
+| `/network-diagnostics` | 320.0 KB | 321.1 KB | +1.1 |
+| `/internet-simulator` | 347.3 KB | 348.3 KB | +1.0 |
+
+`/packet-journey` is now 1.6 KB under the 250 KB budget. The five routes already over it
+stay over by the same zod chunk CLAUDE.md describes.
+
+Every route is still statically prerendered (`○` in `next build`): the script reads
+storage in the browser, so the root layout did not become dynamic.
+
+#### Vitals and playback
+
+Not measured on this branch. The machine was shared with other sessions for the whole
+run, and CLAUDE.md's ±0.5 fps noise floor on Packet Journey needs a quiet machine and a
+same-machine baseline to mean anything. The wave gate measures it.
+
+What changed on the per-frame path, for whoever reads that number: `tick` does one extra
+scan of `phaseStarts` (a handful of entries) when pause-at-steps is on, and the store
+reads one boolean. Nothing new renders per frame.
+
+One change to the measurement itself: `perf/vitals.mjs` now seeds
+`iv:preferences` with `pauseAtSteps: false` before each page load. A fresh browser is
+in Simple, which pauses after each step; a pause inside the four-second playback window
+would leave the page stationary and report a perfect frame rate, which is not
+comparable with any earlier figure.
+
+### Wave 1 gate (`wave-1`)
+
+UX-W1, 2026-09-17, on the merge of `uiux/1-3` and `uiux/1-4` into `main` plus the W1 fixes,
+in the main checkout (LF working tree), port 3100.
+
+**What else was running.** A game (VALORANT), VS Code, Opera, Chrome, Discord, another
+project's dev server and several MCP servers: CPU at 57% before the vitals passes. The
+vitals figures below are therefore an A/B under the same load, not absolute numbers.
+
+**CI sequence:** `npm ci`, `lint`, `build`, `typecheck` green. `format:check` failed on
+three files the W1 token swap had just changed (class order; fixed with Prettier).
+`test:coverage`: 212 files, 4,748 tests, one failure — `tests/single-raf-loop.test.ts`
+counted `ui/position.ts` (UX-1.2) as a second rAF loop, because its scroll coalescer
+cancelled its pending frame on cleanup. Fixed there (a disposed flag instead of
+`cancelAnimationFrame`); the test is unchanged and it and the 21 `src/components/ui` test
+files pass. Every coverage threshold was met (all files 96.3% statements, 87.6% branches).
+`test:e2e`: 214 passed.
+
+**`uiux:screens -- wave-1`:** the three module metrics (Play in first viewport, controls
+above canvas, node label px) are identical to the baseline at both viewports. The canvas and
+Play sit lower on four modules, because UX-1.1's 44px buttons and 12px floor made the
+controls above them taller: `/http-explorer` +80px at 1366×768 and +99px at 390×844,
+`/https-explorer` +52px at 390, `/dns-explorer` +9 / +20px, `/packet-journey` +3 / +10px.
+Every other change is 1–2px.
+
+**`perf:bundles`** (rebuilt after the fixes):
+
+| Route                  | Baseline | Wave 1   | Change |
+| ---------------------- | -------: | -------: | -----: |
+| `/internet-simulator`  | 347.3 KB | 350.1 KB |   +2.8 |
+| `/network-diagnostics` | 320.0 KB | 322.8 KB |   +2.8 |
+| `/api-visualizer`      | 319.2 KB | 322.0 KB |   +2.8 |
+| `/http-explorer`       | 316.8 KB | 319.6 KB |   +2.8 |
+| `/dns-explorer`        | 292.1 KB | 294.9 KB |   +2.8 |
+| `/packet-journey`      | 247.3 KB | **250.1 KB** | +2.8 |
+| `/https-explorer`      | 223.0 KB | 225.8 KB |   +2.8 |
+| `/websocket-viewer`    | 217.2 KB | 220.0 KB |   +2.8 |
+| every lesson route     | 195.5 KB | 198.4 KB |   +2.9 |
+| `/network-map`         | 187.7 KB | 190.5 KB |   +2.8 |
+| `/demo`                | 172.1 KB | 175.0 KB |   +2.9 |
+| `/learn`               | 162.1 KB | 164.8 KB |   +2.7 |
+| `/learn/glossary`      | 153.3 KB | 156.0 KB |   +2.7 |
+| `/` and `/_not-found`  | 151.7 KB | 154.4 KB |   +2.7 |
+| `/_global-error`       | 131.5 KB | 131.5 KB |      0 |
+
+Every addition is in the root layout's client chunk, which every route loads: UX-1.4's
+preferences store (+1.0–1.1 KB, its own measurement above) and UX-1.2's Tooltip, which now
+imports `position.ts` and `topLayer.ts` for top-layer rendering, touch and collision
+handling (SafetyBadge renders a Tooltip on every module route). UX-1.1's `extendTailwindMerge`
+config is the small remainder. No dependency was added. **`/packet-journey` crosses the 250 KB
+budget by 0.1 KB**; it was the one module route still under it. Explained here, not fixed:
+accepting it or trimming the layout chunk is a decision for the person running the plan.
+
+**`perf:vitals`** (`BASE=http://127.0.0.1:3100`, the ten routes, 4x, median of 3). Wave 1
+twice, and the wave-0 build (`~/iv-ux/w0-gate`, `1eb0adb`) once in between on the same
+port and under the same load:
+
+| Route                  | LCP ms (W1 / W0 / W1) | CLS (W1 / W0 / W1)       | Playback fps (W1 / W0 / W1) | LoAF count/ms (W1 / W0 / W1)   |
+| ---------------------- | --------------------: | -----------------------: | --------------------------: | -----------------------------: |
+| `/`                    |    356 / 604 / 1140   |              0 / 0 / 0   |                           – |                              – |
+| `/network-map`         |  1716 / 1260 / 2144   |              0 / 0 / 0   |          19.4 / 17.2 / 16.9 |     5/318 · 9/494 · 14/886     |
+| `/packet-journey`      |  1924 / 4056 / 5432   | 0.0214 / 0.0026 / 0.0161 |             1.3 / 1.1 / 1.0 |  6/4300 · 4/4773 · 3/4421      |
+| `/dns-explorer`        |  2140 / 2708 / 2064   | 0.0006 / 0.0001 / 0.0004 |          43.0 / 18.2 / 42.3 |  7/1233 · 5/1863 · 7/1537      |
+| `/http-explorer`       |   1304 / 796 / 936    |         0 / 0.0055 / 0   |          57.8 / 53.9 / 57.6 |     3/349 · 3/587 · 3/617      |
+| `/https-explorer`      |  1964 / 1252 / 1852   |              0 / 0 / 0   |          56.3 / 58.7 / 56.7 |     3/799 · 3/226 · 3/1189     |
+| `/api-visualizer`      |  1476 / 2656 / 1572   | 0.0003 / 0.0001 / 0.0003 |             5.6 / 5.1 / 4.1 | 20/2849 · 19/3422 · 13/3188    |
+| `/websocket-viewer`    |  2928 / 2872 / 2424   |    0.0001 / 0 / 0        |          33.2 / 35.9 / 33.9 | 11/2208 · 11/1944 · 11/1981    |
+| `/internet-simulator`  |   968 / 3112 / 2452   |    0.0001 / 0.001 / 0.0001 |        46.2 / 38.2 / 46.1 |  6/1520 · 5/1917 · 6/1684      |
+| `/network-diagnostics` |  1288 / 3260 / 2428   |              0 / 0 / 0   |           7.5 / 8.7 / 23.9  | 19/3227 · 21/2987 · 16/1530    |
+
+INP (W1 / W0 / W1): `/` 416 / 272 / 848, `/network-map` 600 / 752 / 936, `/packet-journey`
+2768 / 2592 / 3152, `/dns-explorer` 1072 / 1456 / 888, `/http-explorer` 440 / 792 / 936,
+`/https-explorer` 1064 / 416 / 1488, `/api-visualizer` 944 / 1456 / 912,
+`/websocket-viewer` 1016 / 728 / 1320, `/internet-simulator` 808 / 848 / 608,
+`/network-diagnostics` 968 / 1088 / 552.
+
+Every figure is far below the baseline table, and the wave-0 build — the baseline's own
+product — is as slow as wave 1 under the same load, so the drop is the machine. Between the
+two builds, wave 1 is within the spread or ahead on every route; LCP fails on some routes
+in both builds (`/packet-journey`, `/websocket-viewer`, `/internet-simulator`,
+`/network-diagnostics`, `/dns-explorer`, `/api-visualizer` in one pass or another), which is
+the load as well. CLS passes everywhere. **Accepted as noise; no wave-1 regression shown.**
+A quiet-machine pass is still owed before any fps claim is made.

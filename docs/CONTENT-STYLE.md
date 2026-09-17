@@ -109,7 +109,7 @@ works alone.
 
 **Use the protocol's own word, and use it every time.** A learner who meets "resolver" on
 one screen and "DNS server" on the next has to work out whether those are the same thing.
-`content/glossary.ts` is the list; `<Term>` links a word in a lesson to its entry.
+`src/core/glossary/` is the list; `<Term>` links a word in a lesson to its entry.
 
 **Never invent a name for something that has one.** If a concept has no standard name, say
 what it does rather than coining a term the reader will not find anywhere else.
