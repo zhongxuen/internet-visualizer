@@ -10,7 +10,7 @@
 import type { InFlightPacket } from '@/core/sim/project';
 import type { NodeState } from '@/core/types/events';
 import type { PDU } from '@/core/types/pdu';
-import type { SimLink, SimNode, Topology } from '@/core/types/topology';
+import type { SimLink, SimNode, Topology, TopologyZone } from '@/core/types/topology';
 
 import { NODE_HEIGHT, NODE_WIDTH, type XY } from './layout';
 import { nodeKindToken } from './nodes/kinds';
@@ -43,10 +43,19 @@ export function departureSide(from: XY, to: XY): HandleSide {
  * What a screen reader hears for a machine.
  *
  * Everything the sighted user gets from the card, in the same order: what it is, what it
- * is called, what it is doing, and the addresses it answers to. State is spelled out
- * because it is the thing that changes during playback.
+ * is called, where it is, what it is doing, and the addresses it answers to. State is
+ * spelled out because it is the thing that changes during playback.
+ *
+ * The zone joins the name ("Router: Home router, in Your home") because the backdrop
+ * that shows it is `aria-hidden` -- a place is only worth hearing attached to the machine
+ * that is in it. The addresses stay in at both detail levels: the name is how a keyboard
+ * user reaches what a sighted Simple user gets from one click on the details panel.
  */
-export function describeNode(node: SimNode, state: NodeState): string {
+export function describeNode(
+  node: SimNode,
+  state: NodeState,
+  zone?: Pick<TopologyZone, 'label'>,
+): string {
   const kind = nodeKindToken(node.kind);
   const addresses = [
     node.ipv4 && `IPv4 ${node.ipv4}`,
@@ -55,7 +64,9 @@ export function describeNode(node: SimNode, state: NodeState): string {
   ].filter(Boolean);
 
   return [
-    `${kind.roleLabel}: ${node.label}`,
+    zone
+      ? `${kind.roleLabel}: ${node.label}, in ${zone.label}`
+      : `${kind.roleLabel}: ${node.label}`,
     nodeStateToken(state).label,
     ...addresses,
   ].join('. ');
@@ -156,6 +167,8 @@ export function toFlowNodes(
   positions: Readonly<Record<string, XY>>,
   { nodeStates, selectedNodeId }: ToFlowOptions = {},
 ): TopologyFlowNode[] {
+  const zones = new Map((topology.zones ?? []).map((zone) => [zone.id, zone]));
+
   return topology.nodes.map((node) => {
     const state = nodeStates?.[node.id] ?? 'idle';
 
@@ -177,7 +190,7 @@ export function toFlowNodes(
       connectable: false,
       deletable: false,
       className: NODE_FOCUS_RING,
-      ariaLabel: describeNode(node, state),
+      ariaLabel: describeNode(node, state, node.zone ? zones.get(node.zone) : undefined),
     };
   });
 }

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
+import { renderWithPreferences } from '@/components/prefs/testing';
 import { HOME_LAN, noteFor } from '@/core/topologies';
 
 import { NetworkMapModule } from './NetworkMapModule';
@@ -88,7 +89,8 @@ describe('NetworkMapModule', () => {
   });
 
   it('takes the addresses off the diagram without taking them out of the product', async () => {
-    render(<NetworkMapModule />);
+    // Addresses are drawn on the cards in Full detail only; Simple never draws them.
+    renderWithPreferences(<NetworkMapModule />, { detail: 'full' });
 
     expect(canvas().getAllByText('192.168.1.1')[0]).toBeInTheDocument();
 

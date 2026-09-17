@@ -25,11 +25,35 @@ import type { Topology } from '../types/topology';
 import { rfc, type ScenarioTopology } from './types';
 
 const topology: Topology = {
+  // The places on the map, in the order the diagram lays them out, left to right.
+  zones: [
+    { id: 'home', label: 'Your home', kind: 'home' },
+    {
+      id: 'isp',
+      label: 'Internet provider (ISP)',
+      kind: 'isp',
+      plain: 'The company your home pays for its connection.',
+    },
+    {
+      id: 'internet',
+      label: 'The internet',
+      kind: 'internet',
+      plain: 'Networks owned by other companies, joined together.',
+    },
+    {
+      id: 'datacenter',
+      label: "The website's data centre",
+      kind: 'datacenter',
+      plain: 'The building where the website runs.',
+    },
+  ],
   nodes: [
     {
       id: 'home-router',
       kind: 'router',
       label: 'Home router (NAPT)',
+      plainRole: 'Joins your home to the internet, and shares one public address',
+      zone: 'home',
       ipv4: '192.168.1.1',
       detail: {
         'LAN interface': '192.168.1.1/24',
@@ -42,6 +66,8 @@ const topology: Topology = {
       id: 'access-node',
       kind: 'router',
       label: 'ISP access node',
+      plainRole: "Your provider's first machine, where thousands of homes connect",
+      zone: 'isp',
       ipv4: '203.0.113.1',
       detail: {
         Role: 'Terminates thousands of subscriber lines',
@@ -53,6 +79,8 @@ const topology: Topology = {
       id: 'regional-pop',
       kind: 'router',
       label: 'Regional POP router',
+      plainRole: "Your provider's router for the whole region",
+      zone: 'isp',
       ipv4: '203.0.113.254',
       detail: {
         AS: 'AS64496, the access ISP',
@@ -66,6 +94,8 @@ const topology: Topology = {
       id: 'ixp',
       kind: 'switch',
       label: 'Internet exchange (SG)',
+      plainRole: 'A shared building where networks connect to each other',
+      zone: 'internet',
       detail: {
         'What it is':
           'A layer-2 switching fabric. Members plug in and talk to each other.',
@@ -78,6 +108,7 @@ const topology: Topology = {
       id: 'peer-cdn',
       kind: 'cdn-edge',
       label: 'CDN edge (SG)',
+      zone: 'internet',
       ipv4: '198.51.100.60',
       detail: {
         AS: 'AS64500, a content network',
@@ -89,6 +120,8 @@ const topology: Topology = {
       id: 'transit-sg',
       kind: 'router',
       label: 'Transit provider (SG)',
+      plainRole: 'A global network your provider pays to reach everywhere else',
+      zone: 'internet',
       ipv4: '192.0.2.11',
       detail: {
         AS: 'AS64497, a global transit network',
@@ -100,6 +133,8 @@ const topology: Topology = {
       id: 'transit-fra',
       kind: 'router',
       label: 'Transit provider (FRA)',
+      plainRole: 'The same global network, arriving in Frankfurt',
+      zone: 'internet',
       ipv4: '192.0.2.12',
       detail: {
         AS: 'AS64497, a global transit network',
@@ -111,6 +146,8 @@ const topology: Topology = {
       id: 'hosting-edge',
       kind: 'router',
       label: 'Hosting provider edge',
+      plainRole: 'The front door of the company that runs the website',
+      zone: 'datacenter',
       ipv4: '192.0.2.20',
       detail: {
         AS: 'AS64499, the hosting provider',
@@ -122,6 +159,7 @@ const topology: Topology = {
       id: 'origin',
       kind: 'server',
       label: 'app.example origin',
+      zone: 'datacenter',
       ipv4: '192.0.2.80',
       detail: {
         Serves: 'The application itself, the part no cache can answer for',

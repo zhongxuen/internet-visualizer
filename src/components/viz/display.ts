@@ -2,6 +2,8 @@
 
 import { createContext, useContext } from 'react';
 
+import type { DetailLevel } from '@/components/prefs';
+
 /**
  * Display preferences that have to cross the canvas.
  *
@@ -51,4 +53,24 @@ export const DimmedNodesContext = createContext<ReadonlySet<string>>(NO_DIMMED);
 
 export function useDimmedNodes(): ReadonlySet<string> {
   return useContext(DimmedNodesContext);
+}
+
+/**
+ * How much the canvas draws: `'simple'` (the default everywhere) or `'full'`
+ * (docs/implementation/uiux-spec.md §5.2).
+ *
+ * `SimulationCanvas` reads the viewer's preference once, with `useDetail()`, and hands it
+ * down here, so thirty node cards and every link share one store subscription instead of
+ * holding one each. Simple *unmounts* what it leaves out -- addresses, layer notes, the
+ * latency pill -- rather than hiding it, because CLAUDE.md's Packet Journey measurements
+ * say document size is what costs frames. The canvas is client-only (`LazyCanvas`), so
+ * reading the preference there cannot mismatch a server render.
+ *
+ * The default is Simple for the same reason the preference's is: a canvas rendered with
+ * no provider above it should look like the one a new visitor sees.
+ */
+export const DetailContext = createContext<DetailLevel>('simple');
+
+export function useCanvasDetail(): DetailLevel {
+  return useContext(DetailContext);
 }

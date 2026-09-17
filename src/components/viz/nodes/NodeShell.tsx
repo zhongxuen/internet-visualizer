@@ -1,12 +1,12 @@
 import { Handle, Position } from '@xyflow/react';
 import type { ReactNode } from 'react';
 
+import { plainRoleOf } from '@/core/text/kinds';
 import type { NodeState } from '@/core/types/events';
 import type { SimNode } from '@/core/types/topology';
 import { cn } from '@/lib/cn';
 
-import { useDimmedNodes } from '../display';
-
+import { useCanvasDetail, useDimmedNodes } from '../display';
 import { HANDLE_SIDES, sourceHandleId, targetHandleId, type HandleSide } from './handles';
 import { FAMILY_SHAPE, nodeKindToken } from './kinds';
 import { nodeStateToken } from './state';
@@ -20,10 +20,23 @@ import { nodeStateToken } from './state';
  *
  * Three signals are layered deliberately, and none of them is colour on its own:
  *
- *   - **which machine this is** — icon + printed role word (`./kinds.ts`)
+ *   - **which machine this is** — icon + printed role (`./kinds.ts`)
  *   - **what it is doing** — state colour + state icon + state word + outline shape
  *     (`./state.ts`)
  *   - **where it works** — the `L2`..`L7` layer badge, drawn by the family component
+ *
+ * ## Two detail levels
+ *
+ * **Full detail** is the card as it has always been: role word, state chip, and the
+ * family's body -- layer note, addresses, the rule a middlebox decides with.
+ *
+ * **Simple** (the default, uiux-spec.md §5.2) is a 32px icon, the name, and the plain
+ * role on one line. The family body is not rendered at all -- not hidden, *unmounted* --
+ * so a Packet Journey diagram of seventeen machines stops carrying fifty rows of
+ * addresses nobody asked for. State is the outline and, only when the machine is doing
+ * something, a chip in words ("Working", "Active", "Problem") pinned to the card's top
+ * edge. Pinned rather than in the flow so a card never changes height when its state
+ * does: the zone backdrop around it would otherwise breathe with every event.
  *
  * The wrapper React Flow puts around this owns focus (`tabIndex`), the accessible name,
  * and click handling; nothing in here may be focusable, or a keyboard user would have to
@@ -58,55 +71,123 @@ const HANDLE_STYLE = {
   opacity: 0,
 } as const;
 
+/**
+ * The glow on a machine that is doing something (uiux-spec.md §5.4, "What is happening
+ * now"). A soft halo in the state's own token, on top of the outline that already carries
+ * the state without colour, so it only ever adds emphasis.
+ */
+const GLOW: Record<NodeState, string | undefined> = {
+  idle: undefined,
+  processing: 'shadow-[0_0_28px_color-mix(in_oklab,var(--state-warn)_30%,transparent)]',
+  active: 'shadow-[0_0_28px_color-mix(in_oklab,var(--accent)_35%,transparent)]',
+  error: 'shadow-[0_0_28px_color-mix(in_oklab,var(--state-error)_35%,transparent)]',
+};
+
 export interface NodeShellProps {
   node: SimNode;
   state: NodeState;
   selected: boolean;
-  /** The family-specific body: layer badge, addresses, whatever else the kind needs. */
+  /**
+   * The family-specific body: layer badge, addresses, whatever else the kind needs.
+   * Full detail only.
+   */
   children?: ReactNode;
 }
 
+function Handles() {
+  return HANDLE_SIDES.map((side) => (
+    <div key={side}>
+      <Handle
+        type="target"
+        id={targetHandleId(side)}
+        position={SIDE_POSITION[side]}
+        isConnectable={false}
+        style={HANDLE_STYLE}
+      />
+      <Handle
+        type="source"
+        id={sourceHandleId(side)}
+        position={SIDE_POSITION[side]}
+        isConnectable={false}
+        style={HANDLE_STYLE}
+      />
+    </div>
+  ));
+}
+
 export function NodeShell({ node, state, selected, children }: NodeShellProps) {
+  const detail = useCanvasDetail();
   const dimmed = useDimmedNodes().has(node.id) && !selected;
   const kind = nodeKindToken(node.kind);
   const status = nodeStateToken(state);
   const KindIcon = kind.icon;
   const StatusIcon = status.icon;
+  const simple = detail === 'simple';
+
+  const frame = cn(
+    'bg-surface-raised border-border relative flex w-full flex-col border',
+    dimmed && 'opacity-25',
+    FAMILY_SHAPE[kind.family],
+    status.outline,
+    // Selection is a ring rather than another outline, so it can show at the same
+    // time as the state outline instead of overriding it.
+    selected && 'ring-accent-strong ring-2',
+  );
+
+  if (simple) {
+    const plainRole = plainRoleOf(node);
+    return (
+      <div
+        data-state={state}
+        data-kind={node.kind}
+        data-detail="simple"
+        data-dimmed={dimmed || undefined}
+        className={cn(frame, 'justify-center px-3 py-3', GLOW[state])}
+      >
+        <Handles />
+        <div className="flex items-center gap-2.5">
+          <span
+            aria-hidden="true"
+            className="bg-surface-overlay text-fg border-border flex size-8 shrink-0 items-center justify-center rounded-lg border"
+          >
+            <KindIcon className="size-5" strokeWidth={1.75} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span
+              className="text-fg text-body line-clamp-2 block leading-tight font-semibold break-words"
+              title={node.label}
+            >
+              {node.label}
+            </span>
+            <span className="text-fg-muted text-small block truncate" title={plainRole}>
+              {plainRole}
+            </span>
+          </span>
+        </div>
+        {state === 'idle' ? null : (
+          <span
+            className={cn(
+              'bg-surface-overlay text-caption absolute -top-3 right-3 flex items-center gap-1 rounded-full border px-2 py-px font-semibold',
+              status.chip,
+            )}
+          >
+            <StatusIcon aria-hidden="true" className="size-3" strokeWidth={2.25} />
+            {status.plainLabel}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
       data-state={state}
       data-kind={node.kind}
+      data-detail="full"
       data-dimmed={dimmed || undefined}
-      className={cn(
-        'bg-surface-raised border-border relative flex w-full flex-col gap-2 border px-3 py-2.5',
-        dimmed && 'opacity-25',
-        FAMILY_SHAPE[kind.family],
-        status.outline,
-        // Selection is a ring rather than another outline, so it can show at the same
-        // time as the state outline instead of overriding it.
-        selected && 'ring-accent-strong ring-2',
-      )}
+      className={cn(frame, 'gap-2 px-3 py-2.5')}
     >
-      {HANDLE_SIDES.map((side) => (
-        <div key={side}>
-          <Handle
-            type="target"
-            id={targetHandleId(side)}
-            position={SIDE_POSITION[side]}
-            isConnectable={false}
-            style={HANDLE_STYLE}
-          />
-          <Handle
-            type="source"
-            id={sourceHandleId(side)}
-            position={SIDE_POSITION[side]}
-            isConnectable={false}
-            style={HANDLE_STYLE}
-          />
-        </div>
-      ))}
-
+      <Handles />
       <div className="flex items-start gap-2">
         <span
           aria-hidden="true"
@@ -114,7 +195,6 @@ export function NodeShell({ node, state, selected, children }: NodeShellProps) {
         >
           <KindIcon className="size-4" strokeWidth={1.75} />
         </span>
-
         <span className="min-w-0 flex-1">
           {/*
             Wrapped to two lines rather than truncated: a fully-qualified name like
@@ -131,7 +211,6 @@ export function NodeShell({ node, state, selected, children }: NodeShellProps) {
             {kind.roleLabel}
           </span>
         </span>
-
         <span
           className={cn(
             'text-caption flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-px font-medium',
@@ -142,7 +221,6 @@ export function NodeShell({ node, state, selected, children }: NodeShellProps) {
           {status.label}
         </span>
       </div>
-
       {children}
     </div>
   );

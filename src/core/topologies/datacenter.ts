@@ -34,11 +34,29 @@ const APP_SUBNET = '10.40.2.0/24';
 const DATA_SUBNET = '10.40.3.0/24';
 
 const topology: Topology = {
+  // The places on the map, in the order the diagram lays them out, left to right.
+  zones: [
+    { id: 'home', label: 'Your home', kind: 'home' },
+    {
+      id: 'cdn',
+      label: 'Nearby copy (CDN)',
+      kind: 'cdn',
+      plain: 'Copies of the website kept close to visitors.',
+    },
+    {
+      id: 'datacenter',
+      label: "The website's data centre",
+      kind: 'datacenter',
+      plain: 'The building where the website runs.',
+    },
+  ],
   nodes: [
     {
       id: 'visitor',
       kind: 'client',
       label: 'Visitor',
+      plainRole: 'Someone opening the website',
+      zone: 'home',
       ipv4: '203.0.113.7',
       detail: {
         Asked: 'DNS for app.example, and got an anycast address back',
@@ -50,6 +68,7 @@ const topology: Topology = {
       id: 'cdn-edge',
       kind: 'cdn-edge',
       label: 'CDN edge',
+      zone: 'cdn',
       ipv4: '203.0.113.200',
       detail: {
         'Address type': 'Anycast: the same VIP announced from every location',
@@ -62,6 +81,7 @@ const topology: Topology = {
       id: 'edge-lb',
       kind: 'load-balancer',
       label: 'Origin load balancer',
+      zone: 'datacenter',
       ipv4: '192.0.2.20',
       detail: {
         'Public VIP': '192.0.2.20',
@@ -75,6 +95,8 @@ const topology: Topology = {
       id: 'proxy-a',
       kind: 'proxy',
       label: 'Reverse proxy A',
+      plainRole: 'Takes requests first, then passes them to the app servers',
+      zone: 'datacenter',
       ipv4: '10.40.1.11',
       detail: {
         Tier: `Edge, ${EDGE_SUBNET}`,
@@ -86,6 +108,8 @@ const topology: Topology = {
       id: 'proxy-b',
       kind: 'proxy',
       label: 'Reverse proxy B',
+      plainRole: 'A second one, so losing one is not an outage',
+      zone: 'datacenter',
       ipv4: '10.40.1.12',
       detail: {
         Tier: `Edge, ${EDGE_SUBNET}`,
@@ -97,6 +121,8 @@ const topology: Topology = {
       id: 'app-1',
       kind: 'server',
       label: 'App server 1',
+      plainRole: 'Runs the website code that builds each page',
+      zone: 'datacenter',
       ipv4: '10.40.2.21',
       detail: {
         Tier: `Application, ${APP_SUBNET}`,
@@ -108,6 +134,8 @@ const topology: Topology = {
       id: 'app-2',
       kind: 'server',
       label: 'App server 2',
+      plainRole: 'An identical copy, sharing the work',
+      zone: 'datacenter',
       ipv4: '10.40.2.22',
       detail: {
         Tier: `Application, ${APP_SUBNET}`,
@@ -119,6 +147,8 @@ const topology: Topology = {
       id: 'app-3',
       kind: 'server',
       label: 'App server 3',
+      plainRole: 'An identical copy, sharing the work',
+      zone: 'datacenter',
       ipv4: '10.40.2.23',
       detail: {
         Tier: `Application, ${APP_SUBNET}`,
@@ -130,6 +160,8 @@ const topology: Topology = {
       id: 'cache',
       kind: 'server',
       label: 'In-memory cache',
+      plainRole: 'Remembers recent answers, so they come back faster',
+      zone: 'datacenter',
       ipv4: '10.40.3.31',
       detail: {
         Tier: `Data, ${DATA_SUBNET}`,
@@ -141,6 +173,8 @@ const topology: Topology = {
       id: 'db-primary',
       kind: 'server',
       label: 'Database primary',
+      plainRole: 'Stores the website data, and takes every change',
+      zone: 'datacenter',
       ipv4: '10.40.3.41',
       detail: {
         Tier: `Data, ${DATA_SUBNET}`,
@@ -152,6 +186,8 @@ const topology: Topology = {
       id: 'db-replica',
       kind: 'server',
       label: 'Database replica',
+      plainRole: 'A copy of the stored data, for reading only',
+      zone: 'datacenter',
       ipv4: '10.40.3.42',
       detail: {
         Tier: `Data, ${DATA_SUBNET}`,

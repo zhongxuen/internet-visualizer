@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { LINK_MEDIUM_LIST } from '@/components/viz/edges/media';
 import { NODE_KIND_LIST } from '@/components/viz/nodes/kinds';
 import { NODE_STATE_LIST } from '@/components/viz/nodes/state';
+import { ZONE_KIND_LIST } from '@/components/viz/nodes/zones';
 import { LAYER_KEYS, LAYERS } from '@/lib/theme';
 
 /**
@@ -19,7 +20,9 @@ import { LAYER_KEYS, LAYERS } from '@/lib/theme';
  *     and an outline whose *width and style* differ (hairline, dashed, solid, doubled),
  *     so the state is legible even where the chip text is too small to read.
  *   - a **node kind** prints its role in words on the card.
- *   - a **link medium** is drawn with its own dash pattern and stroke width.
+ *   - a **link medium** is drawn with its own dash pattern and stroke width, and marked
+ *     with its own icon -- the one thing Simple detail keeps at a link's midpoint.
+ *   - a **place** (a zone) prints its name beside its own icon.
  *   - an **OSI layer** always renders its `L2`..`L7` short label beside the colour.
  *
  * Distinctness is the property that matters, not presence: two states that both said
@@ -37,6 +40,10 @@ function duplicates(values: readonly unknown[]): number {
 describe('node state', () => {
   it('says which state it is in words', () => {
     expect(duplicates(NODE_STATE_LIST.map((token) => token.label))).toBe(0);
+  });
+
+  it('says which state it is in plain words too, for Simple detail', () => {
+    expect(duplicates(NODE_STATE_LIST.map((token) => token.plainLabel))).toBe(0);
   });
 
   it('draws a different silhouette per state', () => {
@@ -80,12 +87,22 @@ describe('link medium', () => {
     expect(duplicates(LINK_MEDIUM_LIST.map((token) => token.label))).toBe(0);
   });
 
+  it('marks every medium with its own icon', () => {
+    expect(duplicates(LINK_MEDIUM_LIST.map((token) => token.icon))).toBe(0);
+  });
+
   it('draws every medium with its own stroke, so the hop type survives greyscale', () => {
     // `dash` is `undefined` for a solid stroke, which is itself a distinct signature.
     const strokes = LINK_MEDIUM_LIST.map(
       (token) => `${token.dash ?? 'solid'}@${token.width}`,
     );
     expect(duplicates(strokes)).toBe(0);
+  });
+});
+
+describe('zone kind', () => {
+  it('gives every kind of place its own icon', () => {
+    expect(duplicates(ZONE_KIND_LIST.map((token) => token.icon))).toBe(0);
   });
 });
 

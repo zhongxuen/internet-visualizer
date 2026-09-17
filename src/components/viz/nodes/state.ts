@@ -25,6 +25,12 @@ export interface NodeStateToken {
   state: NodeState;
   /** The word printed in the state chip. */
   label: string;
+  /**
+   * The word the Simple detail level prints instead (uiux-spec.md §5.4): "Problem" says
+   * what a beginner needs to know about an error without the word sounding like the
+   * product broke. Only `error` differs.
+   */
+  plainLabel: string;
   /** One line for the legend and the accessible node description. */
   description: string;
   icon: LucideIcon;
@@ -45,6 +51,7 @@ export const NODE_STATES: Record<NodeState, NodeStateToken> = {
   idle: {
     state: 'idle',
     label: 'Idle',
+    plainLabel: 'Idle',
     description: 'Doing nothing right now.',
     icon: Circle,
     chip: 'border-state-pending/40 text-state-pending',
@@ -53,6 +60,7 @@ export const NODE_STATES: Record<NodeState, NodeStateToken> = {
   processing: {
     state: 'processing',
     label: 'Working',
+    plainLabel: 'Working',
     description: 'Busy with something that takes time — a lookup, a check, a decision.',
     icon: Cog,
     chip: 'border-state-warn/50 text-state-warn',
@@ -61,6 +69,7 @@ export const NODE_STATES: Record<NodeState, NodeStateToken> = {
   active: {
     state: 'active',
     label: 'Active',
+    plainLabel: 'Active',
     description: 'The focus of the story — watch this one.',
     icon: Zap,
     chip: 'border-accent/50 text-accent',
@@ -69,6 +78,7 @@ export const NODE_STATES: Record<NodeState, NodeStateToken> = {
   error: {
     state: 'error',
     label: 'Error',
+    plainLabel: 'Problem',
     description: 'Something failed here: a rejection, a timeout, a bad validation.',
     icon: AlertTriangle,
     chip: 'border-state-error/50 text-state-error',

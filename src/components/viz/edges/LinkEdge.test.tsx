@@ -1,6 +1,8 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import type { DetailLevel } from '@/components/prefs';
+import { renderWithPreferences } from '@/components/prefs/testing';
 import type { SimLink, Topology } from '@/core/types/topology';
 
 import { SimulationCanvas } from '../SimulationCanvas';
@@ -14,6 +16,9 @@ import { LINK_MEDIA } from './media';
  * React Flow only draws an edge once both endpoints have been measured, which in jsdom
  * happens on the deferred `ResizeObserver` callback stubbed in `tests/setup.ts` — hence
  * the `await` in every helper here.
+ *
+ * The pill with the numbers is always there in Full detail, which `renderLink` pins; the
+ * `in Simple detail` block covers the pill that waits to be asked for.
  */
 function topologyWith(link: Partial<SimLink>): Topology {
   return {
@@ -25,8 +30,11 @@ function topologyWith(link: Partial<SimLink>): Topology {
   };
 }
 
-async function renderLink(link: Partial<SimLink> = {}) {
-  const result = render(<SimulationCanvas topology={topologyWith(link)} />);
+async function renderLink(link: Partial<SimLink> = {}, detail: DetailLevel = 'full') {
+  const result = renderWithPreferences(
+    <SimulationCanvas topology={topologyWith(link)} />,
+    { detail },
+  );
   const edge = await screen.findByTestId('rf__edge-l');
   return { ...result, edge };
 }
@@ -94,5 +102,63 @@ describe('LinkEdge', () => {
     fireEvent.click(edge.querySelector('.react-flow__edge-interaction')!);
 
     await waitFor(() => expect(screen.getByTestId('rf__edge-l')).toHaveClass('selected'));
+  });
+
+  describe('in Simple detail', () => {
+    it('keeps the numbers back, but always shows the medium', async () => {
+      await renderLink({ medium: 'fiber', bandwidthMbps: 1000 }, 'simple');
+      expect(screen.queryByText('5 ms')).toBeNull();
+      expect(screen.queryByText('1 Gb/s')).toBeNull();
+      // Dash pattern on the stroke, and the icon at the midpoint: never colour alone.
+      expect(screen.getByTitle('Fiber')).toBeInTheDocument();
+      expect(screen.getByTitle('Fiber').querySelector('svg')).not.toBeNull();
+    });
+
+    it('draws nothing at the midpoint of a link with no stated medium', async () => {
+      const { container } = await renderLink({}, 'simple');
+      expect(container.querySelector('[data-link-numbers]')).toBeNull();
+      expect(screen.queryByText('5 ms')).toBeNull();
+    });
+
+    it('shows the numbers while the pointer is on the link', async () => {
+      const { edge } = await renderLink({ medium: 'wifi', bandwidthMbps: 400 }, 'simple');
+      act(() => {
+        edge.dispatchEvent(new Event('pointerenter'));
+      });
+      expect(await screen.findByText('5 ms')).toBeInTheDocument();
+      expect(screen.getByText('400 Mb/s')).toBeInTheDocument();
+      act(() => {
+        edge.dispatchEvent(new Event('pointerleave'));
+      });
+      await waitFor(() => expect(screen.queryByText('5 ms')).toBeNull());
+    });
+
+    it('shows the numbers while the link has keyboard focus', async () => {
+      const { edge } = await renderLink({ medium: 'wifi' }, 'simple');
+      act(() => {
+        edge.focus();
+      });
+      expect(await screen.findByText('5 ms')).toBeInTheDocument();
+      act(() => {
+        edge.blur();
+      });
+      await waitFor(() => expect(screen.queryByText('5 ms')).toBeNull());
+    });
+
+    it('shows the numbers while the link is selected', async () => {
+      const { edge } = await renderLink({ medium: 'ethernet' }, 'simple');
+      fireEvent.click(edge.querySelector('.react-flow__edge-interaction')!);
+      expect(await screen.findByText('5 ms')).toBeInTheDocument();
+    });
+
+    it('keeps the numbers in the accessible name either way', async () => {
+      const { edge } = await renderLink(
+        { medium: 'fiber', bandwidthMbps: 1000 },
+        'simple',
+      );
+      expect(edge).toHaveAccessibleName(
+        'Link from Laptop to Home router. Fiber. 5 ms one-way latency. 1000 megabits per second',
+      );
+    });
   });
 });

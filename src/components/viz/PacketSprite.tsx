@@ -2,13 +2,14 @@
 
 import { useLayoutEffect, useRef } from 'react';
 
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Mail } from 'lucide-react';
 
 import type { PDU } from '@/core/types/pdu';
 import { useReducedMotionSafe } from '@/components/motion';
 import { cn } from '@/lib/cn';
 import { getLayer, isLayerKey } from '@/lib/theme';
 
+import { useCanvasDetail } from './display';
 import { useFrameClock } from './frameClock';
 import type { XY } from './layout';
 import { clampProgress, placeAlongPath } from './packetPath';
@@ -23,11 +24,24 @@ import { clampProgress, placeAlongPath } from './packetPath';
  * is no animation in flight that would have to be unwound. A CSS keyframe or a
  * self-driven tween would break all three.
  *
- * Colour is the **outermost** layer, because that is what the PDU is on this wire: a
- * frame carrying an IP packet carrying a DNS query is, right here, a frame. The layer's
- * `L2`..`L7` short label is printed beside the colour, so the layer never depends on
- * colour alone, and the arrow points the way the packet is actually going -- which is
- * the only signal distinguishing a request from the reply crossing the same wire.
+ * ## What it says
+ *
+ * **Full detail:** colour is the **outermost** layer, because that is what the PDU is on
+ * this wire: a frame carrying an IP packet carrying a DNS query is, right here, a frame.
+ * The chip reads `L2 Ethernet`.
+ *
+ * **Simple** (the default, uiux-spec.md §5.4): an envelope labelled with what the packet
+ * is *for* -- `PDU.plainLabel`, "Where is example.com?". A scenario that has not written
+ * one falls back to the **innermost** layer's protocol, never the outermost: on a home
+ * network nearly every packet is an Ethernet frame, so "Ethernet" would say the same
+ * nothing about every one of them, while "DNS" or "HTTP/1.1" says what it carries. The
+ * colour follows the same layer as the words.
+ *
+ * Either way the layer's `L2`..`L7` short label is printed beside its colour, so the
+ * layer never depends on colour alone, and the arrow points the way the packet is
+ * actually going -- which is the only signal distinguishing a request from the reply
+ * crossing the same wire. The accessible name starts with the visible label, then says
+ * everything the Full chip does.
  *
  * Under reduced motion the chip sits at whichever end of the link it is nearer to.
  * Nothing is hidden: the packet still appears, still belongs to a link, still comes and
@@ -50,7 +64,10 @@ import { clampProgress, placeAlongPath } from './packetPath';
  */
 
 export interface PacketSpriteProps {
-  /** The PDU on the wire. Its outermost layer decides the colour and the short label. */
+  /**
+   * The PDU on the wire. Its outermost layer (Full) or innermost layer (Simple) decides
+   * the colour and the short label.
+   */
   pdu: PDU;
   /** How far along the link, `0`..`1`. Clamped; anything non-finite parks it at the start. */
   progress: number;
@@ -107,6 +124,11 @@ function progressAt(virtualTime: number, startMs: number, durationMs: number): n
   return (virtualTime - startMs) / durationMs;
 }
 
+/** `text` ending in sentence punctuation, so a label that asks a question keeps its `?`. */
+function asSentence(text: string): string {
+  return /[.?!]$/.test(text) ? text : `${text}.`;
+}
+
 /** The CSS `transform` that puts the chip at `point`. */
 function chipTransform(point: XY): string {
   return `translate(${point.x}px, ${point.y}px) translate(-50%, -50%)`;
@@ -126,6 +148,7 @@ export function PacketSprite({
 }: PacketSpriteProps) {
   const { reduced } = useReducedMotionSafe();
   const clock = useFrameClock();
+  const simple = useCanvasDetail() === 'simple';
 
   const chipRef = useRef<HTMLButtonElement | null>(null);
   const arrowRef = useRef<SVGSVGElement | null>(null);
@@ -172,9 +195,12 @@ export function PacketSprite({
     return clock.subscribe(place);
   }, [travelling, clock, startMs, durationMs, reduced, reversed, path, from, to]);
 
-  const outermost = pdu.layers[0];
-  const layer = getLayer(isLayerKey(outermost?.layer) ? outermost.layer : 'network');
-  const protocol = outermost?.protocol ?? 'Packet';
+  // Simple speaks for what is inside; Full for what is on the wire. See the note above.
+  const shown = simple ? pdu.layers[pdu.layers.length - 1] : pdu.layers[0];
+  const layer = getLayer(isLayerKey(shown?.layer) ? shown.layer : 'network');
+  const protocol = shown?.protocol ?? 'Packet';
+  const plainLabel = pdu.plainLabel ?? protocol;
+  const technical = `${pdu.summary}. ${layer.label} layer, ${protocol}. ${pdu.sizeBytes} bytes`;
 
   return (
     <button
@@ -185,8 +211,8 @@ export function PacketSprite({
       // layer this renders into disables them for everything by default.
       className={cn(
         'nodrag nopan pointer-events-auto absolute top-0 left-0 z-10',
-        'flex items-center gap-1.5 rounded-full border px-2 py-0.5',
-        'text-fg text-caption whitespace-nowrap shadow-lg',
+        'flex items-center gap-1.5 rounded-full border whitespace-nowrap shadow-lg',
+        simple ? 'text-fg text-small px-2.5 py-1' : 'text-fg text-caption px-2 py-0.5',
         'focus-visible:outline-focus focus-visible:outline-2 focus-visible:outline-offset-2',
         selected && 'ring-accent ring-2 ring-offset-1 ring-offset-transparent',
       )}
@@ -198,7 +224,7 @@ export function PacketSprite({
         backgroundColor: `color-mix(in oklab, ${layer.color} 22%, var(--bg-overlay))`,
       }}
       aria-pressed={selected}
-      aria-label={`${pdu.summary}. ${layer.label} layer, ${protocol}. ${pdu.sizeBytes} bytes`}
+      aria-label={simple ? `${asSentence(plainLabel)} ${technical}` : technical}
       // `stopPropagation` is load-bearing, not defensive. The chip is rendered through
       // `EdgeLabelRenderer`, so a click that keeps bubbling reaches React Flow as a click
       // on the edge underneath: the canvas would select the PDU and then immediately
@@ -215,15 +241,23 @@ export function PacketSprite({
         className="size-3 shrink-0"
         style={{ color: layer.color, transform: `rotate(${heading}deg)` }}
       />
+      {simple ? (
+        <Mail aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2} />
+      ) : null}
+      {/*
+        In Simple the tag is primary text, not the layer colour: the innermost layer is
+        often one (TLS, say) whose colour does not reach 4.5:1 on its own tinted chip. The
+        colour still rides on the border, the background and the arrow beside it.
+      */}
       <span
         aria-hidden="true"
-        style={{ color: layer.color }}
-        className="font-mono font-semibold"
+        style={simple ? undefined : { color: layer.color }}
+        className={cn('font-mono font-semibold', simple && 'text-fg')}
       >
         {layer.short}
       </span>
       <span aria-hidden="true" className="font-medium">
-        {protocol}
+        {simple ? plainLabel : protocol}
       </span>
     </button>
   );

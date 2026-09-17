@@ -94,6 +94,7 @@ const RESOLVER: SimNode = {
   id: RESOLVER_ID,
   kind: 'dns-resolver',
   label: 'ISP resolver',
+  zone: 'isp',
   ipv4: '203.0.113.53',
   mac: ALLOCATED_MACS[RESOLVER_ID],
   detail: {
@@ -117,6 +118,15 @@ const ISP_TAIL = [
 
 /** The composed network: the house, the access network, and the route to Frankfurt. */
 export const JOURNEY_TOPOLOGY: Topology = {
+  // The places both halves already name: the house from `HOME_LAN`, and the provider,
+  // the internet and the data centre from `ISP_PATH`, each once. The nodes below carry
+  // their `zone` over from the shared objects, so this list has to name every one.
+  zones: [
+    ...(home.zones ?? []),
+    ...(isp.zones ?? []).filter(
+      (zone) => !(home.zones ?? []).some((known) => known.id === zone.id),
+    ),
+  ],
   nodes: [
     // The house, entire, exactly as the Network Map draws it.
     ...home.nodes.map((node) => nodeFrom(home, node.id)),

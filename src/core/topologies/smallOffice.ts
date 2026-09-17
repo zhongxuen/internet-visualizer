@@ -27,11 +27,28 @@ const SERVER_VLAN = '10.20.20.0/24';
 const GUEST_VLAN = '10.20.30.0/24';
 
 const topology: Topology = {
+  // The places on the map, in the order the diagram lays them out, left to right.
+  zones: [
+    {
+      id: 'office',
+      label: 'Your office',
+      kind: 'office',
+      plain: 'Staff desks, a visitor network and shared machines.',
+    },
+    {
+      id: 'isp',
+      label: 'Internet provider (ISP)',
+      kind: 'isp',
+      plain: 'The company the office pays for its connection.',
+    },
+  ],
   nodes: [
     {
       id: 'desk-1',
       kind: 'client',
       label: 'Workstation 1',
+      plainRole: 'A staff computer on the office network',
+      zone: 'office',
       ipv4: '10.20.10.21',
       mac: '00:00:5e:00:53:11',
       detail: {
@@ -44,6 +61,8 @@ const topology: Topology = {
       id: 'desk-2',
       kind: 'client',
       label: 'Workstation 2',
+      plainRole: 'Another staff computer on the office network',
+      zone: 'office',
       ipv4: '10.20.10.22',
       mac: '00:00:5e:00:53:12',
       detail: {
@@ -56,6 +75,8 @@ const topology: Topology = {
       id: 'guest-laptop',
       kind: 'client',
       label: 'Visitor laptop',
+      plainRole: 'A visitor, kept on a separate network of their own',
+      zone: 'office',
       ipv4: '10.20.30.55',
       mac: '00:00:5e:00:53:13',
       detail: {
@@ -69,6 +90,8 @@ const topology: Topology = {
       id: 'office-ap',
       kind: 'switch',
       label: 'Wi-Fi access point',
+      plainRole: 'Joins wireless devices to the office network',
+      zone: 'office',
       ipv4: '10.20.10.5',
       mac: '00:00:5e:00:53:14',
       detail: {
@@ -82,6 +105,7 @@ const topology: Topology = {
       id: 'core-switch',
       kind: 'switch',
       label: 'Managed switch',
+      zone: 'office',
       ipv4: '10.20.10.2',
       mac: '00:00:5e:00:53:15',
       detail: {
@@ -95,6 +119,7 @@ const topology: Topology = {
       id: 'firewall',
       kind: 'firewall',
       label: 'Firewall / VLAN gateway',
+      zone: 'office',
       ipv4: '10.20.10.1',
       mac: '00:00:5e:00:53:16',
       detail: {
@@ -110,6 +135,7 @@ const topology: Topology = {
       id: 'dns-server',
       kind: 'dns-resolver',
       label: 'Office DNS resolver',
+      zone: 'office',
       ipv4: '10.20.20.53',
       mac: '00:00:5e:00:53:17',
       detail: {
@@ -123,6 +149,8 @@ const topology: Topology = {
       id: 'nas',
       kind: 'server',
       label: 'NAS (file server)',
+      plainRole: 'Holds shared files for everyone in the office',
+      zone: 'office',
       ipv4: '10.20.20.20',
       mac: '00:00:5e:00:53:18',
       detail: {
@@ -136,6 +164,8 @@ const topology: Topology = {
       id: 'printer',
       kind: 'server',
       label: 'Office printer',
+      plainRole: 'The shared printer, reachable only from inside',
+      zone: 'office',
       ipv4: '10.20.20.30',
       mac: '00:00:5e:00:53:19',
       detail: {
@@ -148,6 +178,8 @@ const topology: Topology = {
       id: 'isp-router',
       kind: 'router',
       label: 'ISP business uplink',
+      plainRole: "The provider's machine at the end of the office line",
+      zone: 'isp',
       ipv4: '198.51.100.13',
       detail: {
         Link: '198.51.100.12/30, a point-to-point handoff with two usable addresses',
