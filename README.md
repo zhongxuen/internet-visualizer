@@ -197,4 +197,4 @@ directive, including an honest note about the one that is weaker than it should 
 
 ## Licence
 
-Not yet chosen.
+[MIT](LICENSE) © 2026 Goh Zhong Xuen. You may use, copy, modify and redistribute the code, including in courses and teaching material, as long as the copyright notice and licence text travel with it.

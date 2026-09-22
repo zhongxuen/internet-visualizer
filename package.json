@@ -2,6 +2,7 @@
   "name": "internet-visualizer",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "//sideEffects": "Nothing in src/ runs anything on import, so an unused export can be dropped along with the module behind it. Without this the barrel in src/components/viz/index.ts holds React Flow (~80 KB gzipped) in the first load of every module and lesson route, because a re-export of SimulationCanvas has to be assumed to do something. Stylesheets are the exception and stay: they exist for their side effect.",
   "sideEffects": [
     "*.css"
